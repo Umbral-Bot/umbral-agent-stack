@@ -1,0 +1,259 @@
+{
+ "galeria": "G25",
+ "seccion": null,
+ "rubrica": "v2",
+ "retro": true,
+ "criterios_hasta": "G25",
+ "sellado": "2026-11-11T00:33:18",
+ "hash_rubrica": "f69064585452",
+ "hash_criterios": "fd98b8707561",
+ "votos": [
+  {
+   "id": "G25-v2-jerarquia",
+   "galeria": "G25",
+   "version": "v2",
+   "lente": "jerarquia",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 7.5,
+    "2": 7.5,
+    "3": 7.5
+   },
+   "hallazgos": [
+    {
+     "opcion": "1, 2 y 3 (diferencia de la galería)",
+     "donde": "las 21 piezas, máscara de imagen frente a la banda o columna de texto",
+     "problema": "Para mi lente no hay diferencia entre las opciones. El bloque de texto es idéntico en las tres: mismo tamaño de titular (186/148/156/146/96 px según formato), misma bajada y mismo botón. Al 85 % el edificio queda más cerca del panel, a unos 100 px en el 4:5 y a unos 180 px en el 9:16, pero nunca tapa, cruza ni le disputa al titular su zona de lectura. Según el criterio G14, que la imagen tenga más masa no baja la jerarquía. Por eso no elijo ganadora ni desempato por otra lente.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1, 2 y 3 (común)",
+     "donde": "pieza 16:9 diapositiva (4°, 11° y 18°)",
+     "problema": "El titular se reduce a 146 px para caber en 362 px de alto. Ocupa algo menos del 40 % del ancho de la banda y deja un gran vacío oscuro a la derecha, con el chip EJEMPLO aislado en el borde. Es el «titular mediano que deja aire de sobra en la banda» del criterio G13. Ese criterio viene del post de noticia, así que en la diapositiva lo uso como señal, no como veto. Es común a todas las opciones y no es lo que cambia esta galería.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1, 2 y 3 (común)",
+     "donde": "botón «LEE EL ARTÍCULO · umbralbim.io» en 4:5, 1:1 Banda 5/8 y 9:16 (1°, 2°, 3°, 8°, 9°, 10°, 15°, 16°, 17°)",
+     "problema": "Sigue siendo secundario frente al titular. Sin embargo, el texto en mayúsculas espaciadas sobre un relleno turquesa ancho (cerca del 59 % del ancho en el 4:5) pesa casi como la bajada. Si se extiende a estos formatos el texto reducido que se aceptó en G23, quedaría más claramente subordinado. Es común a todas y corresponde a una base ya elegida, así que solo lo anoto.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1, 2 y 3 (común)",
+     "donde": "LinkedIn sin bajada AB2 (7°, 14° y 21°), botón",
+     "problema": "El texto del botón mide 7,1 px CSS a ancho de celular, bajo el mínimo de 11 px. Lo dejo como aviso, no como veto, porque sigue leyéndose como botón (criterio G23).",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1, 2 y 3 (común)",
+     "donde": "chip EJEMPLO en AB2 (fila del logo) y U2 (junto al logo, abajo)",
+     "problema": "Es una marca de laboratorio y no la evalúo como diseño. No le quita espacio al titular ni choca con el logo. Lo anoto solo como aviso.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "",
+   "veredicto": "sirve",
+   "resumen": "La lente de jerarquía no ve diferencia entre las tres opciones. El titular manda igual en todas, en su banda o columna oscura propia, con el kicker, la bajada, el botón y el logo en su lugar. El objeto al 75 % o al 85 % nunca entra en la zona del titular, así que según el criterio G14 su tamaño no cambia la jerarquía. Por eso les doy el mismo puntaje y no elijo; la decisión corresponde a la lente de composición o encuadre. Hay defectos comunes a las tres. El más visible está en el 16:9: el titular mediano deja demasiado aire oscuro en la banda. Además, el botón pesa casi como la bajada en el 4:5, el 1:1 y el 9:16. El texto de 7,1 px del botón AB2 queda como aviso."
+  },
+  {
+   "id": "G25-v2-lectura",
+   "galeria": "G25",
+   "version": "v2",
+   "lente": "lectura",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 8,
+    "2": 8,
+    "3": 8
+   },
+   "hallazgos": [
+    {
+     "opcion": "todas",
+     "donde": "Piezas LinkedIn sin bajada (7°, 14°, 21°): texto del botón «LEE EL ARTÍCULO / umbralbim.io»",
+     "problema": "Mide 7,1 px CSS a 390 px de ancho, bajo la referencia de 11 px. Es solo un aviso: David ya eligió este botón con el texto reducido y el mismo relleno (G23), y se sigue leyendo como botón. Es igual en las tres opciones.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "Piezas LinkedIn con bajada (5°, 12°, 19°): bajada, botón y logo",
+     "problema": "El texto más chico mide 9,3 px CSS a 555 px de ancho. Es un aviso y no un veto, porque es la pieza LinkedIn pensada para computador que David aceptó (G09/G19). Es igual en las tres opciones.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "Chip EJEMPLO",
+     "problema": "No le quita espacio al texto ni choca con el logo ni con el llamado en ningún formato. Lo anoto solo para dejar constancia; es una marca de laboratorio.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "",
+   "veredicto": "sirve",
+   "resumen": "Para la lente de lectura, las tres opciones son iguales. La galería solo cambia la escala del objeto dentro de la máscara (75 % u 85 %), y la imagen nunca queda debajo de un texto. En los 21 PNG, el kicker, el titular, la bajada, el botón y el logo van sobre el mismo panel liso oscuro, con contraste mínimo de 9,92:1 y separaciones iguales. Los tamaños mínimos también coinciden: 11 px CSS en celular, 14 px en la diapositiva, 9,3 px en el LinkedIn con bajada y 7,1 px en el botón del LinkedIn sin bajada. Todas sirven a tamaño de feed. Los únicos avisos son comunes a las tres: el botón de 7,1 px y el LinkedIn pensado para computador, y ambos ya fueron aceptados por David. Como mi lente no ve diferencia entre las opciones, no elijo ganadora y dejo la decisión a la lente de composición o imagen."
+  },
+  {
+   "id": "G25-v2-posicion",
+   "galeria": "G25",
+   "version": "v2",
+   "lente": "posicion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 8.5,
+    "2": 7.5,
+    "3": 7
+   },
+   "hallazgos": [
+    {
+     "opcion": "todas",
+     "donde": "Las 21 piezas, máscara de imagen",
+     "problema": "Sin defecto de posición: medí la caja del edificio contra la máscara de cada formato. En todos sale entero y centrado con ±1 px, con márgenes opuestos iguales (por ejemplo, U2-o75 L164/R163 y T154/B154; T3-o85 L367/R365 y T173/B173). Está corregido el corte de arriba y el corrimiento a la derecha de G24. Ninguna cruz ni el panel de texto tocan el objeto. No hay veto.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "T6 16:9 (piezas 4, 11, 18) y T1 1:1 (2, 9, 16)",
+     "problema": "Es un defecto común a las tres opciones y no desempata. La imagen no cubre el ancho de la banda: el fondo se extiende con borde difuso y la trama se apaga hacia los lados. Así, el objeto ocupa solo el 15-17 % del ancho en 16:9 y el 20-23 % en T1, y queda como una isla con vacíos laterales grandes. Es una señal para la lente de composición, no un veto de posición.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "T1-o85-75 (pieza 9); también T2 y T6 (13, 11)",
+     "problema": "Al 85 % en la banda 5/8, el vértice superior queda a 58 px del borde de la máscara, más arriba que la fila de cruces de esquina (unos 64 px), y se sale del marco que forman las cruces. En T2 y T6 queda a 76 px, solo 12 px por debajo de esa fila. Arriba y abajo el margen es mínimo, mientras que a los lados sobran entre 750 y 1600 px.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "T1-o85 (pieza 16); T2-o85 y T6-o85 (20, 18)",
+     "problema": "Tiene el mismo apretón que la opción 2 en las bandas: el vértice queda a 58 px en T1, por encima de la fila de cruces, y a 76 px en T2 y T6.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "Columnas LinkedIn U2-o85 y AB2-o85 (piezas 19, 21)",
+     "problema": "Al 85 % la columna se aprieta: en U2 el objeto ocupa el 76 % del ancho, con 91 px arriba y abajo frente a 119 px a los lados. Al 75 % los márgenes son más parejos (154 px arriba y abajo, 164 px a los lados). No toca las cruces, pero queda menos aire que en la opción 1.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "T3 9:16 (pieza 10)",
+     "problema": "Es una nota de trazabilidad. El código rotula la historia como «máscara en columna» y la deja al 75 %, aunque la división es banda_apilada. Probablemente cuenta como columna porque la máscara es más alta que ancha. El resultado está bien, pero el nombre de la opción («85 % en las bandas») no describe lo que pasa en el 9:16.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "1",
+   "veredicto": "sirve",
+   "resumen": "Las tres opciones corrigen lo que David señaló en G24. Según la medición, el edificio sale entero y centrado con ±1 px en la máscara de los siete formatos, y no hay cortes ni corrimientos. La única diferencia está en la escala. Al 75 % en todos los formatos (opción 1), el objeto queda dentro del marco de las cruces, con al menos 99 px de aire en cada pieza y los márgenes más parejos. Al 85 % en las bandas (opciones 2 y 3), el vértice llega a la fila de cruces o la pasa: en T1 queda a 58 px, frente a los 64 px de las cruces. Además, la opción 3 aprieta las columnas de LinkedIn. Mi lente elige la 1. Un defecto común a las tres, que no desempata: en las bandas anchas (16:9 y T1) el objeto queda chico y aislado. Eso corresponde a la lente de composición."
+  },
+  {
+   "id": "G25-v2-composicion",
+   "galeria": "G25",
+   "version": "v2",
+   "lente": "composicion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 5.5,
+    "2": 7,
+    "3": 6.5
+   },
+   "hallazgos": [
+    {
+     "opcion": "1",
+     "donde": "1° P02 4:5 y 3° T3 9:16, pie de la zona de imagen",
+     "problema": "Al 75 % la imagen ya no cubre la máscara. La trama termina antes de la banda: en el P02 la trama llega a y≈1255 y la máscara a 1326 (una franja lisa de unos 66 px); en el T3, de unos 120 px. La imagen se lee como una viñeta dentro de un campo liso y no a sangre. Al 85 % la trama llega al borde de la banda.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1",
+     "donde": "2° T1 1:1 y 4° T6 16:9",
+     "problema": "En las bandas bajas y anchas, el objeto al 75 % queda chico: ocupa el 20 % del ancho en el 1:1 y el 15 % en el 16:9. Los vacíos laterales sin función quedan aún mayores. La imagen pierde peso frente a un bloque de texto que ocupa 5 de las 8 filas.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "19° U2 LinkedIn con bajada, columna de imagen",
+     "problema": "Al 85 % en una columna de unos 1000 px, el objeto queda a 95 px arriba y abajo y a 122 px a los lados. Ese aire es menor que el margen del texto (128 px) y deja el objeto junto a las cruces de registro, apretado al lado de una columna de texto densa. Al 75 % el aire es parejo (158/168 px) y conversa con el margen del texto.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "21° AB2 LinkedIn sin bajada",
+     "problema": "Al 85 % el objeto (y 95–1158) sobresale unos 33 px por arriba y por abajo de la columna de texto (logo 128 – botón 1125). Al 75 % queda metido unos 30 px dentro. Ninguno alinea exacto, pero al 75 % la imagen respeta el mismo marco que el texto.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "10° T3 9:16 (tratado como columna, al 75 %)",
+     "problema": "La máscara del 9:16 mide 2160×2350, casi cuadrada. Al 75 % deja 295 px de aire arriba y abajo. Al 85 % (pieza 17°) el edificio llena mejor la historia sin apretarse (177 px). Conviene tratar el 9:16 como banda y pasarlo al 85 %.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "9° T1 1:1 al 85 %",
+     "problema": "Al 85 % de una banda de 812 px, el objeto queda a 62 px del borde superior y de la banda de texto. Coincide con la altura de las cruces de registro (64 px) y es la mitad del margen del texto, mientras a los lados sobran 835 px. Se ve justo en lo vertical y vacío en lo horizontal.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "16:9 T6 (4°, 11°, 18°), zona de imagen",
+     "problema": "Defecto común a las tres opciones: un objeto alto en una banda muy ancha. La trama de la imagen cubre solo el tercio central y las alas quedan lisas. El objeto ocupa el 15–17 % del ancho, lo que deja vacíos laterales grandes sin función. No se resuelve con el tamaño del objeto: pide otra imagen o división para ese formato.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "todas",
+     "donde": "1:1 T1 con banda 5/8 (2°, 9°, 16°)",
+     "problema": "Defecto común: la imagen queda en una franja baja (3 de 8 filas), donde el edificio, vertical, solo ocupa la parte central. Las alas laterales quedan vacías con cualquier porcentaje.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "2",
+   "veredicto": "sirve",
+   "resumen": "Las tres opciones resuelven la queja de G24: el edificio va entero y centrado en todas las máscaras, sin cortes ni corrimientos. La diferencia está en el tamaño. En las bandas (4:5, 1:1 y 16:9), el 85 % gana: la trama llega al borde de la banda, la imagen se lee a sangre y el objeto tiene más presencia. En las columnas de LinkedIn, el 75 % deja un aire parejo, cercano al margen del texto, mientras el 85 % aprieta el objeto contra los bordes y las cruces. Por eso elijo la opción 2, que decide el tamaño según la forma de la máscara. Ajuste: tratar el 9:16 como banda y pasarlo al 85 %. Defectos comunes a las tres, anotados aparte: en el 16:9, y en menor medida en el 1:1, quedan vacíos laterales grandes porque el objeto es alto y la banda ancha."
+  },
+  {
+   "id": "G25-v2-costuras",
+   "galeria": "G25",
+   "version": "v2",
+   "lente": "costuras",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 9,
+    "2": 8.5,
+    "3": 7.5
+   },
+   "hallazgos": [
+    {
+     "opcion": "3",
+     "donde": "pieza 15° (G25-P02-o85), cruz superior derecha (2096,64)",
+     "problema": "Al 85 % la imagen llena toda la máscara y bajo la cruz ya no queda fondo liso. Una línea de la trama de construcción entra en la zona de los brazos: 66 px por encima del umbral, gris de hasta 31 niveles sobre #F9F7F5, y uno de los «+» grises de la imagen queda al lado de la cruz turquesa. Propuesta: mover la cruz o dejarle unos 25 px de fondo limpio alrededor.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "pieza 8° (G25-P02-o85-75)",
+     "problema": "Tiene el mismo cruce de la trama con la cruz superior derecha que la pieza 15°: es la misma imagen, con 3 niveles de diferencia como máximo. Es el único choque de la opción 2.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "pieza 17° (G25-T3-o85), las dos cruces superiores",
+     "problema": "Las líneas de la trama atraviesan la zona de los brazos de las dos cruces: 4 y 34 px, gris de hasta 28 niveles. En la versión al 75 % las cruces quedan sobre fondo extendido limpio (0 px).",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "pieza 21° (G25-AB2-o85), cruces derechas superior e inferior",
+     "problema": "Las diagonales de la trama pasan a 7–10 px del centro de cruces de brazo 12 px, es decir, las tocan: 17 y 26 px dentro, gris de hasta 34 niveles. Al 75 % quedan limpias.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "pieza 19° (G25-U2-o85), cruces derechas",
+     "problema": "La trama no toca los brazos, pero pasa a 23–26 px del centro (unos 145 px de líneas en un radio de 45). El entorno de la cruz queda cargado.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "1",
+   "veredicto": "sirve",
+   "resumen": "Ninguna opción tiene escalón de color ni parche rectangular, así que no hay vetos. El fondo propio de la imagen ya es #F9F7F5 exacto (80–95 % de la máscara) y el borde difuso desvanece la trama en unos 40–100 px, sin corte recto. Ningún acento turquesa queda a menos de 148 px del borde de la máscara. Para mi lente, la diferencia está en las cruces de registro. Al 75 % siempre quedan sobre fondo extendido limpio. Al 85 %, en las piezas donde la imagen llena la máscara, la trama tenue roza las cruces: P02, T3 y AB2 (U2 casi). Son roces leves, solo visibles de cerca; propongo mover la cruz o dejarle unos 25 px de fondo limpio. La opción 2 es una mezcla exacta de las otras dos (P02, T1, T2 y T6 de la opción 3; T3, U2 y AB2 de la opción 1), así que hereda solo el roce del P02. Elijo la opción 1."
+  }
+ ]
+}

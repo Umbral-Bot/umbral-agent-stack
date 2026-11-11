@@ -1,0 +1,10 @@
+# G28 (2026-11-11): Camino B con Nano Banana 2.1 (sin kit), variante 2. No publicar.
+id: articulo-nb-v2
+ejemplo: true              # muestra el chip EJEMPLO
+chip: EJEMPLO
+kicker: Artículo
+titulo: [La IA entra, a la obra]
+cuerpo: "Qué cambia en la coordinación BIM cuando los modelos se revisan con IA, y qué sigue dependiendo del equipo."
+cta: "LEE EL ARTÍCULO · umbralbim.io"
+imagen: mg-articulo-ia-obra-nb-p2
+imagen_ancha: mg-articulo-ia-obra-nb-a2

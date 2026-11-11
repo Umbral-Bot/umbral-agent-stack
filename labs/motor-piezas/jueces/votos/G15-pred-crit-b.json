@@ -1,0 +1,65 @@
+{
+ "galeria": "G15",
+ "seccion": null,
+ "rubrica": "pred-crit-b",
+ "retro": true,
+ "criterios_hasta": "G15",
+ "sellado": "2026-11-11T00:43:05",
+ "hash_rubrica": "2afef7084991",
+ "hash_criterios": "fd98b8707561",
+ "votos": [
+  {
+   "id": "G15-pcb-prediccion",
+   "galeria": "G15",
+   "version": "pred-crit-b",
+   "lente": "prediccion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 8,
+    "2": 8.5,
+    "3": 4.5
+   },
+   "hallazgos": [
+    {
+     "opcion": "3",
+     "donde": "logo, abajo a la izquierda: «BIM» del wordmark en turquesa sobre el panel claro",
+     "problema": "Medí 2,82:1 (#0FA994 sobre #FAFAF9). El logo cuenta como texto chico. El mínimo que informa el código (4,63:1) no lo incluye, así que el defecto no aparece en las medidas.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "3",
+     "donde": "bajada gris sobre el panel claro",
+     "problema": "Mide 4,63:1, justo en el rango de 4,6 a 6,3:1 que David ya vio flojo. Además mide unos 14 px CSS en el celular, así que se ve lavada: hay que corregirla antes de aprobar.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "3",
+     "donde": "corte entre la imagen y la banda",
+     "problema": "El panel blanco roto (#FAFAF9) casi se confunde con la franja crema del pie de la imagen (#F6E9CE). La banda apenas se separa de la imagen y la pieza pierde fuerza en el feed. En la 1 y la 2, la banda oscura marca el corte con claridad.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "bajada gris (#9BA3AD) sobre la banda oscura",
+     "problema": "Mide 7,24:1 sobre fondo liso, así que se lee, pero queda bajo la referencia de 10:1 del laboratorio. Con unos 14 px CSS en el celular se ve más apagada que la bajada blanca de la 2.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "bajada en el mismo blanco que el titular",
+     "problema": "Solo el tamaño separa la bajada del titular, que la triplica o más (≈25 % de su tamaño). Sigue claramente secundaria y no compite. Lo menor es la diferencia por color frente a la 1.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "imagen: márgenes crema propios arriba y abajo",
+     "problema": "Defecto común a las tres, sin diferencia entre ellas: la ilustración trae un marco crema de unos 60 px arriba y abajo. Por eso no llega del todo a sangre en esos bordes, y el titular deja aire a la derecha de la banda.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "2",
+   "veredicto": "sirve",
+   "resumen": "Predigo la 2. Mantiene la banda oscura que separa con claridad el texto de la imagen. Con la bajada blanca a 15,8:1, todo el texto chico queda cerca de la referencia de 10:1 (el mínimo es el turquesa, a 9,92:1), y la bajada sigue claramente secundaria por tamaño. David pide más contraste en el texto chico cada vez que lo ve flojo. La 1 queda muy cerca: su bajada gris a 7,2:1 se lee bien sobre fondo liso y es la base coherente con el Preset 01, pero en el celular se ve algo apagada. La 3 no sirve tal cual: la bajada queda en 4,63:1 (rango flojo), el «BIM» del logo en 2,82:1 (el código no lo mide) y el panel claro casi se funde con el crema de la imagen."
+  }
+ ]
+}

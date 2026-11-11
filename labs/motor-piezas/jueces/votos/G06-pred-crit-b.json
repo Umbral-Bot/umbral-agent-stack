@@ -1,0 +1,72 @@
+{
+ "galeria": "G06",
+ "seccion": null,
+ "rubrica": "pred-crit-b",
+ "retro": true,
+ "criterios_hasta": "G06",
+ "sellado": "2026-11-11T00:43:03",
+ "hash_rubrica": "2afef7084991",
+ "hash_criterios": "fd98b8707561",
+ "votos": [
+  {
+   "id": "G06-pcb-prediccion",
+   "galeria": "G06",
+   "version": "pred-crit-b",
+   "lente": "prediccion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 6.5,
+    "2": 6.5,
+    "3": 7.5,
+    "4": 5.5
+   },
+   "hallazgos": [
+    {
+     "opcion": "1",
+     "donde": "pie, abajo a la izquierda: «INSCRÍBETE · umbralbim.io» junto al logo",
+     "problema": "El llamado es texto turquesa chico con mucho espaciado. En el celular se lee débil, que es justo la queja de David en G01 sobre el texto de abajo a la izquierda. Pierde contra la opción 3.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "panel completo y esquinas sobre la imagen",
+     "problema": "En el celular apenas se distingue de la 1: las cruces miden pocos píxeles y no se ven a tamaño de feed. Quitar las cruces de las esquinas que caen sobre la zona clara con textura limpia un poco, pero no cambia la elección. El llamado del pie tiene el mismo problema que en la 1.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "botón «INSCRÍBETE · umbralbim.io» bajo los datos",
+     "problema": "El botón termina más o menos en x=600 de 865: no se alinea con el final de los filetes ni con otra línea de la grilla, así que su ancho parece arbitrario. Conviene llevarlo al ancho de las filas o a una columna definida.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "pie: el logo queda solo abajo a la izquierda",
+     "problema": "Al separar el llamado, el logo queda solo y deja vacía la mitad derecha del pie. Además, el bloque turquesa es la masa más brillante del panel y le quita un poco de protagonismo a los datos (criterio de datos fuertes de G03). Igual el orden de lectura sigue siendo título, datos y llamado.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "4",
+     "donde": "trama de puntos en el panel de texto",
+     "problema": "En el celular la trama no se ve, así que no aporta nada a tamaño de feed. De cerca agrega textura bajo el texto, en contra del criterio de que el texto chico no compita con la textura. Es la opción que más se aleja del panel limpio que David viene eligiendo.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "logotipo «Umbral BIM», etiquetas FECHA/HORA/LUGAR y sello EJEMPLO",
+     "problema": "El defecto es común a las cuatro. Son textos de 14 px CSS en una vista de 1280 px: en el feed del celular quedan muy chicos, y el logotipo cuenta como texto chico. No decide entre opciones, pero conviene subirlos antes de aprobar.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "todas",
+     "donde": "imagen del sangrado lateral",
+     "problema": "El defecto es común a las cuatro y está fijado en pasos anteriores, así que no se vuelve a discutir aquí. La franja cian luminosa se lee como resplandor, hay contraste dramático de luz y sombra, y el estilo es una mancha texturada, no la isométrica plana de las imágenes de referencia aprobadas. Revisarlo contra los vetos de marca antes de publicar.",
+     "gravedad": "media"
+    }
+   ],
+   "mejor": "3",
+   "veredicto": "sirve",
+   "resumen": "Las opciones 1, 2 y 4 son casi iguales en el celular: las cruces y la trama de puntos no se ven a tamaño de feed. La 3 es la única con un cambio visible, y ataca el criterio que David repite: el llamado de abajo a la izquierda se leía flojo. Ahora es un bloque turquesa con contraste de 9,9:1, y al subir los datos se achica el vacío bajo el subtítulo. Predigo que elige la 3, con dos ajustes menores: alinear el ancho del botón con la grilla y resolver el logo que queda solo en el pie. Hay defectos comunes a las cuatro que conviene corregir antes de publicar, aunque no deciden la elección: el texto chico del pie (logotipo y etiquetas) y la imagen fija, con resplandor y contraste dramático."
+  }
+ ]
+}

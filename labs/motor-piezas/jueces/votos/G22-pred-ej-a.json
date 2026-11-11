@@ -1,0 +1,53 @@
+{
+ "galeria": "G22",
+ "seccion": null,
+ "rubrica": "pred-ej-a",
+ "retro": true,
+ "criterios_hasta": "G22",
+ "sellado": "2026-11-11T01:09:47",
+ "hash_rubrica": "b71ce177d875",
+ "hash_criterios": "c375ba4695d4",
+ "votos": [
+  {
+   "id": "G22-eja-prediccion",
+   "galeria": "G22",
+   "version": "pred-ej-a",
+   "lente": "prediccion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 7,
+    "2": 5.5,
+    "3": 7.5
+   },
+   "hallazgos": [
+    {
+     "opcion": "1",
+     "donde": "columna de texto, entre el titular y el botón",
+     "problema": "«Artículo» queda a 32 px del titular, pero el botón queda a unos 140 px del titular. Las separaciones no son parejas, aunque en la pieza apaisada sin bajada el criterio acepta que el botón cierre la columna. David pidió en G20 que todos los textos quedaran a la misma distancia, y esta opción no lo consigue.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "pie del panel de texto",
+     "problema": "El botón deja de cerrar la columna y flota a media altura. Queda un vacío sin función de unos 210 px bajo el botón, y los márgenes dejan de ser simétricos: el logo está a 128 px del borde de arriba y el botón a unos 210 px del borde de abajo. Choca con la excepción aprendida («que el botón cierre la columna al pie pesa más que la separación pareja») y con la hipótesis de no dejar vacíos bajo los datos.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "zona entre el logo y «Artículo»",
+     "problema": "El bloque apoyado abajo deja unos 215 px de aire entre el logo y el kicker, y el titular baja hasta cerca del 60 % de la altura. David no eligió en G03 una variante compacta apoyada abajo con aire arriba, aunque era otro formato. Es un riesgo de lectura «bloque en una mitad», el defecto que señaló en G18.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "texto chico (logo, botón)",
+     "problema": "El texto más chico mide 9,3 px CSS con una vista de 390 px. Es un aviso y no un veto, porque es la pieza de LinkedIn pensada para computador y el texto del botón. El chip EJEMPLO no choca con el logo ni le quita espacio al texto. Defecto común a las tres opciones; no desempata.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "3",
+   "veredicto": "sirve",
+   "resumen": "La 3 es la única que cumple a la vez dos cosas que David pidió. Mantiene el botón al pie, cerrando la columna, en la misma posición que la 1 y con los márgenes de arriba y abajo simétricos (128 px). Y deja «Artículo», el titular y el botón a la misma distancia, 32 px, como pidió en G20. Su riesgo es el aire entre el logo y el bloque. La 1 es la alternativa cercana: es la base que ya conocía (G20 4°) y reparte el texto en tres zonas, pero la distancia del titular al botón no es pareja. La 2 se aleja: el botón flota y deja un vacío abajo. Predicción con confianza moderada: 3 por sobre 1."
+  }
+ ]
+}

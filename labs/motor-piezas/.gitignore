@@ -1,0 +1,9 @@
+# Insumos con licencia o pesados (fuentes, lockups, imágenes generadas) y salidas
+insumos/
+salida/
+*.png
+*.jpg
+*.ttf
+*.otf
+# encargos de jueces: se regeneran con jueces.py preparar (el voto sellado guarda el hash de rúbrica y criterios)
+jueces/encargos/

@@ -1,0 +1,22 @@
+# Lo que eligió David en cada galería, en números de opción: con una sola sección, el número de la pieza
+# (1°, 2°…); con varias secciones, el de la sección. Sale de decisiones.csv y de sus mensajes. Es la
+# respuesta contra la que se calibran los votos sellados de los jueces (jueces.py calibrar).
+# Quedan fuera las galerías sin elección clara entre alternativas (G01, G07, G08, G10, G11, G17, G18,
+# G21, G24, G26, G27) y las que eligen por sección dentro de una misma página (G19, G20), por ahora.
+G02: {"elegidas": [2], "fecha": "2026-11-06", "cita": "se ve mejor el 2, pero aumentar contraste en las letras de abajo a la izquierda"}
+G03: {"elegidas": [2], "fecha": "2026-11-06", "cita": "sí, el 2 de todas maneras"}
+G04: {"elegidas": [2], "fecha": "2026-11-06", "cita": "2° Sangrado lateral"}
+G05: {"elegidas": [1], "fecha": "2026-11-06", "cita": "1"}
+G06: {"elegidas": [4], "fecha": "2026-11-06", "cita": "4"}
+G09: {"elegidas": [2], "fecha": "2026-11-08", "cita": "2"}
+G12: {"elegidas": [1], "fecha": "2026-11-09", "cita": "1° Banda abajo"}
+G13: {"elegidas": [1], "fecha": "2026-11-09", "cita": "1° Base"}
+G14: {"elegidas": [1], "fecha": "2026-11-09", "cita": "1° A sangre"}
+G15: {"elegidas": [2], "fecha": "2026-11-09", "cita": "2° Bajada blanca"}
+G16: {"elegidas": [3, 4], "fecha": "2026-11-09", "cita": "3 y 4"}
+G22: {"elegidas": [1], "fecha": "2026-11-10", "cita": "Sin bajada · LinkedIn, piezas completas: 1 peor el boton mas pequeño"}
+G23: {"elegidas": [2], "fecha": "2026-11-10", "cita": "Sin bajada · LinkedIn, piezas completas : 2"}
+G25: {"elegidas": [2], "fecha": "2026-11-10", "cita": "2°, 85 y 75"}
+G28: {"elegidas": [6], "fecha": "2026-11-11", "cita": "la mejor fue de la 36 a la 42", "valoraciones": {"1": -1, "2": -1, "3": -1, "4": 1, "5": 1, "6": 2, "7": 1, "8": 0}, "comentarios": {"1": "de la 1 a la 21, cual sería la metrafora? como se relaciona el totulo con el dibujo? [...] creo que falta todo eso aca", "2": "de la 1 a la 21, cual sería la metrafora? como se relaciona el totulo con el dibujo? [...] creo que falta todo eso aca", "3": "de la 1 a la 21, cual sería la metrafora? como se relaciona el totulo con el dibujo? [...] creo que falta todo eso aca", "4": "de la 22 a la 35 se ve bien", "5": "de la 22 a la 35 se ve bien", "6": "de la 36 a la 42 tambien", "7": "la 43 a 49muy buena la abstración y la idea representada en la imagen, ese arnes que usaste esta bueno", "8": "las de mas adelante casi buen intento"}}
+M01: {"elegidas": [], "fecha": "2026-11-11", "cita": "n9o me gistó ninguna", "valoraciones": {"1": -1, "2": -1, "3": -1, "4": -1}, "comentarios": {"1": "La idea no engancha", "2": "La idea no engancha", "3": "La idea no engancha", "4": "La idea no engancha"}, "motivo": "respuesta a «¿qué falló?»: «La idea no engancha» (no marcó dibujo pobre, título ni preferencia por fondo)"}
+M02: {"elegidas": [], "fecha": "2026-11-11", "cita": "me gustó la propuesta artistica, pero aun le falta a las ideas  y la conexion de la iddeas y los graficos", "valoraciones": {"1": 0, "2": 0, "3": 0, "4": 0}, "comentarios": {"1": "me gustó la propuesta artistica, pero aun le falta a las ideas", "2": "me gustó la propuesta artistica, pero aun le falta a las ideas", "3": "me gustó la propuesta artistica, pero aun le falta a las ideas", "4": "me gustó la propuesta artistica, pero aun le falta a las ideas"}}

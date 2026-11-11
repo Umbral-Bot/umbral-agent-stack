@@ -1,0 +1,186 @@
+{
+ "galeria": "G09",
+ "seccion": null,
+ "rubrica": "v1",
+ "retro": true,
+ "criterios_hasta": null,
+ "sellado": "2026-11-11T00:00:24",
+ "hash_rubrica": "de3f9cdef0fe",
+ "hash_criterios": "-",
+ "votos": [
+  {
+   "id": "G09-v1-jerarquia",
+   "galeria": "G09",
+   "version": "v1",
+   "lente": "jerarquia",
+   "puntajes": {
+    "1": 6.5,
+    "2": 6,
+    "3": 7.5
+   },
+   "hallazgos": [
+    {
+     "opcion": "1",
+     "donde": "mitad derecha (imagen, 49% del área)",
+     "problema": "La imagen es la zona más clara de la pieza: el 30% de sus píxeles supera la luminancia 200, frente al panel oscuro. A tamaño de feed el ojo se va primero al blanco de la imagen y después al título.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "logo abajo a la izquierda",
+     "problema": "El nombre 'Umbral BIM' tiene unos 10,5 px de altura de mayúscula a 1200 px, lo que da unos 3,4 px CSS en una pantalla de 390 px: en celular no se lee, y esta opción es justamente para celular. Solo se reconoce el símbolo, que mide unos 11 px CSS.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "franja inferior del panel (fecha, inscripción y logo)",
+     "problema": "Entre el título y la fecha quedan unos 100 px vacíos, mientras que la fecha, la inscripción y el logo se apilan apretados contra el borde inferior. El logo queda a unos 35 px del corte y la etiqueta FECHA casi toca el valor.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "centro del panel",
+     "problema": "Hay un vacío de unos 180 px entre el título y la fecha, cerca del 27% de la altura. La fecha, más chica, queda desconectada del titular y pierde peso como segundo nivel de un 'save the date'.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "mitad derecha (imagen)",
+     "problema": "La competencia de la imagen clara con el título es la misma que en la opción 1: es la mitad de la pieza y la zona más luminosa.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "logo en la fila inferior",
+     "problema": "En una vista de 555 px el nombre del logo queda en unos 4,9 px CSS de altura de mayúscula: apenas se lee. La inscripción a su lado sí se lee bien, con unos 8,6 px de mayúscula.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "líneas cian espaciadas: SAVE THE DATE, TALLER PRÁCTICO · UMBRAL BIM e INSCRÍBETE · umbralbim.io",
+     "problema": "Las tres líneas usan el mismo estilo de letra y el mismo color, así que la inscripción no se distingue como acción y parece una etiqueta más. Además, el subtítulo repite 'UMBRAL BIM', que ya está en el logo.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "final del subtítulo y columna de datos",
+     "problema": "El subtítulo 'TALLER PRÁCTICO · UMBRAL BIM' termina a unos 17 px de la línea de la columna de datos: se ve pegado al bloque 03.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "logo abajo a la izquierda",
+     "problema": "El tamaño del logo es igual al de las demás opciones: en una vista de 555 px el nombre queda en unos 4,9 px CSS de altura de mayúscula. Se reconoce por el símbolo, pero el nombre no se lee.",
+     "gravedad": "media"
+    }
+   ],
+   "mejor": "3",
+   "veredicto": "sirve",
+   "resumen": "La opción 3 tiene la mejor jerarquía. La imagen baja a una franja superior del 37% del área, con solo un 13% de píxeles muy claros, y queda como acompañamiento. El título es el más grande, con unos 75 px de mayúscula, y los tres datos forman un segundo nivel claro. Conviene darle a la inscripción un tratamiento distinto de las otras líneas cian, quitar 'UMBRAL BIM' del subtítulo o separarlo de la columna de datos, y agrandar el nombre del logo. En las opciones 1 y 2, la mitad clara de la imagen compite con el título. La 1 tiene la inscripción más fuerte, pero en celular el logo no se lee. En la 2, el vacío central desconecta la fecha del título."
+  },
+  {
+   "id": "G09-v1-costuras",
+   "galeria": "G09",
+   "version": "v1",
+   "lente": "costuras",
+   "puntajes": {
+    "1": 6.5,
+    "2": 6.5,
+    "3": 6
+   },
+   "hallazgos": [
+    {
+     "opcion": "1",
+     "donde": "Costura entre imagen y panel (x=608), de y≈80 a y≈400",
+     "problema": "Queda una tira turquesa de 12 a 24 px (a 1x) cortada a ras del panel durante media altura. El haz real queda tapado y solo asoma el filo. A 555 px CSS se ve como un filete turquesa de 6 a 11 px que parece un error. Ajuste: imagen_foco x≈0,53, para que la costura caiga en gris (las columnas 370 a 395 de la fuente no tienen turquesa).",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "Costura entre imagen y panel (x=608), de y≈80 a y≈400",
+     "problema": "Es el mismo recorte que la opción 1: la tira turquesa de 12 a 24 px queda cortada a ras del panel durante media altura. Se corrige igual, con imagen_foco x≈0,53.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "Costura inferior de la banda (y=234), x≈541–618",
+     "problema": "El haz turquesa principal queda cortado justo en su tramo más saturado: el 92 % de los píxeles de la última franja es turquesa. La banda muestra las filas 266 a 550 de la fuente y el haz termina cerca de la 555. Ajuste: imagen_foco y≈0,56, para que el haz termine dentro de la imagen.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "Borde superior de la pieza (y=0), x≈514–583",
+     "problema": "El mismo haz también queda cortado en el borde exterior: el 55 % de esa franja es turquesa. Es menos notorio que el corte inferior.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "Costura de la banda, x≈845–900",
+     "problema": "Las cimas del edificio oscuro (las chimeneas) asoman y quedan cortadas en la costura. Ese resto del dibujo no se lee como silueta.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1",
+     "donde": "Cruces de registro sobre la imagen, en (1182,18) y (1182,609); también en la opción 2",
+     "problema": "No chocan con trazos: no hay tinta oscura debajo. Pero el turquesa sobre un fondo casi blanco (luminancia 241 a 251) casi desaparece, así que las cruces se pierden.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1",
+     "donde": "Franja blanca inferior de la imagen (y≈578–627); también en la opción 2",
+     "problema": "Es el papel blanco de la imagen original, no un parche: la transición es gradual (luminancia de 120 a 229 en unos 50 px). Su borde superior es casi recto y puede leerse como un zócalo.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "2",
+   "veredicto": "sirve con ajustes",
+   "resumen": "Ninguna opción cae en el veto. No hay fondo extendido ni parches: las tres son un recorte de la misma imagen de 1456×816, sin velos. El problema común es el turquesa cortado en la costura. En las opciones 1 y 2 queda una tira de 12 a 24 px pegada al panel durante media altura. En la 3 el haz principal se corta en la costura justo en su tramo más brillante, y también en el borde superior. Las opciones 1 y 2 empatan porque usan el mismo recorte; elijo la 2. Las cruces no chocan con el dibujo, aunque sobre el blanco se pierden. Los ajustes son baratos: imagen_foco x≈0,53 en las opciones 1 y 2, e imagen_foco y≈0,56 en la 3."
+  },
+  {
+   "id": "G09-v1-posicion",
+   "galeria": "G09",
+   "version": "v1",
+   "lente": "posicion",
+   "puntajes": {
+    "1": 5,
+    "2": 5.5,
+    "3": 3
+   },
+   "hallazgos": [
+    {
+     "opcion": "1 y 2",
+     "donde": "imagen, borde izquierdo (división con el panel)",
+     "problema": "La mancha de tinta se apoya en la división: toca el borde del panel en las filas 809–1182 (30% del alto, medido en el render 2400×1254). La silueta superior está entera, pero el objeto no está centrado: su centroide queda en x 1542, cuando el centro de la zona de imagen está en 1808. Eso lo corre 266 px (22% del ancho) hacia el panel y 198 px hacia abajo. Márgenes del objeto: izquierdo 0, derecho ~535, superior ~492, inferior ~84. Ajuste: correr el recorte ~250 px a la derecha o achicar ~15% para despegarlo del panel.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "panel, línea de la fecha",
+     "problema": "«Jueves 19 nov 2026» llega a 38 px de la división, contra 76 px de margen izquierdo. El margen derecho del texto queda a la mitad del izquierdo y la fecha casi choca con la imagen.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "panel, fila inferior (CTA)",
+     "problema": "«INSCRÍBETE · umbralbim.io» termina a 40 px de la división, contra 72 px a la izquierda: el margen sigue desparejo, aunque la fecha ya tiene aire (242 px). Entre el título y la fecha queda un hueco vertical de 349 px (28% del alto).",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "banda de imagen, borde inferior (y 468→469)",
+     "problema": "Veto. La banda de 469 px corta en seco la tinta. El trazo oscuro en x 365–735 y la mancha negra de la esquina inferior izquierda (luminancia 7–9) siguen hasta el borde. De la silueta principal solo asoman las chimeneas cortadas, en x ~1600–1760: el objeto queda cortado por la máscara.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "3",
+     "donde": "panel inferior, arriba y entre columnas",
+     "problema": "El texto arranca a 32 px del borde de la imagen, contra 72 px a los lados y abajo. «TALLER PRÁCTICO · UMBRAL BIM» termina en x 1368 y la columna de datos empieza en 1399: quedan 31 px entre las dos columnas.",
+     "gravedad": "media"
+    }
+   ],
+   "mejor": "2",
+   "veredicto": "sirve con ajustes",
+   "resumen": "Desde la lente de posición elijo la 2. Las opciones 1 y 2 usan el mismo recorte. La silueta superior se ve entera, pero la mancha está corrida 266 px hacia el panel y su base toca la división en un 30% del alto, así que conviene correr el recorte a la derecha. La 2 deja más aire en el panel, aunque el texto sigue más pegado a la división (40 px) que al borde izquierdo (72 px). La 1 aprieta la fecha a 38 px de la imagen. La 3 cae en el veto: la banda corta la tinta en seco y de la silueta principal solo asoman las chimeneas. Además, el texto queda a 32 px de la imagen."
+  }
+ ]
+}

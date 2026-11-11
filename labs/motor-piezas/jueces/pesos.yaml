@@ -1,0 +1,10 @@
+rubrica: v2
+calculado: '2026-11-11T00:51:55'
+regla: acuerdo suavizado (aciertos+1)/(n+2) de cada lente, normalizado a promedio
+  1
+pesos:
+  composicion: 1.49
+  costuras: 0.75
+  jerarquia: 1.16
+  lectura: 0.66
+  posicion: 0.93

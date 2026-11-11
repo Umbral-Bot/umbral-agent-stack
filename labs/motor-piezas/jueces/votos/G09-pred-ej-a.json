@@ -1,0 +1,65 @@
+{
+ "galeria": "G09",
+ "seccion": null,
+ "rubrica": "pred-ej-a",
+ "retro": true,
+ "criterios_hasta": "G09",
+ "sellado": "2026-11-11T01:09:45",
+ "hash_rubrica": "b71ce177d875",
+ "hash_criterios": "c375ba4695d4",
+ "votos": [
+  {
+   "id": "G09-eja-prediccion",
+   "galeria": "G09",
+   "version": "pred-ej-a",
+   "lente": "prediccion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 6.5,
+    "2": 8,
+    "3": 5.5
+   },
+   "hallazgos": [
+    {
+     "opcion": "3",
+     "donde": "banda inferior: título a la izquierda y los tres datos a la derecha",
+     "problema": "Es la composición más compleja y la que mejor cumple «datos fuertes». Pero en LinkedIn David ya prefirió solo la fecha con aire frente a una banda con los tres datos (G08). En 555 px CSS, la banda de 3 filas más el subtítulo deja poco aire y el conjunto se ve denso.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "columna izquierda, fecha y llamado",
+     "problema": "Está dimensionada para celular, pero la pieza de LinkedIn que David aceptó está pensada para computador. El título baja de 102 a 94 px. La fecha ocupa todo el ancho y el llamado va pegado debajo, así que el bloque inferior queda apretado y con menos aire que en la 2.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "columna izquierda, entre el título y la fecha",
+     "problema": "Queda un vacío de cerca de un cuarto del alto sin función entre el título y la fecha. La fecha es más chica que en la 1, así que el dato pierde algo de peso. Se lee como «aire» intencional y no rompe la lectura.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "pie: logo y llamado en la misma fila",
+     "problema": "Juntar el logo y el llamado en una sola línea ordena el pie y libera aire. El llamado queda sobre el panel oscuro, lejos de la textura, que es lo que David pide.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "logotipo «Umbral BIM», esquina inferior izquierda",
+     "problema": "El texto del logotipo mide unos 6–7 px CSS en la vista de 555 px. Cuenta como texto chico y queda por debajo de la referencia de 11 px. Es un defecto común a las tres, así que no desempata.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "imagen",
+     "problema": "La imagen es pictórica, con salpicaduras, textura y turquesa saturado, y no sigue la línea isométrica plana aprobada. Es común a las tres y viene de la base elegida, así que no cambia la elección.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "2",
+   "veredicto": "sirve",
+   "resumen": "Predigo la 2. En LinkedIn, David ya prefirió solo la fecha con aire frente a la banda con los tres datos, y aceptó que la imagen de LinkedIn se piense para computador. La 2 hace exactamente eso, con el pie ordenado (logo y llamado en una fila) y todo el texto sobre el panel oscuro, con un mínimo de 7,24:1. La 3 es la más compleja y la más completa en datos, pero choca con esa preferencia ya expresada. La 1 sirve en celular, aunque queda más apretada y no es la versión para computador. Defecto común a las tres: el logotipo es muy chico (unos 6–7 px CSS)."
+  }
+ ]
+}

@@ -1,0 +1,71 @@
+{
+ "galeria": "G25",
+ "seccion": null,
+ "rubrica": "pred-crit-a",
+ "retro": true,
+ "criterios_hasta": "G25",
+ "sellado": "2026-11-11T00:43:06",
+ "hash_rubrica": "2afef7084991",
+ "hash_criterios": "fd98b8707561",
+ "votos": [
+  {
+   "id": "G25-pca-prediccion",
+   "galeria": "G25",
+   "version": "pred-crit-a",
+   "lente": "prediccion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 6,
+    "2": 7,
+    "3": 7.5
+   },
+   "hallazgos": [
+    {
+     "opcion": "1",
+     "donde": "Bandas: piezas 1 (4:5), 2 (1:1), 4 (16:9) y 6 (1:1)",
+     "problema": "Al 75 % el edificio queda chico en la máscara. En el 1:1 y el 16:9 ocupa solo el 20 % y el 15 % del ancho y deja grandes vacíos lisos a los lados. Visto en el celular, el wireframe de trazo fino pierde presencia frente a la banda oscura.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "Piezas 1 (4:5) y 3 (9:16), borde inferior de la máscara",
+     "problema": "El fondo extendido con borde difuso deja una franja lisa sin trama justo encima de la banda: la desviación de la textura es 0,4 abajo y unos 3 arriba. Se lee como si la imagen se apagara antes del panel, no como imagen a sangre.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "Pieza 10 (historia 9:16), tratada como columna al 75 %",
+     "problema": "La máscara de la historia es casi cuadrada y no se comporta como columna. Al 75 % repite la franja lisa abajo, y el edificio tiene claramente menos presencia que en la pieza 17 al 85 %. Es la diferencia más visible entre las opciones 2 y 3.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "Pieza 19 (LinkedIn con bajada, columna de unos 1000 px)",
+     "problema": "Al 85 % el edificio queda a unos 120 px de los bordes de la columna, un 5 % del lienzo. Se ve algo justo, aunque entero y centrado. En la pieza 21 (sin bajada, columna más ancha) el 85 % respira bien.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "Pieza 16, y la pieza 9 de la opción 2 (1:1 banda 5/8)",
+     "problema": "La base del edificio queda a unos 61 px de la banda oscura, unos 11 px CSS en el celular: casi la toca. No hay corte.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "16:9 (piezas 4, 11 y 18) y 1:1 con bajada (piezas 2, 9 y 16)",
+     "problema": "Defecto común: la máscara es muy apaisada y baja, y el objeto, limitado por la altura, queda pequeño con mucho fondo extendido a los lados. Esos vacíos no tienen función, y ningún porcentaje lo resuelve. Hace falta otra división o una imagen más ancha, y queda fuera de lo que decide esta galería.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "todas",
+     "donde": "Botón en las piezas de LinkedIn (9,3 y 7,1 px CSS)",
+     "problema": "Aviso común, no veto: el texto del botón está bajo 11 px CSS. Es un rasgo aceptado por David en LinkedIn y no distingue entre las opciones.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "3",
+   "veredicto": "sirve",
+   "resumen": "Las tres opciones resuelven la queja de G24: el edificio queda entero y centrado en cada máscara (medido, márgenes simétricos). Solo cambia el tamaño. David prefiere la imagen con presencia, y le pareció bien un sujeto grande aunque llegue al borde. Por eso elegiría el 85 % en todos los formatos (opción 3): el edificio pesa más en el feed, cubre mejor la máscara y evita la franja lisa del fondo extendido que deja el 75 % en el 4:5 y el 9:16. La opción 2 queda cerca. Solo difiere en la historia, donde el 75 % se ve claramente peor, y en los LinkedIn, donde es apenas más aireada; la pieza con bajada al 85 % queda algo justa en su columna. La opción 1 deja el objeto chico, sobre todo en las bandas. Defecto común a las tres: en el 16:9 y el 1:1 con bajada, la máscara baja deja el objeto pequeño y vacíos laterales, y eso se resuelve con otra división, no con el porcentaje."
+  }
+ ]
+}

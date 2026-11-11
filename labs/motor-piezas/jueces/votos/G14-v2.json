@@ -1,0 +1,276 @@
+{
+ "galeria": "G14",
+ "seccion": null,
+ "rubrica": "v2",
+ "retro": true,
+ "criterios_hasta": "G14",
+ "sellado": "2026-11-11T00:33:17",
+ "hash_rubrica": "f69064585452",
+ "hash_criterios": "fd98b8707561",
+ "votos": [
+  {
+   "id": "G14-v2-jerarquia",
+   "galeria": "G14",
+   "version": "v2",
+   "lente": "jerarquia",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 7,
+    "2": 8,
+    "3": 6.5
+   },
+   "hallazgos": [
+    {
+     "opcion": "1",
+     "donde": "mitad superior, imagen a sangre",
+     "problema": "La imagen es la masa más clara y contrastada de la pieza. Toca tres bordes, ocupa cerca de la mitad del alto y compite con el titular por la primera mirada: en la hoja, el ojo cae primero en el robot y después en el titular.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "borde inferior de la imagen sobre el kicker",
+     "problema": "La franja crema propia de la imagen termina en un corte duro unos 49 px (≈24 px CSS) por encima de «ARTÍCULO». Esa línea clara queda pegada al kicker y le resta aire.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "caja de la imagen",
+     "problema": "Dentro de la caja quedan las franjas crema de la imagen original, arriba y abajo, y forman un marco claro desigual. La franja de abajo deja un borde brillante justo encima del kicker. No rompe el orden de lectura.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "mitad superior, isometría",
+     "problema": "La ilustración está hecha de líneas finas en turquesa tenue. A tamaño de feed casi desaparece, la mitad de arriba se lee vacía y la pieza pierde su punto de entrada. El titular manda, pero la imagen ya no acompaña.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "eje de la ilustración",
+     "problema": "La isometría está centrada y todo el texto va alineado a la izquierda. Quedan dos ejes y la ilustración no conduce la vista hacia el titular.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "pie, logo «Umbral BIM»",
+     "problema": "Es el texto más chico de la pieza (11 px CSS en la vista de 390 px). Va sobre fondo liso, así que no tiene el problema de contraste sobre la imagen, pero queda justo. Es común a las tres y no desempata.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "bajada",
+     "problema": "La retícula de puntos pasa entre las líneas de la bajada gris y le mete algo de ruido. Es común a las tres y no desempata.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "2",
+   "veredicto": "sirve",
+   "resumen": "La banda de texto es idéntica en las tres. El titular llena su banda y el kicker y la bajada rondan el 27 % de su tamaño, así que cumplen G10 y G13. La diferencia está en cuánto compite la imagen con el titular. La 2 es la mejor: la caja con margen se alinea a la columna del texto, baja el peso de la imagen y deja una sola columna de lectura, de la imagen al kicker y al titular. En la 1, la imagen a sangre es la masa más brillante y le disputa la primera mirada al titular. En la 3, el titular manda sin rival, pero la isometría es tan tenue que a tamaño de feed la mitad de arriba se lee vacía; además está centrada y crea un segundo eje."
+  },
+  {
+   "id": "G14-v2-lectura",
+   "galeria": "G14",
+   "version": "v2",
+   "lente": "lectura",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 8,
+    "2": 8,
+    "3": 8.5
+   },
+   "hallazgos": [
+    {
+     "opcion": "todas",
+     "donde": "logo, esquina inferior izquierda (palabra «Umbral BIM»)",
+     "problema": "Defecto común a las tres, no las distingue. La palabra del logo mide unos 31 px de alto en la pieza, lo que equivale a una letra de unos 7,5 px CSS en una vista de 390 px. Queda bajo la referencia de 11 px y es lo más chico que se lee en la pieza. El contraste sí está bien (blanco sobre la banda oscura lisa).",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "todas",
+     "donde": "etiqueta «EJEMPLO», arriba a la derecha de la banda",
+     "problema": "Defecto común. Calculado por la altura de las mayúsculas (unos 41 px), el texto mide unos 10 px CSS, algo menos que los 11,0 px que informa el código. Si es una marca de laboratorio y no sale en la pieza publicada, da igual.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1",
+     "donde": "borde inferior de la imagen, sobre el kicker «ARTÍCULO»",
+     "problema": "Entre el borde crema de la imagen y la tilde de la Í quedan solo unos 30 px, cerca de 5 px CSS en el celular. Es un borde claro y de mucho contraste pegado al kicker, y le quita aire. El kicker se sigue leyendo.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "borde inferior de la caja de imagen, sobre el kicker",
+     "problema": "Igual que en la opción 1: la caja termina unos 31 px sobre el kicker (cerca de 5 px CSS) y lo deja apretado bajo el borde crema.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "3",
+   "veredicto": "sirve",
+   "resumen": "Desde la lectura, las tres opciones casi no se distinguen. En las tres todo el texto va sobre la misma banda oscura lisa y sin textura, con iguales medidas: contraste mínimo de 7,24:1 y letra mínima de 11 px. Ninguna opción tiene vetos. La única diferencia que ve esta lente está en el kicker: en la 1 y la 2 queda unos 5 px CSS bajo el borde crema de la imagen, mientras que la ilustración de la 3 le deja más aire. Por eso elijo la 3, pero por muy poco, y no debería pesar en la decisión. Hay un defecto común que conviene anotar aparte: a tamaño de feed, la palabra del logo mide unos 7,5 px CSS."
+  },
+  {
+   "id": "G14-v2-composicion",
+   "galeria": "G14",
+   "version": "v2",
+   "lente": "composicion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 8,
+    "2": 6.5,
+    "3": 4
+   },
+   "hallazgos": [
+    {
+     "opcion": "3",
+     "donde": "mitad superior, ilustración isométrica",
+     "problema": "La isometría está centrada en el lienzo (eje x≈1080, caja 694–1465 de 2160 px), pero el texto va alineado a la izquierda en x≈127. No se alinea con la columna de texto ni con la grilla: flota. Deja unos 690 px vacíos a cada lado, que no cumplen ninguna función.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "3",
+     "donde": "equilibrio de la pieza entera",
+     "problema": "Los trazos ocupan cerca del 1,5 % de la zona superior. A tamaño de feed, la mitad de arriba se lee vacía y todo el peso cae en el título. La pieza queda desequilibrada hacia abajo.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "3",
+     "donde": "división imagen/banda",
+     "problema": "El fondo oscuro es continuo y no hay un bloque de imagen que lo corte, así que la banda de abajo ya elegida (G12) no se distingue como banda. La división del lienzo solo se intuye por el contenido.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "borde inferior de la caja y antetítulo ARTÍCULO",
+     "problema": "La caja deja 127 px de margen arriba y a los lados, pero solo ≈29 px hasta el antetítulo. El ritmo de márgenes se rompe y la caja parece apoyada sobre el texto. En la hoja de miniaturas también se nota.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "interior de la caja",
+     "problema": "La ilustración trae franjas crema propias arriba y abajo. Dentro de la caja con radio forman un doble marco que le quita un poco de limpieza al bloque.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1",
+     "donde": "esquinas superiores",
+     "problema": "Las cruces de registro de arriba caen sobre la imagen, en crema y turquesa, y la derecha queda justo en el canto del turquesa. Pierden la función de marco que sí cumplen sobre el fondo oscuro.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1",
+     "donde": "borde inferior de la imagen",
+     "problema": "La franja crema propia de la ilustración, de unos 70 px, queda justo encima del corte con la banda oscura. Se lee como una tercera franja fina entre imagen y texto.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "banda de texto (común, no desempata)",
+     "problema": "El antetítulo empieza a ≈29 px del final de la zona de imagen, mientras que bajo el pie quedan ≈151 px. La banda queda apretada arriba y holgada abajo. Habría que repartir el aire o subir el bloque de texto desde la base.",
+     "gravedad": "media"
+    }
+   ],
+   "mejor": "1",
+   "veredicto": "sirve",
+   "resumen": "La opción 1 es la que mejor resuelve la división del vertical de noticia: la imagen manda arriba, sus bordes coinciden con los del lienzo y la banda de abajo se lee como banda. La 2 tiene la mejor alineación, con la caja exactamente sobre la columna de texto (127–2032 px). Pero rompe su propio ritmo de márgenes, porque deja 127 px arriba y a los lados y solo ≈29 px hasta el antetítulo; sirve con ajustes. La 3 no sirve para composición: la isometría flota centrada sin relación con la columna izquierda, deja vacíos laterales grandes y el peso cae entero en el título. Defecto común a las tres, que no cuenta para elegir: la banda de texto queda apretada arriba (≈29 px) frente a ≈151 px bajo el pie."
+  },
+  {
+   "id": "G14-v2-posicion",
+   "galeria": "G14",
+   "version": "v2",
+   "lente": "posicion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 5.5,
+    "2": 5,
+    "3": 8.5
+   },
+   "hallazgos": [
+    {
+     "opcion": "1 y 2 (común)",
+     "donde": "imagen fuente mj3_V-S17b_0, mitad derecha",
+     "problema": "La fuente tiene composición de afiche: el brazo robótico está en el tercio derecho y su pedestal termina a 46 px del borde derecho (de 1456). Con foco 0.5/0.5, cualquier recorte lateral se come el pedestal. Es común a 1 y 2, así que no lo uso para desempatar entre ellas.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "esquina inferior derecha de la imagen (pedestal) y codo del brazo",
+     "problema": "El borde del lienzo corta el pedestal del robot: el recorte lateral (x −51,5 a 1131,5) pierde 17 px de fuente, unos 14 px de lienzo. El anillo del codo queda a 27 px del borde, menos de la mitad del margen de 64. El brazo se lee entero, pero la base se sale del cuadro.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "esquinas superiores",
+     "problema": "Las dos marcas de registro superiores (+) quedan dibujadas encima de la imagen, la izquierda sobre la franja crema y la derecha sobre el turquesa. No tocan al robot.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "borde derecho de la caja (x 1016, radio 8)",
+     "problema": "Es el peor encuadre del objeto de las tres. La caja recorta 34 px de fuente del pedestal, unos 25 px de lienzo, contra un borde marcado y redondeado, y el anillo del codo queda a 13 px del borde. Roza el veto de objeto cortado por la máscara.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "entre el borde inferior de la caja (y 663) y la etiqueta ARTÍCULO",
+     "problema": "Los márgenes de la caja no son parejos: quedan unos 24 px hasta el texto, contra 64 px arriba y a los lados. La caja se pega al panel de texto.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "zona de ilustración x 348,6–731,4, y 88–639",
+     "problema": "El objeto va entero y centrado: centro en x 540 y en y 363,5, que es el centro de la zona libre de 64 a 663. Tiene 24 px de holgura arriba y abajo, queda lejos de las marcas y no toca el panel. Su ventaja es estructural, porque no hay máscara que recortar. Pide un ajuste: ocupa 383 de 952 px y deja vacíos laterales de unos 285 px. Sus bordes tampoco caen en las líneas de la grilla de 3 columnas (≈381 y 698), así que flota. Esto es una hipótesis del laboratorio, no un criterio de David, y conviene que lo mire la lente de composición.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "3",
+   "veredicto": "sirve",
+   "resumen": "Por posición gana la 3: la isometría va entera, centrada al píxel en la zona libre, con holguras parejas arriba y abajo, y no toca marcas ni panel. Su único reparo es que flota con vacíos laterales grandes, algo que debe mirar la lente de composición. La 1 y la 2 usan la misma fuente con el sujeto a la derecha, y el recorte lateral les corta el pedestal del robot. En la 1 se pierden 14 px de lienzo y el anillo queda a 27 px del borde; además, las marcas superiores caen sobre la imagen. La 2 recorta más (25 px de lienzo, anillo a 13 px del borde de la caja) y su caja queda a 24 px del texto, contra 64 en los otros lados, aunque deja libres las marcas. Las dos sirven con ajustes; la 2 es la que más roza el veto."
+  },
+  {
+   "id": "G14-v2-costuras",
+   "galeria": "G14",
+   "version": "v2",
+   "lente": "costuras",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 6,
+    "2": 8
+   },
+   "hallazgos": [
+    {
+     "opcion": "1",
+     "donde": "Cruz de registro de arriba a la derecha, centro (1048, 32) en px de 1080",
+     "problema": "La cruz cae justo en el borde superior del panel turquesa de la imagen, que está en y ≈ 29–30. El brazo vertical cruza ese borde y el horizontal queda 2–3 px dentro del turquesa. Media cruz desaparece (turquesa sobre turquesa) y lo que se ve es un palito que sale del borde del panel. Choca con el dibujo. La de arriba a la izquierda cae sobre crema y no choca. Ajuste: en el modo a sangre, quitar las cruces de arriba que caen sobre la imagen o dejar solo las de la banda.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1",
+     "donde": "Franjas crema arriba (y 0–29) y abajo (y 630–663), a todo el ancho",
+     "problema": "La fuente mj3_V-S17b_0 (1456×816) trae su propio marco crema (246,233,206): 36 px arriba, 41 px abajo, 50 px a la izquierda y nada a la derecha. Al recortar los lados (51,5 px por lado a escala 0,8125) desaparece el marco lateral, pero quedan 29 px crema en el borde superior del lienzo y 33 px sobre la banda oscura. A tamaño de feed no se lee como sangre: parece una lámina enmarcada a la que le cortaron los lados, con un listón crema pegado a la banda. Ajuste: declarar la región útil de esa imagen (≈ 0,035; 0,045; 1,0; 0,949) para que el motor recorte el marco.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "Interior de la caja (64, 64, 952×599), franjas crema arriba de 26 px y abajo de 29 px",
+     "problema": "Es el mismo marco crema de la fuente, sin recortar. Dentro de la caja se nota menos, porque la caja ya funciona como marco, pero el paspartú queda asimétrico: hay crema arriba y abajo y no a los lados. Se corrige igual, con la región útil. Los bordes de la caja están limpios: filete de 1 px (38,43,49), sin huecos ni escalones, y las cruces quedan a unos 27 px de la caja, sin choque.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1 y 2 (común)",
+     "donde": "Panel turquesa superior; x ≈ 541 en las dos piezas (x ≈ 730 en la fuente)",
+     "problema": "La fuente tiene un escalón vertical de tono en el turquesa, de unos (+4, +13, +10) RGB, en toda la altura del panel. Viene de la imagen y no de un recorte o extensión del motor. Se ve de cerca y no desempata.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "Toda la pieza",
+     "problema": "No aplica a mi lente: no hay imagen recortada ni extendida, así que no hay costuras que revisar. La isometría y las cruces no se tocan. Las cruces quedan en x 32/1048 y la ilustración entre x 349 y 731. No le pongo puntaje para no premiarla por falta de imagen.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "2",
+   "veredicto": "sirve",
+   "resumen": "Ninguna opción tiene parche ni veto. La 1 (a sangre) deja a la vista el marco crema propio de la fuente en el borde superior y sobre la banda, así que no se lee como sangre. Además, la cruz de arriba a la derecha cae justo en el borde del panel turquesa. Sirve con ajustes: región útil para la imagen y quitar las cruces sobre la imagen. La 2 (en caja) tiene bordes limpios y cruces despejadas, y el mismo marco crema se nota poco dentro de la caja. La 3 no tiene imagen y queda fuera de mi lente. Elijo la 2."
+  }
+ ]
+}

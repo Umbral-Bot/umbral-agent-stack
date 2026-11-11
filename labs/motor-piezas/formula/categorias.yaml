@@ -1,0 +1,457 @@
+# Categorías del camino B (gráfico relacionado). Diseñadas por un panel de agentes (3 propuestas, 2 jueces,
+# 1 síntesis) el 2026-11-11, a partir del visual brief v2 del repo y de G24–G28. Pedido de David: «un proceso tipo
+# plantilla donde llega el brief, eso pasa por un prompt(1) que produce el prompt(2) para ser ingresado en magnific [...]
+# varias plantillas que se pueden rutear, seleccionar según tipo o categoria de grafico».
+categorias:
+- id: hallazgo
+  nombre: Hallazgo en el objeto
+  cuando: 'Usar cuando la cláusula principal del titular, o la bajada si el titular no tiene tesis, dice que una
+    revisión (IA, reglas, coordinación, auditoría o inspección) encuentra, detecta o marca un problema concreto
+    y ubicado en un modelo o en una obra. Es la única categoría probada (G24 a G27). También es la red de seguridad
+    cuando el copy tiene un objeto de dominio con un punto señalado y no encaja en otra. No se usa cuando la tesis
+    es el arreglo (anti: resuelve, corrige) ni cuando lo que falta es un acuerdo de información (interfaz) o un
+    responsable (pendiente).'
+  senales:
+  - 'fuerte (+3): un verbo de detección a 6 palabras o menos de un sustantivo de problema: (detecta|encuentra|revela|marca|señala|identifica)\w*
+    … (choque|clash|interferencia|colisi[oó]n|error|incidencia|fallo|omisi[oó]n|inconsistencia|incompatibilidad)'
+  - 'media (+2): revisión, revisa, se revisan, chequeo, comprobación, auditoría, control de calidad, inspección,
+    validación, model checking'
+  - 'media (+2): IA, inteligencia artificial o automatiz* a 6 palabras o menos de una revisión o de un verbo de
+    detección'
+  - 'débil (+1): Navisworks, Solibri, model checker, reglas; kicker Caso o Noticia'
+  - 'anti (−3): resuelve, corrige, soluciona o repara como tesis principal (el copy cuenta el arreglo, no el hallazgo)'
+  gramatica: 'Un solo objeto técnico, entero, calmo y dibujado en línea fina. El hallazgo son 1 o 2 partes en turquesa
+    plano que se tocan: las dos que chocan, o la que falla y la que la recibe. Ese punto es el ancla del motor (tipo:
+    objeto, imagen_objeto_ancla: acento). Lo que el copy deja abierto (cómo se resuelve, qué depende del equipo)
+    no se dibuja. La relación dice en afirmativo que el hallazgo sigue ahí («The pipe still runs through the beam.»).
+    No lleva rutas alternativas ni líneas tenues o discontinuas: en B1 los jueces vieron que se perdían en el feed.'
+  acentos: 'Lo típico son 2 partes contiguas: el tramo que invade y la pieza invadida (tubería y viga, ducto y losa,
+    anclaje y canto de losa). Va 1 sola cuando el hallazgo es una pieza aislada (un apoyo corto, una junta abierta).'
+  composicion_16_9: Un objeto compacto de proporción 1:1 a 4:3 (dos pisos, un nudo, una pieza), entero y centrado,
+    con aire alrededor. El hallazgo va cerca del centro del objeto.
+  composicion_21_9: El mismo tipo de objeto, alargado a 3:1 o más (más vanos, un tramo más largo, la tubería de
+    punta a punta), centrado y con márgenes libres en los extremos. El hallazgo aparece una sola vez, hacia un tercio,
+    y su posición se dice al final del motivo («…, in the second bay»).
+  prohibiciones:
+  - el choque resuelto, desviado o corregido (fixed, resolved, rerouted, repaired, corrected)
+  - rutas alternativas, tenues o discontinuas (alternative, bypass, dashed, faint)
+  - robot, cerebro, chip, haz de escaneo, lupa o señal de advertencia (robot, brain, chip, scan, magnifying, warning)
+  - personas que representen al equipo
+  - en 21:9, el hallazgo repetido en cada vano (each bay, repeated)
+  ejemplo_titular: '«La IA entra a la obra». Bajada: «Qué cambia en la coordinación BIM cuando los modelos se revisan
+    con IA, y qué sigue dependiendo del equipo». Es la B1 de G27 corregida: se quitan los recorridos discontinuos.
+    Esta versión todavía no se ha generado.'
+  ejemplo_prompt2_16_9: 'Isometric line illustration of a compact two-storey building frame with one pipe crossing
+    the first floor, whole and centred with wide empty space around it. Only two parts are flat teal, the clash
+    an automated review found: the pipe segment and the beam section it passes through. The pipe still runs through
+    the beam. No text, no markers, no logo.'
+  ejemplo_prompt2_21_9: 'Isometric line illustration: a long, low four-bay building frame with one pipe running
+    its full length, centred, empty margins at both ends. Only two parts are flat teal, the single clash an automated
+    review found, in the second bay: the pipe segment and the beam section it crosses. The pipe still runs through
+    the beam. No text, no markers, no logo.'
+  bloque_prompt1: '### hallazgo · Hallazgo en el objeto
+
+    Qué cuenta: una revisión encuentra un punto concreto dentro de un todo. Lo que el copy deja abierto (cómo se
+    resuelve, quién decide) no se dibuja: basta con que el hallazgo siga ahí.
+
+    Sujeto (inventario: elige uno o un equivalente del dominio): armazón de edificio cruzado por una tubería; cielo
+    técnico con ducto y viga; tramo de escalera prefabricada y su descanso; paño de muro cortina y su anclaje al
+    canto de losa; jaula de armadura con una camisa embebida; cercha de cubierta y el brocal de un lucernario; tablero
+    de puente sobre su apoyo.
+
+    Acentos: 1 o 2 (lo típico es 2), que se tocan. Son la pieza que invade y la invadida, o la que falla y la que
+    la recibe.
+
+    Motivo (sin artículo): nombra el hallazgo. Ejemplos: «clash an automated review found», «gap the model check
+    found».
+
+    Relación: dice en afirmativo que el hallazgo sigue presente. Ejemplos: «The pipe still runs through the beam.»,
+    «The anchor still sits clear of the slab edge.». No se admiten rutas alternativas ni líneas tenues o discontinuas.
+
+    Ancho 21:9: el mismo objeto con más vanos o más tramo. El hallazgo aparece una sola vez, hacia un tercio, con
+    su posición al final del motivo («…, in the second bay»).
+
+    No nombres estas palabras, ni siquiera en negativo: fixed, resolved, repaired, rerouted, solved, corrected,
+    alternative, bypass, scan, magnifying, warning.
+
+    Ejemplo (muestra la forma; no reutilices su objeto ni sus acentos):
+
+    16:9 «Isometric line illustration of a compact two-storey building frame with one pipe crossing the first floor,
+    whole and centred with wide empty space around it. Only two parts are flat teal, the clash an automated review
+    found: the pipe segment and the beam section it passes through. The pipe still runs through the beam.»
+
+    21:9 «Isometric line illustration: a long, low four-bay building frame with one pipe running its full length,
+    centred, empty margins at both ends. Only two parts are flat teal, the single clash an automated review found,
+    in the second bay: the pipe segment and the beam section it crosses. The pipe still runs through the beam.»'
+- id: comparacion
+  nombre: Dos opciones abiertas
+  cuando: 'Usar cuando el copy pone dos opciones sobre la misma mesa y la decisión sigue abierta: A o B, costo o
+    carbono, un sistema u otro. Con señal fuerte gana siempre, por la regla dura CAND-WLCA-01: contarla como cierre,
+    como deterioro o como antes y después de un mismo objeto invalida el pedido. No se usa cuando el copy declara
+    una ganadora (anti) ni cuando compara dos momentos del mismo objeto (eso es transformación).'
+  senales:
+  - 'fuerte (+3, gana directo): titular con ¿X o Y?, «vs», «versus», «frente a», o «entre X y Y» junto a elegir
+    o decidir'
+  - 'media (+2): elegir, opción, opciones, alternativa, comparar, comparativa, disyuntiva, cuál conviene, qué conviene,
+    trade-off, a cambio de, compensa, más barato pero'
+  - 'débil (+1): dos sustantivos del mismo tipo coordinados (dos sistemas, materiales, fachadas, estructuras, plataformas)'
+  - 'anti (−3): gana, la mejor opción, la respuesta es, elegimos, nos quedamos con, antes y después'
+  gramatica: 'Un solo cuerpo sobre una base común, partido por una costura central en dos mitades iguales, a la
+    misma escala y con el mismo acabado: la mitad A y la mitad B. Ninguna mitad está favorecida, más terminada,
+    gastada ni dañada, y la relación lo dice en afirmativo («Both halves are equally finished.»). Las opciones se
+    distinguen por la geometría (listones verticales contra paneles lisos, cercha contra losa), no por textura ni
+    color. Turquesa: las dos piezas que se tocan en la costura, una de cada opción. Así hay un solo ancla para el
+    motor (tipo: objeto, imagen_objeto_ancla: acento).'
+  acentos: Exactamente 2, uno por opción, contiguos en la costura (por ejemplo, el listón de madera y el panel prefabricado
+    que se encuentran ahí). Nunca uno en cada extremo del objeto.
+  composicion_16_9: El objeto compacto, partido al medio por una costura vertical, entero y centrado, con la costura
+    en el centro del objeto.
+  composicion_21_9: El objeto largo y bajo, con la mitad A a la izquierda, la mitad B a la derecha y la costura
+    en el centro. Es la gramática que mejor se adapta al apaisado. El acento queda en la costura central y sobrevive
+    a los recortes 1:1.
+  prohibiciones:
+  - una mitad ganadora, resaltada o terminada antes (better, best, winner, preferred, chosen, selected)
+  - una mitad gastada, rota o vieja, que se leería como antes y después o como daño (old, new, worn, damaged, cracked,
+    broken, before, after)
+  - balanza, flecha, signo versus o marca de verificación
+  - dos objetos separados, o una vitrina
+  - acentos en extremos opuestos del objeto, porque rompen el ancla única
+  ejemplo_titular: «¿Fachada de madera o prefabricada? El carbono entra antes a la mesa». Es un titular ilustrativo
+    del tipo de CAND-WLCA-01; en esta pasada no se leyó el copy real de CAND-WLCA-01.
+  ejemplo_prompt2_16_9: 'Isometric line illustration of a compact four-storey building, one half clad in timber
+    battens and the other in precast panels, whole and centred with wide empty space around it. Only two parts are
+    flat teal, the seam where the options meet: the timber batten and the precast panel beside it. Both halves are
+    equally finished. No text, no markers, no logo.'
+  ejemplo_prompt2_21_9: 'Isometric line illustration: a long, low building block, centred, empty margins at both
+    ends, its left half clad in timber battens and its right half in precast panels. Only two parts are flat teal,
+    the single seam where the options meet: the timber batten and the precast panel beside it. Both halves are equally
+    finished. No text, no markers, no logo.'
+  bloque_prompt1: '### comparacion · Dos opciones abiertas
+
+    Qué cuenta: dos opciones en la misma mesa, con la decisión abierta. La imagen cuenta una elección pendiente,
+    no un cierre, un deterioro ni un antes y después (regla CAND-WLCA-01).
+
+    Sujeto (inventario: elige uno o un equivalente): bloque de edificio con dos sistemas de fachada; losa con dos
+    sistemas estructurales; cubierta con dos soluciones; muro con dos composiciones; armazón mitad acero y mitad
+    madera; tablero de puente con dos tipos de viga. Es siempre un solo cuerpo sobre una base común.
+
+    Acentos: exactamente 2, uno por opción, que se tocan en la costura central.
+
+    Motivo (sin artículo): «seam where the options meet».
+
+    Relación: igualdad afirmativa entre las mitades. Ejemplos: «Both halves are equally finished.», «Both halves
+    stand at the same height on one base.». Las opciones se distinguen por la geometría (listones contra paneles,
+    cercha contra losa), no por textura ni color.
+
+    Ancho 21:9: la mitad A a lo largo de la izquierda y la mitad B a lo largo de la derecha, con la costura en el
+    centro. Esto va en el detalle_21x9.
+
+    No nombres estas palabras, ni siquiera en negativo: better, best, winner, preferred, chosen, selected, favoured,
+    old, new, worn, damaged, cracked, broken, before, after, balance, scale, versus.
+
+    Ejemplo (muestra la forma; no reutilices su objeto ni sus acentos):
+
+    16:9 «Isometric line illustration of a compact four-storey building, one half clad in timber battens and the
+    other in precast panels, whole and centred with wide empty space around it. Only two parts are flat teal, the
+    seam where the options meet: the timber batten and the precast panel beside it. Both halves are equally finished.»
+
+    21:9 «Isometric line illustration: a long, low building block, centred, empty margins at both ends, its left
+    half clad in timber battens and its right half in precast panels. Only two parts are flat teal, the single seam
+    where the options meet: the timber batten and the precast panel beside it. Both halves are equally finished.»'
+- id: interfaz
+  nombre: Interfaz o estándar
+  cuando: 'Usar cuando el copy trata de acuerdos, formatos o requisitos de información compartidos entre disciplinas,
+    equipos o herramientas: qué información se exige, en qué formato, cómo se intercambia y con qué criterio común.
+    Se distingue de pendiente porque lo que falta o existe es un acuerdo de información o de formato, no una persona.
+    Se distingue de hallazgo porque no hay un problema encontrado en un lugar del modelo. Cubre el fixture openBIM.'
+  senales:
+  - 'fuerte (+3): openBIM, IFC, IDS, BCF, ISO 19650, BEP, EIR, AIR, LOIN, COBie, interoperabilidad, intercambio
+    de (información|datos|modelos), formato abierto, requisitos de información, modelo federado, entorno común de
+    datos, CDE'
+  - 'fuerte (+3): acordar, definir o consensuar a 6 palabras o menos de información, formato, requisito, criterio,
+    condición, nomenclatura o clasificación'
+  - 'media (+2): criterio común, integración, integrar, conectar, entre disciplinas, entre plataformas, traspaso,
+    handover, nomenclatura, clasificación'
+  - 'débil (+1): kicker openBIM, Interoperabilidad o Integraciones; «coordinación» suelta no suma'
+  gramatica: 'Un objeto entero hecho de piezas de dos o tres disciplinas que se encuentran en una sola junta física
+    (nudo, placa de conexión, pasada o apoyo). Turquesa: la junta y la pieza que llega a ella, dos acentos que se
+    tocan. La relación describe la junta según el copy, con geometría sólida. Si el acuerdo existe, la pieza encaja
+    al ras («The collar sits flush on the plate.»). Si falta, queda corrida («The collar sits offset from the plate.»).
+    Nunca lleva cables a pantallas, nubes, flujos de datos ni piezas de puzzle (tipo: objeto, imagen_objeto_ancla:
+    acento).'
+  acentos: '2 contiguos: la placa, el apoyo o la pasada, y la pieza que llega (el collar del ducto, el ala de la
+    viga, el montante, la camisa).'
+  composicion_16_9: 'Un nudo constructivo compacto, entero y centrado con aire alrededor: viga, pilar y ducto; montante
+    y canto de losa; o panel y fundación.'
+  composicion_21_9: Un tramo largo donde las disciplinas corren en paralelo (línea de vigas, línea de pilares, ducto
+    al lado) y se juntan en una sola junta, dicha en el detalle_21x9 («all meeting at one joint»). La junta no se
+    repite.
+  prohibiciones:
+  - el adaptador o conector universal que lo arregla
+  - cables, enchufes, nube, red, flujo de datos o piezas de puzzle (cable, wire, plug, socket, cloud, network, data,
+    stream, puzzle)
+  - íconos de archivo, documentos, logos de software o pantallas
+  - corte o sección del nudo (cutaway, cross-section)
+  - flechas de intercambio
+  ejemplo_titular: 'Fixture openBIM (visual_brief_v2_openbim.yaml), central_fact: «Automatizar una comprobación
+    antes de acordar qué información se exige, sobre qué elementos y bajo qué condición no crea un criterio común».
+    La ruta se decide por regla: «acordar qué información» y «criterio común» suman 5 en interfaz contra 3 de «comprobación»
+    y «automatizar» en hallazgo.'
+  ejemplo_prompt2_16_9: 'Isometric line illustration of a compact structural node where a beam, a column and a duct
+    meet, whole and centred with wide empty space around it. Only two parts are flat teal, the shared fit: the connection
+    plate and the duct collar beside it. The collar sits offset from the plate. No text, no markers, no logo.'
+  ejemplo_prompt2_21_9: 'Isometric line illustration: a long beam run with a column line and a duct beside it, centred,
+    empty margins at both ends, all meeting at one joint. Only two parts are flat teal, the single shared fit: the
+    connection plate and the duct collar beside it. The collar sits offset from the plate. No text, no markers,
+    no logo.'
+  bloque_prompt1: '### interfaz · Interfaz o estándar
+
+    Qué cuenta: un acuerdo de información o de formato entre disciplinas o herramientas, hecho visible en la junta
+    física de un solo objeto ensamblado.
+
+    Sujeto (inventario: elige uno o un equivalente): nudo de viga, pilar y ducto; montante de muro cortina y canto
+    de losa; panel prefabricado y su fundación; tubería que pasa por la camisa de una losa; dos módulos apilados
+    y su conector; tablero de puente sobre el apoyo de una pila.
+
+    Acentos: 2 que se tocan: la junta (placa, apoyo, pasada) y la pieza que llega a ella.
+
+    Motivo (sin artículo): «shared fit», «common joint».
+
+    Relación: el estado de la junta según el copy, con geometría sólida. Si el acuerdo existe, la pieza encaja al
+    ras («The collar sits flush on the plate.»). Si falta, queda corrida («The collar sits offset from the plate.»).
+
+    Ancho 21:9: las disciplinas corren en paralelo a lo largo y se juntan en una sola junta («all meeting at one
+    joint» en el detalle_21x9). La junta no se repite.
+
+    No nombres estas palabras, ni siquiera en negativo: cable, wire, plug, socket, cloud, network, data, stream,
+    puzzle, file, adapter, connector.
+
+    Ejemplo (muestra la forma; no reutilices su objeto ni sus acentos):
+
+    16:9 «Isometric line illustration of a compact structural node where a beam, a column and a duct meet, whole
+    and centred with wide empty space around it. Only two parts are flat teal, the shared fit: the connection plate
+    and the duct collar beside it. The collar sits offset from the plate.»
+
+    21:9 «Isometric line illustration: a long beam run with a column line and a duct beside it, centred, empty margins
+    at both ends, all meeting at one joint. Only two parts are flat teal, the single shared fit: the connection
+    plate and the duct collar beside it. The collar sits offset from the plate.»'
+- id: pendiente
+  nombre: Pendiente sin asignar
+  cuando: 'Usar cuando el copy pone el peso en quién decide, quién responde o qué falta asignar entre personas (responsable,
+    destinatario, dueño, cierre, aprobación, gobernanza), y no en la herramienta ni en el formato. Funciona como
+    categoría primaria; la bajada solo la precisa. Cubre el fixture RFI. Se dibuja sin personas: el objeto llega
+    hasta un punto de recepción vacío.'
+  senales:
+  - 'fuerte (+3): sin (acordar|definir|asignar) junto a responsable, dueño, destinatario, cierre o aprobación; «sin
+    responsable», «sin destinatario», «sin dueño»; «nadie decide», «nadie responde», «nadie asume»; «quién decide»,
+    «quién responde»'
+  - 'fuerte (+3): acordar o definir a 6 palabras o menos de responsable, dueño, cierre, aprobación, destinatario
+    o quién'
+  - 'media (+2): responsable, rol, dueño, aprobación, escalamiento, pendiente(s), sin asignar, gobernanza, depend\w*
+    del equipo, mueve preguntas'
+  - 'débil (+1): equipo, adopción, liderazgo, cultura, como palabras sueltas'
+  - 'regla: un «sin» suelto nunca suma'
+  gramatica: 'Un objeto entero cuyo recorrido (bandeja, ducto, tubería o viga) llega hasta un elemento receptor
+    vacío: un soporte sin pieza, un apoyo sin viga o una brida sin válvula. Todo va en geometría sólida: el receptor
+    se dibuja completo y vacío, y el recorrido se detiene a un paso de él. No lleva contorno discontinuo ni continuaciones
+    tenues. Turquesa: el extremo que espera y el receptor vacío, contiguos. Sin personas ni sus sustitutos, como
+    sillas, mesas, manos, signos de interrogación o señaléticas (tipo: objeto, imagen_objeto_ancla: acento).'
+  acentos: '2 contiguos: el extremo abierto del recorrido y el receptor vacío. Ejemplos: open tray end y empty bracket;
+    duct end y empty hanger; beam end y empty column seat.'
+  composicion_16_9: Un tramo compacto del soporte, con el recorrido y su receptor vacío cerca del centro del objeto.
+  composicion_21_9: El recorrido largo y bajo viene desde un extremo y se detiene hacia el tercio derecho, frente
+    al receptor vacío. La posición va en el motivo («near the right third»). Hay una sola parada, que no se repite.
+  prohibiciones:
+  - una respuesta que llega, la pieza instalada o el receptor ocupado (filled, delivered, arrives, installed, received,
+    answered)
+  - personas, manos, sillas, mesa de reunión o insignias (person, hand, chair, table, badge)
+  - signo de interrogación, señalética o flecha (question, sign, arrow)
+  - carpetas, fichas, documentos o bandejas de oficina, que invitan pseudotexto (folder, document, paper, tray rack)
+  - contornos discontinuos o continuaciones tenues (dashed outline, faint)
+  ejemplo_titular: 'Fixture RFI (visual_brief_v2_rfi.yaml). Titular: «Acelerar el envío de RFIs sin acordar responsable,
+    contexto mínimo y condición de cierre sólo mueve preguntas, no las resuelve». Bajada: «…sigue sin destinatario
+    y su pendiente crece». La ruta se decide por regla: «sin acordar responsable», «sin destinatario» y «pendiente»
+    suman 8, y «resuelve» le resta 3 a hallazgo.'
+  ejemplo_prompt2_16_9: 'Isometric line illustration of a compact bay of steel support frames carrying one cable
+    tray, whole and centred with wide empty space around it. Only two parts are flat teal, the connection still
+    unassigned: the open tray end and the empty bracket past it. The tray stops a short gap before the bracket.
+    No text, no markers, no logo.'
+  ejemplo_prompt2_21_9: 'Isometric line illustration: a long, low run of steel support frames carrying one cable
+    tray, centred, empty margins at both ends. Only two parts are flat teal, the single connection still unassigned,
+    near the right third: the open tray end and the empty bracket past it. The tray stops a short gap before the
+    bracket. No text, no markers, no logo.'
+  bloque_prompt1: '### pendiente · Pendiente sin asignar
+
+    Qué cuenta: algo avanza o se envía y llega a un punto de recepción que nadie ocupa. Se dibuja con objetos, nunca
+    con personas.
+
+    Sujeto (inventario: elige uno o un equivalente): bandeja portacables sobre marcos de soporte que llega a un
+    soporte vacío; ducto que llega a un colgador vacío; viga que llega a un asiento de pilar vacío; tubería que
+    llega a una brida sin válvula; tramo de escalera prefabricada frente a un descanso sin apoyo; panel de fachada
+    frente a su anclaje vacío.
+
+    Acentos: 2 que se tocan o quedan a un paso: el extremo abierto del recorrido y el receptor vacío. Uno de los
+    acentos lleva la palabra «empty».
+
+    Motivo (sin artículo): «connection still unassigned», «hand-over point still unassigned».
+
+    Relación: geometría sólida del alto. Ejemplos: «The tray stops a short gap before the bracket.», «The duct ends
+    just short of the hanger.». El receptor se dibuja completo y vacío; no lleva contorno discontinuo.
+
+    Ancho 21:9: el recorrido largo viene desde un extremo y se detiene una sola vez hacia el tercio derecho, con
+    la posición al final del motivo.
+
+    No nombres estas palabras, ni siquiera en negativo: filled, delivered, arrives, installed, received, answered,
+    question, decision, owner, nobody, person, hand, chair, table, folder, document, paper.
+
+    Ejemplo (muestra la forma; no reutilices su objeto ni sus acentos):
+
+    16:9 «Isometric line illustration of a compact bay of steel support frames carrying one cable tray, whole and
+    centred with wide empty space around it. Only two parts are flat teal, the connection still unassigned: the
+    open tray end and the empty bracket past it. The tray stops a short gap before the bracket.»
+
+    21:9 «Isometric line illustration: a long, low run of steel support frames carrying one cable tray, centred,
+    empty margins at both ends. Only two parts are flat teal, the single connection still unassigned, near the right
+    third: the open tray end and the empty bracket past it. The tray stops a short gap before the bracket.»'
+- id: transformacion
+  nombre: Objeto en transición
+  cuando: Usar cuando el copy cuenta el paso de un estado del trabajo a otro (del plano al modelo, de lo manual
+    a lo automatizado, del modelo a la obra) sin cifras ni etapas verificables. Si trae una cifra o tres pasos o
+    más, el gate ADR-006 lo manda a diagrama; solo vuelve aquí con instrucción de David, y sin la cifra. Es la gramática
+    con más riesgo de pseudotexto, por eso va última en los pilotos.
+  senales:
+  - 'fuerte (+3): «de X a Y», «del X al Y» o «desde X hasta Y», con X e Y del léxico de estados (plano, papel, CAD,
+    2D, modelo, 3D, obra, manual, automático, digital)'
+  - 'media (+2): pasar de, convertir, migrar, digitalizar, transformación digital, implementar, implementación,
+    adoptar, evolución del flujo'
+  - 'débil (+1): flujo o proceso sin enumerar; kicker Caso'
+  - 'anti (−3): pasos enumerados o «en N fases» (los toma el gate ADR-006); «antes y después» con un ganador declarado'
+  gramatica: 'Un solo objeto que es los dos estados a la vez y en continuidad: una parte sigue siendo el contorno
+    plano de su huella sobre el suelo y otra ya está levantada. No son dos objetos ni etapas: hay un único frente
+    de cambio. Turquesa: la primera pieza levantada y el borde de la huella del que sale, contiguos (tipo: objeto,
+    imagen_objeto_ancla: acento). En el prompt se dice «footprint outline», nunca «floor plan» ni «drawing», porque
+    esas palabras invitan cotas y rótulos.'
+  acentos: '2 contiguos: la primera pieza levantada (pilar, muro o montante) y el borde de la huella del que sale.'
+  composicion_16_9: El objeto compacto que sube desde su propia huella, con el frente de cambio cerca de su centro.
+  composicion_21_9: El objeto largo y bajo, con un extremo todavía en huella y el otro construido, y un único frente
+    de cambio entre ambos. Nunca tramos discretos ni etapas.
+  prohibiciones:
+  - planta con cotas, ejes, rótulos o cuadrícula numerada (floor plan, plan view, blueprint, dimension, drawing,
+    sketch)
+  - etapas, fases, línea de tiempo o flechas (stages, steps, phases, timeline, arrow)
+  - dos objetos o un antes y después lado a lado
+  - grúas o personas construyendo
+  - la cifra del copy (plazo o porcentaje), ni en dígitos ni en palabras
+  ejemplo_titular: 'Caso real «Del plano al modelo, en tres semanas». Por defecto va a diagrama, porque el gate
+    detecta «tres semanas». Este par es el fallback cuando David pide imagen: la cifra queda fuera del prompt.'
+  ejemplo_prompt2_16_9: 'Isometric line illustration of a compact three-storey building rising out of its own footprint
+    outline, whole and centred with wide empty space around it. Only two parts are flat teal, the front where outline
+    becomes structure: the first raised column and the footprint edge it rises from. The frame grows continuously
+    from that corner. No text, no markers, no logo.'
+  ejemplo_prompt2_21_9: 'Isometric line illustration: a long, low building block, centred, empty margins at both
+    ends, its left end still a flat footprint outline and its right end fully framed. Only two parts are flat teal,
+    the single front where outline becomes structure: the first raised column and the footprint edge. The frame
+    grows continuously between them. No text, no markers, no logo.'
+  bloque_prompt1: '### transformacion · Objeto en transición
+
+    Qué cuenta: el mismo objeto pasa de un estado del trabajo a otro, en continuidad y sin etapas.
+
+    Sujeto (inventario: elige uno o un equivalente): edificio que se levanta desde su propia huella; puente cuyo
+    tablero sale del contorno del estribo; muro que pasa de su trazo en el suelo a paños levantados; armazón que
+    pasa de vigas desnudas a paños revestidos en continuidad; losa que pasa de su contorno a la losa colada.
+
+    Acentos: 2 que se tocan: la primera pieza levantada y el borde de la huella del que sale.
+
+    Motivo (sin artículo): «front where outline becomes structure».
+
+    Relación: continuidad afirmativa. Ejemplos: «The frame grows continuously from that corner.», «The frame grows
+    continuously between them.».
+
+    Ancho 21:9: un extremo sigue siendo contorno y el otro está construido, con un solo frente de cambio. Va en
+    el detalle_21x9.
+
+    Vocabulario: usa «footprint outline». No uses floor plan, plan view, blueprint, drawing, sketch ni dimension,
+    porque invitan cotas y rótulos.
+
+    No nombres estas palabras, ni siquiera en negativo: stages, steps, phases, timeline, sequence, arrow, crane,
+    worker, before, after.
+
+    Ejemplo (muestra la forma; no reutilices su objeto ni sus acentos):
+
+    16:9 «Isometric line illustration of a compact three-storey building rising out of its own footprint outline,
+    whole and centred with wide empty space around it. Only two parts are flat teal, the front where outline becomes
+    structure: the first raised column and the footprint edge it rises from. The frame grows continuously from that
+    corner.»
+
+    21:9 «Isometric line illustration: a long, low building block, centred, empty margins at both ends, its left
+    end still a flat footprint outline and its right end fully framed. Only two parts are flat teal, the single
+    front where outline becomes structure: the first raised column and the footprint edge. The frame grows continuously
+    between them.»'
+- id: evento
+  nombre: Evento o tema (emblema)
+  cuando: Usar cuando la pieza anuncia una sesión (webinar, workshop, taller, curso, charla, masterclass o save
+    the date). Se detecta por código desde el kicker, las filas Fecha, Hora, Lugar o Cupos, o el CTA INSCRÍBETE
+    o RESERVA, y sus cifras no activan el gate. También sirve para piezas explicativas sin tesis comparativa (guía,
+    lanzamiento) que nombran un objeto del dominio, siempre que ninguna otra categoría sume 2 o más. La imagen muestra
+    el tema, nunca el evento.
+  senales:
+  - 'código: kicker ∈ {Webinar, Webinar gratuito, Workshop, Taller, Curso, Clase, Masterclass, Charla, Save the
+    date, Sesión en vivo}'
+  - 'código: filas Fecha, Hora, Lugar o Cupos en el contenido, o CTA INSCRÍBETE o RESERVA'
+  - 'media (+2): kicker Guía o Lanzamiento con un sustantivo del léxico de objetos AEC en el titular'
+  - 'sujeto: sale del sustantivo de dominio del titular («COORDINACIÓN BIM» da un cielo técnico con instalaciones;
+    «muros cortina» da un paño de muro cortina), nunca de «IA»'
+  gramatica: 'Un objeto representativo del tema, en reposo y entero, con una sola parte en turquesa: el foco del
+    tema. La relación es fija: «Every other part is plain line work.». La imagen no agrega una tesis que el copy
+    no trae. No lleva vista explosionada, porque invita líneas guía y números de pieza (tipo: objeto, imagen_objeto_ancla:
+    acento).'
+  acentos: 'Exactamente 1: la pieza que trabaja la sesión (el ducto que cruza bajo la viga, el nudo del montante,
+    el apoyo del tablero).'
+  composicion_16_9: El objeto compacto del tema, entero y centrado, con el acento cerca de su centro.
+  composicion_21_9: El mismo objeto alargado (más paños o más tramo) con un solo acento. Nunca una fila de objetos
+    distintos, uno por tema.
+  prohibiciones:
+  - pantalla, laptop, monitor, auditorio, escenario, podio, micrófono o cámara
+  - calendario, reloj, birrete o ampolleta
+  - robot, cerebro o chip para representar «IA»
+  - vista explosionada, líneas guía o números de pieza (exploded, leader line, part number)
+  - una fila de objetos, uno por tema
+  ejemplo_titular: Webinar «COORDINACIÓN BIM CON IA», con kicker «Webinar gratuito» y filas de fecha, hora y lugar.
+    La ruta la decide el código desde el kicker. El workshop «BIM + IA» se rutea igual.
+  ejemplo_prompt2_16_9: 'Isometric line illustration of a compact ceiling services zone where a duct, a pipe and
+    a cable tray run under one beam, whole and centred with wide empty space around it. Only one part is flat teal,
+    the coordination point: the duct crossing under the beam. Every other part is plain line work. No text, no markers,
+    no logo.'
+  ejemplo_prompt2_21_9: 'Isometric line illustration: a long, low ceiling services zone where a duct, a pipe and
+    a cable tray run side by side under a beam line, centred, empty margins at both ends. Only one part is flat
+    teal, the single coordination point: the duct crossing under the beam. Every other part is plain line work.
+    No text, no markers, no logo.'
+  bloque_prompt1: '### evento · Evento o tema (emblema)
+
+    Qué cuenta: el tema de la sesión, en un objeto en reposo. Fecha, hora, lugar y cupos los pone el motor como
+    texto. No dibujes la sesión ni el formato.
+
+    Sujeto: sale del sustantivo de dominio del titular, nunca de «IA» (inventario: cielo técnico con ducto, tubería,
+    bandeja y viga; paño de muro cortina; tramo de escalera prefabricada; nudo de madera laminada; módulo prefabricado;
+    apoyo de puente; jaula de armadura).
+
+    Acentos: exactamente 1, la pieza que trabaja la sesión.
+
+    Motivo (sin artículo): «coordination point», «focus of the topic».
+
+    Relación: fija y literal, «Every other part is plain line work.».
+
+    Ancho 21:9: el mismo objeto con más paños o más tramo y un solo acento. Nunca una fila de objetos, uno por tema.
+
+    No nombres estas palabras, ni siquiera en negativo: session, webinar, workshop, audience, stage, podium, microphone,
+    speaker, screen, laptop, calendar, clock, exploded, leader line, part number, light bulb, robot, brain, chip.
+
+    Ejemplo (muestra la forma; no reutilices su objeto ni su acento):
+
+    16:9 «Isometric line illustration of a compact ceiling services zone where a duct, a pipe and a cable tray run
+    under one beam, whole and centred with wide empty space around it. Only one part is flat teal, the coordination
+    point: the duct crossing under the beam. Every other part is plain line work.»
+
+    21:9 «Isometric line illustration: a long, low ceiling services zone where a duct, a pipe and a cable tray run
+    side by side under a beam line, centred, empty margins at both ends. Only one part is flat teal, the single
+    coordination point: the duct crossing under the beam. Every other part is plain line work.»'

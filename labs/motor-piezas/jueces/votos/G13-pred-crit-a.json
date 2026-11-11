@@ -1,0 +1,66 @@
+{
+ "galeria": "G13",
+ "seccion": null,
+ "rubrica": "pred-crit-a",
+ "retro": true,
+ "criterios_hasta": "G13",
+ "sellado": "2026-11-11T00:43:04",
+ "hash_rubrica": "2afef7084991",
+ "hash_criterios": "fd98b8707561",
+ "votos": [
+  {
+   "id": "G13-pca-prediccion",
+   "galeria": "G13",
+   "version": "pred-crit-a",
+   "lente": "prediccion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 8,
+    "2": 5.5,
+    "3": 7,
+    "4": 5
+   },
+   "hallazgos": [
+    {
+     "opcion": "2",
+     "donde": "banda, entre la última línea del titular (y≈2135) y el pie (y≈2490)",
+     "problema": "Sin bajada queda un vacío de unos 355 px (13 % del alto) sin función bajo el titular. Además, la pieza pierde en el feed el contexto de la noticia. Choca con la preferencia de David por conservar los datos aunque el resto ceda espacio.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4",
+     "donde": "banda, bajo la bajada (y≈2228 a 2490)",
+     "problema": "Queda un vacío de unos 260 px bajo la bajada: la banda se ve floja y no gana aire útil.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4",
+     "donde": "titular frente al kicker",
+     "problema": "El titular a 110 px pierde mando. La mayúscula del kicker ya mide cerca del 39 % de la del titular (63/163 px), muy cerca del tope de alrededor del 45 % de la regla de jerarquía.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "bajada de 17,6 px CSS en tres líneas casi a lo ancho",
+     "problema": "Se lee mejor en el celular, pero suma masa visual y empieza a disputar peso al titular, que baja a 136 px. Está dentro del 45 % (mayúsculas de unos 60/202 px), pero va contra el espíritu de «el titular manda».",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "pie, nombre «Umbral BIM» junto al isotipo (esquina inferior izquierda)",
+     "problema": "El texto del logo mide unos 31 px de alto en 2160, es decir, unos 5,6 px CSS de altura de letra (cuerpo de unos 8 px) en la vista de 390. Queda por debajo de la referencia de 11 px, y el código no lo mide (informa 11,0 px como mínimo). Es común a todas y no desempata.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1, 3 y 4",
+     "donde": "bajada en gris sobre la banda oscura",
+     "problema": "La bajada mide 7,24:1, debajo de la referencia de 10:1 del laboratorio (no es veto). Va sobre un fondo liso sin textura, así que el riesgo es bajo. Es común a las opciones con bajada.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "1",
+   "veredicto": "sirve",
+   "resumen": "Creo que David elegiría la 1. El titular manda claramente (kicker a unos 27 % y bajada a unos 25 % de su tamaño), conserva la bajada y llena la banda sin vacíos: entre el texto y el pie quedan unos 107 px. La 3 queda segunda: la bajada se lee mejor en el celular, pero le disputa peso al titular. La 2 tiene el titular más fuerte, pero deja un vacío grande y se queda sin contexto. La 4 debilita el titular y deja la banda floja. Hay un defecto común que no desempata: el nombre del logo queda en unos 8 px CSS en el celular."
+  }
+ ]
+}

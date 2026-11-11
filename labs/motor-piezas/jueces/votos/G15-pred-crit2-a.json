@@ -1,0 +1,65 @@
+{
+ "galeria": "G15",
+ "seccion": null,
+ "rubrica": "pred-crit2-a",
+ "retro": true,
+ "criterios_hasta": "G15",
+ "sellado": "2026-11-11T00:51:30",
+ "hash_rubrica": "b71ce177d875",
+ "hash_criterios": "11070cf84d18",
+ "votos": [
+  {
+   "id": "G15-raa-prediccion",
+   "galeria": "G15",
+   "version": "pred-crit2-a",
+   "lente": "prediccion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 8,
+    "2": 6.5,
+    "3": 4
+   },
+   "hallazgos": [
+    {
+     "opcion": "2",
+     "donde": "bajada, banda oscura",
+     "problema": "La bajada blanca (15,8:1) toma el mismo color que el titular y le resta distancia jerárquica. En un post de noticia David pide una bajada claramente secundaria. La bajada gris de la 1° ya se lee bien sobre fondo liso (7,2:1), así que el contraste extra no suma y aplana la jerarquía.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "logotipo, esquina inferior izquierda",
+     "problema": "El «BIM» turquesa del logotipo queda en unos 2,8:1 sobre el panel claro (medido: #0FA994 sobre #FAFAF9). El logo cuenta como texto chico, y en el celular se ve lavado.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "3",
+     "donde": "bajada, panel claro",
+     "problema": "La bajada gris queda en 4,63:1, apenas sobre el mínimo y en el rango que David ya vio flojo (4,6–6,3:1). En el feed del celular se lee débil.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "kicker «Artículo» y llamado",
+     "problema": "El kicker y el llamado pierden el turquesa y pasan a verde oscuro. La pieza se vuelve más genérica y se aleja del Preset 01, justo lo que David no premia aunque se lea.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "unión entre la imagen y la banda",
+     "problema": "El panel casi blanco se pega a la franja crema del borde inferior de la imagen. La separación entre la imagen y el panel de texto se debilita y la pieza pierde el corte limpio que da la banda oscura.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "imagen",
+     "problema": "Defecto común que no desempata: el fondo de la ilustración es turquesa/aqua (veto de marca «turquesa como fondo»), tiene grano de risografía en vez de la línea isométrica plana de referencia, y el sujeto (el brazo robótico) está cargado a la derecha. Además, el titular deja aire a la derecha en su banda.",
+     "gravedad": "media"
+    }
+   ],
+   "mejor": "1",
+   "veredicto": "sirve",
+   "resumen": "David elegiría la 1° (la base). La banda oscura con bajada gris a 7,2:1 ya se lee sobre fondo liso, mantiene la bajada claramente secundaria y conserva el turquesa de marca en el kicker y en el llamado, como el Preset 01. La 2° solo agrega contraste a la bajada, y eso aplana la jerarquía. La 3° pierde el turquesa y deja el «BIM» del logo en unos 2,8:1 y la bajada en 4,6:1. Los defectos de la imagen son comunes a las tres y no deciden."
+  }
+ ]
+}

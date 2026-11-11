@@ -1,0 +1,10 @@
+# G28 (2026-11-11): Camino A con rescates: G-AFI-04 (tercio derecho) y H023 (retícula). No publicar.
+id: articulo-rescate-r3
+ejemplo: true              # muestra el chip EJEMPLO
+chip: EJEMPLO
+kicker: Artículo
+titulo: [La IA entra, a la obra]
+cuerpo: "Qué cambia en la coordinación BIM cuando los modelos se revisan con IA, y qué sigue dependiendo del equipo."
+cta: "LEE EL ARTÍCULO · umbralbim.io"
+imagen: mg-rescate-gafi04
+imagen_ancha: mg-rescate-h023

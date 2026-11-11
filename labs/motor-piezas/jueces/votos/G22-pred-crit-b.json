@@ -1,0 +1,59 @@
+{
+ "galeria": "G22",
+ "seccion": null,
+ "rubrica": "pred-crit-b",
+ "retro": true,
+ "criterios_hasta": "G22",
+ "sellado": "2026-11-11T00:43:06",
+ "hash_rubrica": "2afef7084991",
+ "hash_criterios": "fd98b8707561",
+ "votos": [
+  {
+   "id": "G22-pcb-prediccion",
+   "galeria": "G22",
+   "version": "pred-crit-b",
+   "lente": "prediccion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 8,
+    "2": 5,
+    "3": 7
+   },
+   "hallazgos": [
+    {
+     "opcion": "2",
+     "donde": "pie del panel de texto",
+     "problema": "El botón deja el pie y sube con el bloque al medio. Quedan 106 px vacíos bajo el botón y 59 px sobre «Artículo», así que el panel se ve cargado arriba y con el fondo hueco. En la pieza apaisada sin bajada, que el botón cierre la columna al pie pesa más que la separación pareja, y esta opción cambia lo primero por lo segundo. Además vuelve a apilar los textos por defecto.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "entre el logo y «Artículo»",
+     "problema": "El bloque se apoya abajo con separación pareja de 32/30 px y el botón al pie, lo que cumple las dos reglas. A cambio deja 100 px vacíos bajo el logo: el logo queda aislado arriba y la pieza se ve cargada abajo. La 1 reparte ese aire en tramos de 63 y 68 px.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "columna de texto",
+     "problema": "Las separaciones de la columna no son parejas: 32 px entre «Artículo» y el titular, y 68 px entre el titular y el botón. La excepción de la pieza apaisada sin bajada cubre esto. Además, el ritmo general del panel es casi uniforme: margen de 64 px, logo, 63, kicker y titular, 68, botón, 65 hasta el borde.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "botón y logotipo",
+     "problema": "El texto más chico mide 9,3 px CSS en la vista de 390 px. Es un aviso y no un veto, porque la imagen de LinkedIn se pensó para computador.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "cruz de registro superior derecha",
+     "problema": "La cruz cae sobre la imagen, entre la franja crema y el turquesa, y casi no se ve. Conviene moverla o darle contraste, no quitarla.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "1",
+   "veredicto": "sirve",
+   "resumen": "Predigo que David elige la 1. Deja el botón al pie, como manda la excepción de la pieza apaisada sin bajada, y reparte el panel en tramos casi iguales: logo, 63 px, kicker y titular, 68 px, botón, 65 px hasta el borde. La 3 cumple la separación pareja y deja el botón al pie, pero junta todo abajo y deja 100 px vacíos bajo el logo. Es una buena segunda. La 2 sube el botón al medio y deja 106 px vacíos al pie: es la más débil. El contraste (9,92:1), la imagen a sangre y el chip EJEMPLO son iguales en las tres y no deciden."
+  }
+ ]
+}

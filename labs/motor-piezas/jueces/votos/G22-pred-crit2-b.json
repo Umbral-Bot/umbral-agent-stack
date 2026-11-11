@@ -1,0 +1,59 @@
+{
+ "galeria": "G22",
+ "seccion": null,
+ "rubrica": "pred-crit2-b",
+ "retro": true,
+ "criterios_hasta": "G22",
+ "sellado": "2026-11-11T00:51:31",
+ "hash_rubrica": "b71ce177d875",
+ "hash_criterios": "11070cf84d18",
+ "votos": [
+  {
+   "id": "G22-rab-prediccion",
+   "galeria": "G22",
+   "version": "pred-crit2-b",
+   "lente": "prediccion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 7,
+    "2": 5.5,
+    "3": 8
+   },
+   "hallazgos": [
+    {
+     "opcion": "1",
+     "donde": "columna de texto, del titular al botón",
+     "problema": "Los 32 px solo se aplican entre «Artículo» y el titular. Del titular al botón quedan unos 68 px, así que las separaciones no son parejas. La excepción para la pieza apaisada sin bajada lo permite, y el reparto (márgenes de 64–65 px, logo a «Artículo» 63 px, titular a botón 68 px) tiene ritmo. Aun así no aplica la separación pareja que David pidió para todos los textos.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "pie del panel, bajo el botón",
+     "problema": "El bloque queda centrado y deja unos 106 px vacíos bajo el botón, frente a 64 px de margen arriba. El botón ya no cierra la columna al pie: va contra la excepción del criterio de separaciones para la pieza apaisada sin bajada y deja un vacío sin función bajo los datos. Se lee como textos apilados por defecto, no como un reparto deliberado.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "entre el logo y «Artículo»",
+     "problema": "Al apoyar el bloque abajo quedan unos 100 px de aire entre el logo y el kicker, y el peso se carga hacia abajo (el titular queda algo bajo el centro). Es un vacío arriba, no bajo los datos, y se lee como decisión: logo arriba y bloque anclado al margen inferior, a la misma altura que el superior.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "texto del botón «LEE EL ARTÍCULO / umbralbim.io»",
+     "problema": "Mide 9,3 px CSS en la vista de 390 px, bajo la referencia de 11 px. Es solo aviso, no veto: es el texto del botón en una imagen de LinkedIn pensada para computador. Es común a las tres opciones y no las diferencia.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "chip EJEMPLO, arriba a la derecha del panel",
+     "problema": "Es una marca de laboratorio y está alineada con el logo. No le quita espacio al texto ni choca con las cruces. No se evalúa como diseño.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "3",
+   "veredicto": "sirve",
+   "resumen": "La galería solo cambia la posición vertical del bloque de texto. La 3 es la única que cumple a la vez dos cosas: «Artículo», titular y botón quedan a 32 px parejos, como pidió David en G20, y el botón sigue cerrando la columna al pie, con el margen inferior igual al superior, que es lo que pesa en el LinkedIn sin bajada. A cambio deja aire entre el logo y el kicker, pero arriba y con intención. La 1 es la base de G20 4° con un ritmo correcto, pero del titular al botón quedan 68 px y no aplica la separación pareja. La 2 centra el bloque, deja un vacío bajo el botón y saca el botón del pie, así que queda como «sirve con ajustes». Común a las tres y sin efecto en la elección: el texto del botón mide 9,3 px CSS (aviso, no veto) y el contraste mínimo es de 9,92:1."
+  }
+ ]
+}

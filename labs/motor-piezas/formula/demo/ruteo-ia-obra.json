@@ -1,0 +1,38 @@
+{
+ "id": "articulo-ia-obra",
+ "contenido": "contenido/articulo-ejemplo.yaml",
+ "lexico": 1,
+ "kicker": "Artículo",
+ "titular": "La IA entra a la obra",
+ "bajada": "Qué cambia en la coordinación BIM cuando los modelos se revisan con IA, y qué sigue dependiendo del equipo.",
+ "override": null,
+ "puntajes": {
+  "hallazgo": 4.0,
+  "pendiente": 2.0
+ },
+ "senales": [
+  {
+   "categoria": "hallazgo",
+   "peso": 2.0,
+   "cita": "se revisan"
+  },
+  {
+   "categoria": "hallazgo",
+   "peso": 2.0,
+   "cita": "revisan con IA"
+  },
+  {
+   "categoria": "pendiente",
+   "peso": 2.0,
+   "cita": "dependiendo del equipo"
+  }
+ ],
+ "ruta": "imagen",
+ "categoria": "hallazgo",
+ "metodo": "regla",
+ "motivo": "hallazgo 4 contra pendiente 2",
+ "evidencia": [
+  "se revisan",
+  "revisan con IA"
+ ]
+}

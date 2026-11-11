@@ -1,0 +1,37 @@
+id: G20
+fecha: 2026-11-10
+titulo: "Galería 20 · LinkedIn ajustado (G19 5° y 10°)"
+descripcion: >
+  Elecciones de David en G19: tono 3° (la bajada al 80 %, que pasa a todo el Preset 02), 5° para
+  LinkedIn con bajada («pero ajustando tamaño de "lee el articulo.." mas mpequeño y distribuye
+  mejor los textos») y 10° para LinkedIn sin bajada («pero mas pequeño el "lee el .."»). El botón
+  baja un 15 % (9,4 px CSS, bajo el mínimo de 11 del laboratorio) y el chip EJEMPLO, que es una
+  marca de laboratorio, pasa a la línea del logo. Laboratorio: no publicar.
+resumen: >
+  El 5° de G19 con tres formas de repartir mejor el texto (1° a 3°) y el 10° con el botón más
+  chico (4°).
+como_elegir: >
+  Elige una del 1° al 3° y dime si el 4° queda bien (por ejemplo «2 y 4»).
+contenido: contenido/articulo-ejemplo.yaml
+secciones:
+  - alternativa: p02-linkedin-ajuste
+    titulo: "Con bajada · LinkedIn (1200×627), G19 5° ajustado"
+    descripcion: >
+      Las tres traen la bajada al 80 %, el botón más chico y 32 px entre la bajada y el botón.
+      La 2° y la 3° cambian una sola cosa respecto de la 1°.
+    pasos:
+      - "El 5° con el botón más chico, más aire antes del botón y EJEMPLO junto al logo"
+      - "Igual, con la columna de texto más ancha (7 de 12): la bajada en 3 líneas y el titular más grande"
+      - "Igual, con la bajada más chica (12 px CSS en vez de 14): en 3 líneas y más distinta del titular"
+    piezas:
+      - packs/Y1-noticia-linkedin-centro-aire.yaml
+      - packs/Y2-noticia-linkedin-columna-ancha.yaml
+      - packs/Y3-noticia-linkedin-bajada-menor.yaml
+  - alternativa: sin-bajada-linkedin-ajuste
+    titulo: "Sin bajada · LinkedIn (1200×627), G19 10° ajustado"
+    descripcion: >
+      El botón un 15 % más chico, con las letras menos separadas.
+    pasos:
+      - "El 10° con el botón más chico"
+    piezas:
+      - packs/Z1-noticia-linkedin-logo-arriba-boton.yaml

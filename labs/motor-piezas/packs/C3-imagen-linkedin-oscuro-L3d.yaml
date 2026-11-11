@@ -1,0 +1,21 @@
+id: C3
+nombre: "Imagen primero · LinkedIn oscuro · umbral L3d, texto en la franja libre"
+alternativa: C
+contenido: contenido/workshop-bim-ia.yaml
+corrige: "12°: la imagen reemplaza la isometría suelta; fondo carbón, no azul de portada"
+decision_david: null
+valores:
+  proceso: C_imagen
+  formato: linkedin
+  modo: oscuro
+  columnas: 6
+  imagen_fuente: mj3_V-L3d_0
+  imagen_encaje: fondo_completo_con_velo
+  imagen_foco: [0.5, 0.45]
+  zona_libre: auto
+  densidad_texto: minima
+  velo_opacidad: 0.5
+  titulo_altura_relativa: 0.13
+  logo_altura_relativa: 0.06
+  trama_visible: false
+  modulo_proporcional: 0.012

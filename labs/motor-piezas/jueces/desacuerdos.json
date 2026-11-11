@@ -1,0 +1,1010 @@
+[
+ {
+  "galeria": "G02",
+  "rubrica": "pred-crit-a",
+  "jueces": "4",
+  "david": [
+   "2"
+  ],
+  "cita": "se ve mejor el 2, pero aumentar contraste en las letras de abajo a la izquierda",
+  "resumenes": {
+   "prediccion": "Predigo la 4 (Ele) por poco sobre la 1 (Mitad). En la 4 el título se queda en 176 px a todo el ancho, la lectura más fuerte en el celular. Además, el bloque de imagen se alinea con la primera línea de datos y con la columna 4/12, justo lo que David pedía para que la imagen no flote. Le juegan en contra la placa gris vacía a la derecha del título y el corte del velo sobre los edificios. La 1 es la base conocida y está limpia, pero apoya el sujeto contra la costura. La 3 esconde el sujeto bajo la banda. La 2 cae: el título baja a 98 px y lo que más se ve es el resplandor turquesa. Aparte, común a todas: la imagen no sigue la línea isométrica aprobada."
+  }
+ },
+ {
+  "galeria": "G02",
+  "rubrica": "pred-crit-b",
+  "jueces": "4",
+  "david": [
+   "2"
+  ],
+  "cita": "se ve mejor el 2, pero aumentar contraste en las letras de abajo a la izquierda",
+  "resumenes": {
+   "prediccion": "Predigo que David elegiría la 4° (Ele), aunque la 1° queda muy cerca. La Ele tiene el título más grande (176 px, sin reducir), el que mejor se lee en el celular, y una ventana de imagen anclada a la grilla: su borde superior coincide con la primera regla de datos y el izquierdo con la columna 4/12, y llega a los bordes del lienzo. Le falta corregir la zona gris turbia junto al título. La 1° (Mitad, la base que él ya eligió) está limpia y equilibrada, pero el título es más chico y queda un hueco sobre los datos. La 3° (Banda) tapa el sujeto con el velo y deja arriba solo textura. La 2° (Tercio) achica el título un 44 %, aprieta el pie y deja que domine el resplandor cian."
+  }
+ },
+ {
+  "galeria": "G02",
+  "rubrica": "pred-sin-a",
+  "jueces": "1",
+  "david": [
+   "2"
+  ],
+  "cita": "se ve mejor el 2, pero aumentar contraste en las letras de abajo a la izquierda",
+  "resumenes": {
+   "prediccion": "Predigo que David elige la 1°. Es la mitad que ya eligió en G01, ahora con el contraste corregido: título grande (149 px) que manda en el celular, imagen con su masa oscura y cian bien visible y una división limpia. La 3° (banda) es la alternativa real: queda ordenada y aprovecha el ancho, pero la imagen pierde su parte más fuerte bajo el velo y el título baja a 143 px. La 4° tiene el título más grande, pero la zona gris vacía arriba a la derecha y la ventana en L parecen un error. La 2° pierde jerarquía: título de 98 px y subtítulo partido en 2 líneas."
+  }
+ },
+ {
+  "galeria": "G02",
+  "rubrica": "pred-sin-b",
+  "jueces": "1",
+  "david": [
+   "2"
+  ],
+  "cita": "se ve mejor el 2, pero aumentar contraste en las letras de abajo a la izquierda",
+  "resumenes": {
+   "prediccion": "Predigo que David elige la 1° (mitad), por poco frente a la 3°. Es la base que ya eligió en G01, ahora con mejor contraste. Mantiene una lectura limpia de arriba abajo y un título grande (149 px) que en el celular sigue mandando. La imagen conserva su mitad. Su defecto, el hueco entre el subtítulo y los datos, se corrige en el paso 2. La 3° (banda) es la rival seria: título a la izquierda, datos a la derecha y mejor contraste (7.05:1), pero la banda de abajo queda apretada. La 4° tiene el título más potente, aunque deja un bloque gris muerto arriba a la derecha y la imagen queda relegada. La 2° encoge el título a 98 px y pierde la jerarquía del anuncio."
+  }
+ },
+ {
+  "galeria": "G02",
+  "rubrica": "v2",
+  "jueces": "1",
+  "david": [
+   "2"
+  ],
+  "cita": "se ve mejor el 2, pero aumentar contraste en las letras de abajo a la izquierda",
+  "resumenes": {
+   "jerarquia": "Por jerarquía elijo la 4 (Ele). Es la única donde el título conserva su tamaño completo, va primero en la lectura y la imagen queda abajo a la derecha, acompañando sin competir. La 1 sirve: el título manda, pero la franja cian y la mitad clara de la imagen le disputan la atención. La 3 pone la imagen en la entrada de la lectura y deja el título en segundo lugar. La 2 no sirve: el título baja a 98 px y la imagen se vuelve la protagonista. Defecto común a todas, que no uso para desempatar: el CTA tiene poco peso visual.",
+   "lectura": "Para la lectura gana la 3, la banda. Todos sus textos quedan sobre una sola franja oscura con velo de 0.77, y el contraste mínimo es el mejor de la galería: 7.05:1, con antetítulo 7.41:1 y subtítulo 7.08:1. Las filas de datos llegan a 13–15:1, el llamado y el logo quedan bien separados en los extremos del pie, y los espacios entre textos son los más parejos. La 1 también sirve: título de 149 px, 6.04:1 de mínimo y un pie holgado. La 4 tiene el título más grande, 176 px, pero los datos quedan pegados al cian más brillante de la imagen y el pie es angosto. La 2 es la más débil: el subtítulo queda en 4.81:1 sobre textura, el título baja a 98 px y el llamado se aprieta contra el logo. Hay un defecto común que no desempata: el llamado y las etiquetas miden 14 px CSS y no hay botón; se ve en el paso 2.",
+   "posicion": "La imagen es un fondo abstracto con un acento claro: un bloque oscuro con chimeneas y un foco cian. El motor no la reencuadra por división: fuera del velo los píxeles son idénticos en las cuatro opciones. Por eso la división decide qué parte del acento queda tapada. Gana la opción 2 (tercio), la única que deja enteros el foco y la silueta en la zona de imagen, aunque queda algo a la izquierda. La 1 se puede usar con ajustes: deja el foco bajo el velo y la masa pegada al borde. La 3 (banda) y la 4 (Ele) caen en el veto, porque la máscara corta la silueta: en la 3 queda el 82 % bajo el texto y en la 4 se pierden la cubierta y las chimeneas.",
+   "composicion": "Para la lente de composición, gana la 3 (banda) por poco sobre la 1 (mitad). La 3 usa el ancho completo: título a la izquierda, datos a la derecha, y la línea superior de los datos coincide con la parte alta del título. Además, ancla la imagen a tres bordes del lienzo y deja una base oscura estable bajo una imagen clara, sin vacíos bajo los datos. Su punto débil es que la banda queda apretada a lo alto, con poco aire sobre la etiqueta. La 1 está limpia y bien alineada, con más aire, pero reparte el lienzo en dos mitades iguales y la línea de división deja una franja cian pegada al corte. La 2 encoge el título a 98 px y aprieta el pie, así que el texto queda como barra lateral. La 4 conserva el título grande y alinea bien la imagen, pero deja un cuadrante superior derecho grande sin función.",
+   "costuras": "La imagen es idéntica en las cuatro opciones: solo está recortada 3,5 px por lado, sin extensión ni parches. La diferencia para esta lente es dónde cae el borde del velo respecto del turquesa. La 2 (tercio) es la única que deja el núcleo turquesa entero y lejos del corte. La 1 y la 3 lo tapan con el velo y dejan una tira o un resplandor truncado contra la costura. La 4 corta la columna turquesa en su punto más brillante, y su ventana en ele es la que más se lee como rectángulo encajado. Ninguna llega al veto. Elige la 2."
+  }
+ },
+ {
+  "galeria": "G03",
+  "rubrica": "pred-crit-a",
+  "jueces": "4",
+  "david": [
+   "2"
+  ],
+  "cita": "sí, el 2 de todas maneras",
+  "resumenes": {
+   "prediccion": "Las cuatro opciones miden más de 10:1 sobre la imagen, así que el contraste ya no las distingue. Las separa el tamaño del texto chico en el celular. La 4 es la única que lo agranda de forma pareja: datos y llamado pasan a 18 px CSS, el llamado tiene su propia línea y la columna queda llena, sin el vacío bajo el subtítulo. Es la que más se acerca a lo que David pidió de abajo a la izquierda. Antes de aprobarla conviene agrandar el logotipo, que no creció. La 2 refuerza solo los datos y agranda el vacío. La 1 y la 3 dejan el texto chico en 14 px y cambian el vacío de lugar. La imagen es común a todas y debe revisarse aparte contra los vetos de resplandor y dramatismo."
+  }
+ },
+ {
+  "galeria": "G03",
+  "rubrica": "pred-crit-b",
+  "jueces": "4",
+  "david": [
+   "2"
+  ],
+  "cita": "sí, el 2 de todas maneras",
+  "resumenes": {
+   "prediccion": "La galería cambia la jerarquía y la diferencia que más pesa para David es la lectura del texto chico en el celular. La 4° es la única que la resuelve de verdad: mínimo de 18 px CSS y 10,61:1 sobre la imagen, sin el vacío entre el subtítulo y los datos. Su costo es un subtítulo algo pesado y el logo solo en el pie. La 2° le sigue porque refuerza los datos clave, pero deja el llamado y el logo chicos y conserva el vacío. La 1° y la 3° mantienen el texto chico; la 3° además deja aire arriba sin función. El defecto común es una imagen fuera de la línea isométrica, con resplandor turquesa; no desempata."
+  }
+ },
+ {
+  "galeria": "G03",
+  "rubrica": "pred-sin-a",
+  "jueces": "4",
+  "david": [
+   "2"
+  ],
+  "cita": "sí, el 2 de todas maneras",
+  "resumenes": {
+   "prediccion": "Vista en el celular, la 4 es la única donde todo se lee: el texto más chico pasa de 14 a 18 px CSS, el contraste sobre la imagen llega a 10,61:1 y el llamado queda bajo los datos. Eso responde a lo que David pidió para abajo a la izquierda. La 2 queda cerca porque tiene la jerarquía más limpia y datos fuertes, pero el llamado sigue diminuto. La 1 y la 3 dejan los datos en 14 px, y la 3 además vacía la parte de arriba. Ajuste sugerido para la 4: bajar un poco el subtítulo para que no compita con los datos."
+  }
+ },
+ {
+  "galeria": "G03",
+  "rubrica": "pred-sin-b",
+  "jueces": "4",
+  "david": [
+   "2"
+  ],
+  "cita": "sí, el 2 de todas maneras",
+  "resumenes": {
+   "prediccion": "Vista en el celular, la 4 es la única que sube todo el texto chico (18 px CSS frente a 14 px) y cierra el vacío de la columna. Además deja el llamado en su propia línea y con más peso. Sigue el pedido de David de que lo de abajo a la izquierda se lea bien. La 2 es la alternativa: tiene datos fuertes y buena jerarquía, pero el pie y el llamado siguen siendo diminutos. La 1 y la 3 no cambian los tamaños y solo reacomodan el espacio."
+  }
+ },
+ {
+  "galeria": "G03",
+  "rubrica": "v1",
+  "jueces": "4",
+  "david": [
+   "2"
+  ],
+  "cita": "sí, el 2 de todas maneras",
+  "resumenes": {
+   "jerarquia": "En las cuatro opciones el título manda sobre la imagen, porque va en blanco, a 98 px y sobre el panel oscuro. Lo que las distingue es el llamado. En la 1, la 2 y la 3 queda en 14 px, pegado al logo e indistinguible de las etiquetas, y a tamaño de feed casi no se lee. La 4 lo saca a su propia línea bajo los datos y sube el texto mínimo a 18 px. Así el orden se lee completo: kicker, título, subtítulo, datos, llamado y logo, y el logo queda solo y limpio. A cambio, el subtítulo se acerca un poco al título. La 2 da más peso a los datos, pero aprieta el subtítulo contra el borde y conserva el hueco de la 1. La 3 agrupa bien el texto, aunque deja un vacío arriba que parece error. Elijo la 4. La imagen no cambia en este paso, pero ojo con el brillo cian pegado al panel: compite con el título por la primera mirada en todas las opciones.",
+   "posicion": "Comparé píxel a píxel la zona de imagen de las 4 opciones y es idéntica: 0 píxeles distintos a la derecha de x=1345. Desde la posición del objeto, las 4 empatan. La masa no queda cortada por la máscara de forma grave, pero está descentrada hacia abajo y hacia el panel. Su base oscura toca el corte del tercio (y≈1430–1900) y a la derecha sobran unos 840 px de gris vacío. Por eso todas sirven con ajustes. Para que la masa se despegue del panel, propongo correr el recorte unos 300–400 px a la derecha, o aceptar ese contacto como puente con el texto. Ninguna opción toca las marcas de esquina. Desempato por los márgenes dentro del panel: la 4 reparte el texto más parejo (mayor hueco 136 px). La 1 deja un hueco de 369 px, la 3 vacía la parte de arriba y la 2 arrima el subtítulo a 66 px del corte.",
+   "costuras": "Por costuras, las cuatro opciones son casi iguales, porque comparten la imagen, el velo y las cruces. El fondo no está extendido: la fuente es 16:9 nativa (1456×816), cubre el lienzo completo con velo y no tiene escalones internos (el salto máximo entre filas es de ≈4/255). Tampoco hay parches rectangulares, así que no aplica el veto. El único punto a corregir es común a todas: una franja turquesa queda cortada en seco contra el borde del velo del tercio, en un tramo de ≈21 % del alto. Se resuelve corriendo el foco de la imagen a la derecha. Las cruces de registro no chocan con el dibujo. La 3 pierde medio punto porque su aire superior deja ver un bloque oscuro rectangular de la pintura bajo el velo. Elijo la 1, que empata con la 2 y la 4 y no expone nada extra."
+  }
+ },
+ {
+  "galeria": "G03",
+  "rubrica": "v2",
+  "jueces": "4",
+  "david": [
+   "2"
+  ],
+  "cita": "sí, el 2 de todas maneras",
+  "resumenes": {
+   "jerarquia": "En las cuatro manda el título; la diferencia está en cómo se reparten los niveles de abajo. La 4° tiene el orden más claro: kicker, título, bajada, datos, llamado en línea propia y logo al cierre. Además es la única en que el texto chico de abajo a la izquierda pasa de 14 a 18 px, que es lo que pide David para que se lea con holgura. Su costo es menor: menos aire y una bajada algo más pesada. La 2° pone bien la fecha como segundo nivel, pero deja el llamado chico y un hueco al medio. La 1° es correcta, aunque la bajada pesa más que la fecha. La 3° pierde la entrada superior izquierda y funde los grupos. Defecto común: el texto del logotipo sigue chico en las cuatro.",
+   "costuras": "Mi lente no ve diferencia entre las cuatro opciones, así que no elijo ninguna. En las cuatro, la imagen tiene el mismo encaje: fondo completo, 1927×1080 en x=-3,53. Solo se recortan 3,5 px por lado en horizontal y no hay extensión. Medí la zona de imagen a la derecha del velo y es idéntica píxel a píxel (diferencia máxima 0). Ninguna tiene parche rectangular ni escalón de color por extensión, así que no hay veto. Las cruces de registro de las esquinas derechas quedan sobre papel casi blanco, sin manchas del dibujo debajo; las de la izquierda, bajo el velo. El borde vertical en x≈669 es el velo de la división en tercio que eligió David en G02, no una costura, y no lo vuelvo a discutir. Puntúo las cuatro igual.",
+   "composicion": "En composición, la diferencia entre las opciones es cómo se reparte el espacio vertical de la columna, ya que la imagen no cambia. La 4° llena la columna sin vacíos muertos, con un ritmo parejo y el llamado unido a los datos, y todo arranca en el mismo margen izquierdo. La 1° y la 2° dejan un hueco central del 18 % y del 20 % del alto. La 3° pasa ese vacío arriba (16 %), deja la etiqueta huérfana y separa por igual todos los bloques. Como defectos comunes, el margen derecho de la columna es más estrecho que el izquierdo y los números de los datos no caen en el margen.",
+   "lectura": "Para lectura en el feed, la diferencia está en el tamaño del texto chico y en dónde cae el llamado. La 4 es la única que sube el mínimo a 18 px CSS. Además saca el llamado del rincón más claro del panel: queda a 11,46:1 sobre un fondo más oscuro y parejo. La 2 agranda los datos clave, pero deja el llamado y las etiquetas en 14 px. Para esta lente, la 1 y la 3 son iguales (mismos tamaños). Ninguna cae en veto. Hay dos ajustes comunes a todas: escalar el logo junto con el texto, porque en la 4 quedó como el texto más chico, y el «BIM» turquesa del lockup, que mide ~8,5:1 y no 10:1."
+  }
+ },
+ {
+  "galeria": "G04",
+  "rubrica": "v1",
+  "jueces": "4",
+  "david": [
+   "2"
+  ],
+  "cita": "2° Sangrado lateral",
+  "resumenes": {
+   "jerarquia": "Por jerarquía, la 4 es la única en la que la imagen acompaña sin competir: el titular manda y el logo y el CTA quedan limpios. Hay que engrosar su trazo para que no desaparezca en el feed. La 3 es la mejor foto, porque la caja la contiene y cuadra con la grilla, pero le falta medianil con el texto. Las opciones 1 y 2 dejan que la masa blanca de la foto le gane al titular, y en la 1 el velo deja un corte duro.",
+   "posicion": "Por posición, la 4 es la única con el objeto entero y centrado en la zona libre: centro en (2525; 1080) y márgenes parejos de 202/203 px arriba y abajo y 576/577 px a los lados, sin tocar marcas ni texto. En las opciones 1, 2 y 3 la foto ocupa la misma ventana. Su silueta se desplaza 447 px hacia el texto y el borde izquierdo la corta en unas 600 filas, aunque el bloque principal sigue entero. Además, en la 1 la masa pasa por detrás de las filas de datos. En la 3 el gutter mide 35 px frente a los 127 de margen exterior, y la base apenas tiene 59 px de suelo. De las fotos, la mejor es la 2. Serviría corriendo la imagen unos 400 a 450 px a la derecha.",
+   "costuras": "Ninguna opción extiende el fondo. La foto Midjourney ya viene en 16:9 y cada opción solo cambia la ventana, así que no hay parches ni veto. La 4 (ilustración) es la más limpia: fondo plano, cruces sobre fondo oscuro con buena separación y ningún turquesa cortado. Entre las que usan foto, la 3 (en caja) es la mejor: márgenes de 64 px alineados al chip, cruces en el margen sin tocar la imagen. Su único defecto es que la esquina inferior izquierda se funde con el fondo. La 2 y la 1 dejan las cruces derechas sobre la pintura clara, con un contraste de 1,4:1, y cortan el lavado turquesa en x=669. La 1 suma además el escalón duro del velo y una banda clara bajo el pie."
+  }
+ },
+ {
+  "galeria": "G04",
+  "rubrica": "v2",
+  "jueces": "3",
+  "david": [
+   "2"
+  ],
+  "cita": "2° Sangrado lateral",
+  "resumenes": {
+   "composicion": "Para la composición gana la 2: la división del tercio queda más clara, la imagen llega a tres bordes del lienzo y su borde izquierdo coincide con el tercio, así que no flota nada y los dos tercios se usan completos. La 3 se alinea muy bien en vertical (la caja va de y 127 a 2032, igual que la columna de texto, desde EJEMPLO hasta el pie del logo), pero el canal hacia el texto mide 35 a 60 px contra márgenes de 128 px y la imagen queda pegada al texto. La 1, con el velo a 0,84, no se lee como imagen a sangre: es la 2 con el tercio texturado y la misma costura dura. La 4 flota sin anclaje a la grilla, deja vacíos laterales de 575 y 704 px y pesa muy poco (1,28 % de trazo), así que la pieza se desequilibra hacia el texto.",
+   "jerarquia": "Por jerarquía, la 4 es la única en que el titular manda sin disputa: la ilustración acompaña y no compite. Conviene engrosar los trazos para que no se pierdan en el celular. La 3 es la mejor de las fotos: la caja baja mucho el brillo junto al CTA, aunque el margen izquierdo queda apretado contra el subtítulo. En la 1 y la 2, la foto a sangre tiene zonas tan claras como el titular y una franja blanca junto al CTA que tira de la mirada. La 1 además pasa las etiquetas a blanco y aplana el bloque de datos. No hay defectos de jerarquía comunes a las cuatro que no vengan de pasos ya elegidos.",
+   "lectura": "La columna de texto es idéntica en las cuatro opciones; solo cambia lo que hay detrás y al lado. La 1 es la única con texto chico sobre textura: cumple con 10,13:1, pero la textura se nota. La 2, la 3 y la 4 dejan el texto sobre fondo liso, con un mínimo de 7,24:1 y sin textura. Entre esas tres, mi lente casi no ve diferencias. Solo en la 4 no hay una masa blanca de foto pegada al llamado y al logo, así que es la lectura más tranquila: la elijo por un margen pequeño. Hay un defecto común a todas: el texto más chico (etiquetas, logotipo y llamado) queda al límite en el feed del celular.",
+   "posicion": "Elijo la opción 3. La caja está alineada a la grilla: arriba coincide con EJEMPLO (127/128) y abajo con la base del CTA y el logo (2032/2031), con 127 px parejos arriba, abajo y a la derecha. Las marcas quedan libres sobre el fondo liso y el sujeto queda algo más centrado que con sangrado (−13 % frente a −15 %). Ajuste pendiente: la calle con la columna de texto mide solo 35–55 px. La 1 y la 2 tienen la misma ventana, con la imagen bajo las marcas claras, y la 1 además la pasa bajo el panel. La 4 está centrada con exactitud, pero flota sin alinearse a la grilla, como criticó David. Defecto común a 1–3: el skyline izquierdo queda cortado en la división. No es veto, porque la masa principal está entera.",
+   "costuras": "Ninguna opción extiende la imagen. La fuente de 1456×816 se escala de forma uniforme a 1927×1080 y solo pierde 3,5 px por lado, así que no hay escalones de fondo extendido ni parches, y el veto no aparece. F2 tiene las costuras más limpias: un solo corte en la división y la imagen sangra por los otros tres bordes. F3 deja las cuatro cruces sobre margen liso, pero el marco corta el turquesa por arriba y deja una tira blanca casi tangente en la base. F1 suma el escalón del velo sobre la imagen continua. Las tres opciones con foto comparten el corte del lavado turquesa en x=669. F4 no tiene imagen extendida ni recortada: no aplica a mi lente y no la puntúo (sus cruces no tocan la isometría)."
+  }
+ },
+ {
+  "galeria": "G05",
+  "rubrica": "pred-crit-a",
+  "jueces": "2",
+  "david": [
+   "1"
+  ],
+  "cita": "1",
+  "resumenes": {
+   "prediccion": "Predigo que David elige la 2°. Su criterio constante es que el texto chico se lea con holgura. Las etiquetas FECHA, HORA y LUGAR son el texto más chico, y la 2° es la única opción que sube el mínimo medido (de 7,24 a 9,92:1, casi en el objetivo de 10:1). También refuerza los datos fuertes sin tocar la marca. La 1° sirve tal cual, pero sus etiquetas grises se ven más apagadas. La 3° se ve lavada, deja descolgado el «BIM» del logotipo y no mejora el mínimo. La 4° baja el contraste a 6,69:1 y su panel azul choca con la imagen neutra. Comunes a las cuatro, sin efecto en la elección: posible resplandor en la imagen y un vacío en el panel."
+  }
+ },
+ {
+  "galeria": "G05",
+  "rubrica": "pred-crit-b",
+  "jueces": "2",
+  "david": [
+   "1"
+  ],
+  "cita": "1",
+  "resumenes": {
+   "prediccion": "Lo único que cambia de verdad entre las opciones es el texto más débil del panel, las etiquetas grises de los datos (7,24:1). David pidió holgura de contraste en el texto chico y que los datos tengan peso propio. La opción 2 es la única que ataca ese punto: las etiquetas pasan a blanco y el mínimo sube a 9,92:1, casi el objetivo de 10:1, sin tocar la marca. Por eso la elijo. La 1 sirve con ajustes, porque es la base y tiene las etiquetas apagadas. La 3 refuerza lo que ya estaba bien, deja el mínimo igual y crea dos turquesas al lado del logo. La 4 es la única que empeora el contraste (6,69:1) y su panel azul choca con la imagen. Los defectos comunes a las cuatro (resplandor cian de la imagen, texto chico en formato slide, vacío sobre los datos) no desempatan."
+  }
+ },
+ {
+  "galeria": "G05",
+  "rubrica": "v2",
+  "jueces": "2",
+  "david": [
+   "1"
+  ],
+  "cita": "1",
+  "resumenes": {
+   "lectura": "Medí cada texto en los PNG. Con el sangrado lateral, todo el texto queda sobre un panel liso, sin textura, y las cuatro opciones superan con holgura el mínimo de 4,5:1. Para la lectura, la diferencia está en el texto más débil, que son las etiquetas grises a 7,24:1. La 2° las sube a 15,8:1 y deja el mínimo de la pieza en 9,92:1, el más alto de la galería y casi en la referencia de 10:1, así que la elijo. La 3° aclara el turquesa, incluido el llamado, que pasa a 14,7:1, pero deja las etiquetas en 7,24:1, así que su mínimo es igual al de la 1°. La 4° baja todos los contrastes, con las etiquetas en 6,69:1, y queda última. Un defecto común a las cuatro, que no desempata: a todo el ancho del feed (~390 px), las etiquetas, el logo y el llamado miden 3–4 px de alto de mayúscula. Conviene comprobar el formato de salida.",
+   "jerarquia": "Para la jerarquía, la 1° es la mejor porque mantiene la escalera más limpia: título blanco grande, acento turquesa para kicker, subtítulo, números y llamado, valores blancos y etiquetas grises. La 4° conserva esa misma escalera, pero baja el contraste a 6,69:1 y solo mejora un poco el borde de la división. La 2° hace competir las etiquetas con los valores sin ganar nada. La 3° es la peor: el turquesa claro acerca los textos secundarios a la luminancia del título, el subtítulo compite más con los datos y quedan dos turquesas en el pie. Hay un defecto común a todas: el llamado es una línea de texto sin forma de botón y es el elemento más débil.",
+   "costuras": "La imagen va recortada, sin extensión: no hay relleno, escalón ni parche rectangular, y el veto no se activa. La zona de imagen es idéntica en las cuatro opciones, porque solo cambia el color del texto y del panel, así que mi lente no ve diferencia y no elijo. Hay un defecto común que viene de G04 y no reabro: el halo cian llega cortado al canto del panel en y≈470–700. Las cruces de registro no chocan con el dibujo. Las cuatro sirven por igual."
+  }
+ },
+ {
+  "galeria": "G06",
+  "rubrica": "pred-crit-a",
+  "jueces": "3",
+  "david": [
+   "4"
+  ],
+  "cita": "4",
+  "resumenes": {
+   "prediccion": "Las cuatro piezas comparten base y pasan contraste, 7,24:1 como mínimo y texto de 14 px. En el celular la única diferencia que se ve es el botón de la 3°: el llamado se lee con holgura y el vacío sobre los datos se achica. Por eso predigo que David elige la 3°. Antes de aprobarla convendría alinear el ancho del botón con los filetes. La 1° es una base sólida y queda cerca. La 2° casi no se distingue de la 1° en el feed. La 4° no aporta a tamaño de feed y de cerca pone textura bajo el texto."
+  }
+ },
+ {
+  "galeria": "G06",
+  "rubrica": "pred-crit-b",
+  "jueces": "3",
+  "david": [
+   "4"
+  ],
+  "cita": "4",
+  "resumenes": {
+   "prediccion": "Las opciones 1, 2 y 4 son casi iguales en el celular: las cruces y la trama de puntos no se ven a tamaño de feed. La 3 es la única con un cambio visible, y ataca el criterio que David repite: el llamado de abajo a la izquierda se leía flojo. Ahora es un bloque turquesa con contraste de 9,9:1, y al subir los datos se achica el vacío bajo el subtítulo. Predigo que elige la 3, con dos ajustes menores: alinear el ancho del botón con la grilla y resolver el logo que queda solo en el pie. Hay defectos comunes a las cuatro que conviene corregir antes de publicar, aunque no deciden la elección: el texto chico del pie (logotipo y etiquetas) y la imagen fija, con resplandor y contraste dramático."
+  }
+ },
+ {
+  "galeria": "G06",
+  "rubrica": "pred-sin-a",
+  "jueces": "3",
+  "david": [
+   "4"
+  ],
+  "cita": "4",
+  "resumenes": {
+   "prediccion": "En el celular, la 1°, la 2° y la 4° se ven idénticas: las cruces y la trama de puntos no llegan a tamaño de feed. La única variante que cambia lo que se ve es la 3°. El bloque turquesa convierte «Inscríbete» en una acción clara y sube los datos, con lo que se acorta el vacío del panel. Predigo que David elige la 3°. La 1° queda muy cerca, como base, si a David el botón le parece demasiado de web. La 4° es la más floja, porque añade ruido sin aportar nada visible."
+  }
+ },
+ {
+  "galeria": "G06",
+  "rubrica": "pred-sin-b",
+  "jueces": "3",
+  "david": [
+   "4"
+  ],
+  "cita": "4",
+  "resumenes": {
+   "prediccion": "En el celular, la 1°, la 2° y la 4° se ven casi iguales: las cruces y la trama de puntos no se distinguen a tamaño de feed. La única variante que cambia la pieza a esa escala es la 3°. Su botón deja el llamado a inscribirse como una acción visible, con 9,9:1 de contraste, y además reparte mejor el vertical del panel porque achica el vacío entre el subtítulo y los datos. Predigo que David elige la 3°. Como alternativa cercana queda la 1° si prefiere el pie limpio. El punto a vigilar en la 3° es que el botón no le gane a la fecha."
+  }
+ },
+ {
+  "galeria": "G06",
+  "rubrica": "v1",
+  "jueces": "3",
+  "david": [
+   "4"
+  ],
+  "cita": "4",
+  "resumenes": {
+   "jerarquia": "Por jerarquía gana la 3. Es la única con un botón real y legible (texto oscuro sobre turquesa, 9,9:1). El logo queda solo en el pie y se lee mejor, y el titular sigue mandando. En la 1, la 2 y la 4 el llamado es texto chico del mismo color que el subtítulo: no funciona como botón y en el feed se pierde junto al logo. La 2 es marginalmente más limpia que la 1, y la trama de la 4 solo suma ruido. Hay un problema común a las cuatro: el resplandor turquesa de la imagen queda contra la división y compite con el panel a tamaño de feed. Una combinación posible es la 3 sin las cruces de las esquinas, como en la 2.",
+   "costuras": "Desde la lente de costuras, las cuatro opciones sirven y ninguna cae en el veto. La imagen es la misma en las cuatro, recortada sin extensión: no hay escalón ni parche, y la línea clara de abajo es del dibujo original. El turquesa toca el borde superior y la división solo como sangrado. Elijo la 2 porque, al no tener cruces, quita las dos de la derecha, que flotan con poco contraste (1,6–1,9:1) sobre el blanco de la imagen. La 1 y la 3 también son limpias. La 4 suma un recuadro de puntos que no se ve a tamaño de feed pero de cerca roza las cruces de fila.",
+   "posicion": "La imagen está en la misma posición en las 4 opciones y en ninguna queda cortada (sin veto). Pero en todas la mancha oscura se funde con el panel a la altura de los datos (y≈1380–1900 px), y el bloque de texto tiene 48–66 px de margen a la derecha frente a 128 px a la izquierda. Elijo la opción 2: al quitar las cruces ya no hay marcas a 35 px de la zona fundida ni sobre la pintura, y los filetes quedan a 48 px de la división. La opción 3 reparte mejor el panel en vertical, pero el pie queda irregular. La opción 4 hace más visible la asimetría. Ajustes: llevar el margen derecho del panel hacia 128 px y separar la masa oscura de la división, o aclarar ese borde."
+  }
+ },
+ {
+  "galeria": "G06",
+  "rubrica": "v2",
+  "jueces": "3",
+  "david": [
+   "4"
+  ],
+  "cita": "4",
+  "resumenes": {
+   "jerarquia": "En las cuatro el titular manda y la imagen acompaña desde su tercio. Los datos se leen fuertes y el pie va sobre el panel sólido, no sobre la imagen, así que el texto chico no se lava (cumple el criterio G01). Para la jerarquía, la única diferencia real es la 3°: el llamado convertido en botón bajo los datos deja una secuencia clara (titular, datos, acción, firma) y separa la acción del kicker y del subtítulo, que en la 1°, la 2° y la 4° comparten la misma voz turquesa. Quitar las cruces (2°) limpia apenas las filas y la trama de puntos (4°) es neutra o algo ruidosa: casi no mueven el orden de lectura. Elijo la 3°, con la condición de no agrandar el botón para que no le gane a los datos.",
+   "lectura": "Para la lectura, todo el texto va sobre el panel oscuro liso: las cuatro opciones comparten el mínimo de 7,24:1 y los 14 px CSS. La 3° es la mejor: el llamado como bloque turquesa (9,9:1) se reconoce a tamaño de feed y deja de competir con el logo. Conviene agrandar un poco el texto del botón, que mide lo mismo que en la 1°. Para mi lente, la 1° y la 2° empatan, porque las cruces no tocan texto. La 4° baja un poco porque la trama de puntos (1,56:1) pasa bajo el texto chico, aunque no se ve en el feed. Defecto común a las cuatro: el texto de 14 px CSS (etiquetas, logo y llamado) queda muy chico en el celular.",
+   "composicion": "Para la lente de composición, la 1°, la 2° y la 4° son la misma pieza. Las cruces y la trama son adornos que a tamaño de feed casi no se ven. La 2° es la más limpia: los filetes quedan justo al ras de la columna (x 128 a 1290) y el pie justificado, con el logo a la izquierda y el llamado a la derecha, repite ese ancho. La 3° es la única que cambia el reparto de la columna: baja el vacío superior de 438 a 262 px, pero a cambio el pie pierde el equilibrio y queda un botón cuyo borde derecho no se alinea con nada. Además cambia dos cosas a la vez, porque los datos suben 176 px. Elijo la 2°.",
+   "costuras": "La imagen no se extiende: se recorta con registro de lienzo bajo el panel y solo pierde unos 7 px en horizontal. En las cuatro no hay escalón, parche ni rectángulo, y no aplica el veto. El bloque claro del haz viene del original y pasa en gradiente de 2 niveles por fila, sin costura. La zona de imagen es idéntica en las cuatro, salvo las dos cruces derechas que la 2° quita (296 px). En la 1°, 3° y 4° esas cruces no chocan con el dibujo: quedan en zonas limpias, aunque se leen muy poco. Mi lente no ve diferencia entre las opciones, así que no elijo por otra. Lo común a todas es baja gravedad: el lavado turquesa cortado en la división y la columna que toca el borde superior."
+  }
+ },
+ {
+  "galeria": "G09",
+  "rubrica": "pred-sin-a",
+  "jueces": "3",
+  "david": [
+   "2"
+  ],
+  "cita": "2",
+  "resumenes": {
+   "prediccion": "David elegiría la 3. Es la única que trae los tres datos fuertes. Vista en el celular, su título es más grande que el de la 1 y la fecha mide casi lo mismo, así que perder legibilidad por mostrar todo cuesta poco. La 1 se lee bien pero queda incompleta: solo la fecha, un «01» huérfano y un hueco. La 2 empeora la 1 con texto más chico y un vacío grande. Ajuste menor en la 3: dar aire al subtítulo turquesa frente a la columna de datos, o quitarlo."
+  }
+ },
+ {
+  "galeria": "G09",
+  "rubrica": "pred-sin-b",
+  "jueces": "3",
+  "david": [
+   "2"
+  ],
+  "cita": "2",
+  "resumenes": {
+   "prediccion": "Predigo que David elige la 3 (banda). Es la única que da los tres datos y llena el formato 1200×627 sin vacíos. Además conserva el color de marca, la trama y los datos fuertes del Preset 01. Su punto débil son los rótulos y la CTA, chicos en el celular, que se corrigen con un ajuste menor. La 1 se lee bien en el celular, pero deja un vacío y omite la hora y el lugar. La 2 es la peor: achica el texto y no muestra más datos."
+  }
+ },
+ {
+  "galeria": "G09",
+  "rubrica": "v1",
+  "jueces": "1",
+  "david": [
+   "2"
+  ],
+  "cita": "2",
+  "resumenes": {
+   "jerarquia": "La opción 3 tiene la mejor jerarquía. La imagen baja a una franja superior del 37% del área, con solo un 13% de píxeles muy claros, y queda como acompañamiento. El título es el más grande, con unos 75 px de mayúscula, y los tres datos forman un segundo nivel claro. Conviene darle a la inscripción un tratamiento distinto de las otras líneas cian, quitar 'UMBRAL BIM' del subtítulo o separarlo de la columna de datos, y agrandar el nombre del logo. En las opciones 1 y 2, la mitad clara de la imagen compite con el título. La 1 tiene la inscripción más fuerte, pero en celular el logo no se lee. En la 2, el vacío central desconecta la fecha del título.",
+   "costuras": "Ninguna opción cae en el veto. No hay fondo extendido ni parches: las tres son un recorte de la misma imagen de 1456×816, sin velos. El problema común es el turquesa cortado en la costura. En las opciones 1 y 2 queda una tira de 12 a 24 px pegada al panel durante media altura. En la 3 el haz principal se corta en la costura justo en su tramo más brillante, y también en el borde superior. Las opciones 1 y 2 empatan porque usan el mismo recorte; elijo la 2. Las cruces no chocan con el dibujo, aunque sobre el blanco se pierden. Los ajustes son baratos: imagen_foco x≈0,53 en las opciones 1 y 2, e imagen_foco y≈0,56 en la 3.",
+   "posicion": "Desde la lente de posición elijo la 2. Las opciones 1 y 2 usan el mismo recorte. La silueta superior se ve entera, pero la mancha está corrida 266 px hacia el panel y su base toca la división en un 30% del alto, así que conviene correr el recorte a la derecha. La 2 deja más aire en el panel, aunque el texto sigue más pegado a la división (40 px) que al borde izquierdo (72 px). La 1 aprieta la fecha a 38 px de la imagen. La 3 cae en el veto: la banda corta la tinta en seco y de la silueta principal solo asoman las chimeneas. Además, el texto queda a 32 px de la imagen."
+  }
+ },
+ {
+  "galeria": "G09",
+  "rubrica": "v2",
+  "jueces": "3",
+  "david": [
+   "2"
+  ],
+  "cita": "2",
+  "resumenes": {
+   "composicion": "Elijo la 2. Mantiene la base de solo la fecha con aire que David eligió para LinkedIn y la resuelve mejor que la 1. El pie junta el logo y el CTA en una sola fila, el borde derecho queda alineado entre EJEMPLO, las líneas y el CTA, y la jerarquía es clara: el título manda y la fecha queda como dato secundario. Sus defectos son leves: un hueco de 351 px entre el título y los datos, y la fecha corta frente a las líneas. La 1 funciona, pero apila tres filas abajo, la fecha compite con el título y los márgenes del panel quedan asimétricos (40 px a la derecha, 77 px a la izquierda). La 3 es la composición más compleja y está bien alineada, pero vuelve a la banda con los tres datos que David descartó para LinkedIn en G08. Además el subtítulo queda a 33 px de la columna de datos y la banda no tiene margen arriba.",
+   "jerarquia": "Elijo la 2. Tiene la escala más limpia: título (94 px), luego fecha (40.5 px), luego kicker (33.3 px) y al final el llamado (23.8 px), que va en el pie junto al logo. Además es la que mejor coincide con el criterio de David para LinkedIn, solo la fecha con aire. Su costo es un vacío central amplio y un llamado de unos 7.7 px CSS si se ve en el celular. La 1 es la más robusta en el celular (fecha de 16.3 px CSS), pero el llamado es más ancho que la fecha y kicker y fecha casi empatan, así que el segundo nivel se pierde. La 3 tiene una buena jerarquía por mi lente, pero choca con la elección de David en LinkedIn (banda con tres datos) y su subtítulo queda pegado a la fila 03. Ninguna pone texto sobre la imagen.",
+   "posicion": "Desde la posición, la 1 y la 2 son idénticas porque tienen el mismo clip y la imagen en el mismo lugar. Las dos esconden bajo el panel el haz turquesa, que es el acento de la pintura: queda visible el 20,6 %, pegado a la división. La masa oscura queda abajo a la izquierda, tocando el panel. La 3 conserva el 41,4 % del turquesa y lo deja centrado (x 0,46), pero corta las puntas de los edificios en el borde de la banda. Elijo la 3, con un ajuste: mover un poco la banda o el foco vertical para que no queden puntas cortadas.",
+   "lectura": "La 3 es la única que pone los tres datos con peso propio. Sus valores miden ~19 px CSS en computador y siguen leyéndose en celular (~13 px), y ningún texto cae sobre la imagen. Antes de aprobarla conviene despegar el subtítulo de la columna de datos y subir el llamado (~11,8 px), y quitar o agrandar los rótulos, que en celular bajan a ~7,7 px (aviso, no veto, por ser LinkedIn para computador). La 1 es la que mejor se lee en celular, pero deja fuera la hora y el lugar. La 2 achica el texto sin sumar ningún dato. Defecto común a las tres: la palabra del logotipo no se lee a tamaño de feed (~5–7 px CSS).",
+   "costuras": "En ninguna opción hay imagen extendida: las tres usan un recorte de la misma imagen, ajustada al lienzo (1200×672,5, y −22,76), así que no hay escalón ni parche creado por el motor. Las opciones 1 y 2 tienen el mismo recorte y en costuras no se distinguen. En las dos, la división corta a lo largo el haz turquesa y deja un filo turquesa de unos 10 px pegado al borde. Además se ve abajo a la derecha el margen blanco del cuadro, con el borde recto, como un bloque claro. Por eso sirven con ajustes (6). La opción 3 corta el haz en perpendicular, como una ventana. Solo deja asomar, pequeñas, las puntas de la silueta en la costura: sirve (8). Las cruces no chocan con el dibujo en ninguna opción."
+  }
+ },
+ {
+  "galeria": "G13",
+  "rubrica": "pred-crit-b",
+  "jueces": "3",
+  "david": [
+   "1"
+  ],
+  "cita": "1° Base",
+  "resumenes": {
+   "prediccion": "Predigo que David elige la 3. El titular sigue mandando: la bajada queda en cerca del 36 % de su tamaño, dentro del límite del 45 %. Además, la bajada sube a 17,6 px CSS y se lee con holgura en el celular, que es su criterio de datos fuertes, y la banda queda llena, sin vacíos. La 1 queda muy cerca, con un titular más imponente pero una bajada chica y gris. La 2 gana impacto pero pierde el contexto de la noticia y deja un vacío bajo el titular. La 4 debilita el titular y deja todo el aire abajo. Hay dos defectos comunes que no cambian la elección: la bajada gris mide 7,24:1, bajo la referencia de 10:1, y el texto del logo queda en unos 11 px CSS."
+  }
+ },
+ {
+  "galeria": "G13",
+  "rubrica": "pred-ej-b",
+  "jueces": "3",
+  "david": [
+   "1"
+  ],
+  "cita": "1° Base",
+  "resumenes": {
+   "prediccion": "Predigo la 3, con la 1 muy cerca. En G03 David eligió que la información secundaria creciera para leerse en el celular («Datos fuertes»). La 3 hace eso con la bajada: sube a 17,6 px CSS, llena la banda sin vacíos y el titular sigue mandando (36 %). La 1 es sólida y tiene el titular más potente, pero su bajada de 14 px en gris queda chica en el feed. La 2 y la 4 dejan vacíos sin función en la banda, y la 2 además pierde la bajada. Los defectos comunes a todas son el logotipo chico del pie y la falta de metáfora en la imagen. No cambian la elección."
+  }
+ },
+ {
+  "galeria": "G13",
+  "rubrica": "pred-sin-a",
+  "jueces": "3",
+  "david": [
+   "1"
+  ],
+  "cita": "1° Base",
+  "resumenes": {
+   "prediccion": "Predigo la 3. En el celular reparte mejor el peso: el titular sigue mandando (unos 49 px CSS) y la bajada de 17,6 px se lee bien en el feed. Además, la bajada ocupa casi todo el ancho y alinea con la etiqueta EJEMPLO y el llamado, y entre kicker, titular, bajada y pie hay un ritmo parejo, sin huecos. La 1 queda muy cerca, con más golpe en el titular pero una bajada débil a tamaño de feed. La 2 y la 4 dejan la banda con un hueco y se ven incompletas; además, la 2 pierde el contexto de la noticia."
+  }
+ },
+ {
+  "galeria": "G14",
+  "rubrica": "pred-crit-a",
+  "jueces": "2",
+  "david": [
+   "1"
+  ],
+  "cita": "1° A sangre",
+  "resumenes": {
+   "prediccion": "Las tres conservan la banda, la jerarquía y los textos iguales, así que lo único que cambia es la imagen. Elijo la 2. La caja va alineada a la columna de texto y al borde de «EJEMPLO», y el marco oscuro cierra la pieza, así que en el celular se ve completa y ordenada. Las cruces de registro quedan sobre el fondo oscuro y la imagen solo pierde un 20 % de área. La 1 está muy cerca y tiene más impacto. Pero su sangrado deja franjas crema arriba y abajo y no a los lados: el borde superior queda crema y en el feed la pieza parece cortada. La 3 no sirve: la isometría de líneas finas casi desaparece a tamaño de feed, deja vacíos grandes, flota sin relación con la grilla y no comunica IA."
+  }
+ },
+ {
+  "galeria": "G14",
+  "rubrica": "pred-crit-b",
+  "jueces": "2",
+  "david": [
+   "1"
+  ],
+  "cita": "1° A sangre",
+  "resumenes": {
+   "prediccion": "La banda de texto es igual en las tres y solo cambia la imagen. Predigo la 2: la caja se alinea con la columna del texto, el marco oscuro mantiene la pieza unida en cualquier feed y la imagen sigue mandando arriba. La 1 queda muy cerca y tiene más impacto, pero su borde crema superior se pierde en un feed claro y las cruces de las esquinas quedan sobre la imagen. La 3 no sirve: su isometría de trazo fino desaparece en el celular, flota con vacíos grandes y es más simple de lo que David valora."
+  }
+ },
+ {
+  "galeria": "G14",
+  "rubrica": "pred-crit2-a",
+  "jueces": "2",
+  "david": [
+   "1"
+  ],
+  "cita": "1° A sangre",
+  "resumenes": {
+   "prediccion": "Predigo que David elige la 2 (en caja). Los bordes de la imagen calzan con la columna de texto y los cuatro lados comparten el mismo marco oscuro, así que la pieza se ve unida, sobria y editorial. Además contiene el turquesa de la imagen, que en la opción a sangre se lee como fondo. La 1 sigue siendo buena y tiene más impacto en el feed, pero el margen crema propio de la imagen queda como tira suelta arriba y sobre la banda, y las cruces superiores pierden su función. La 3 repite el defecto ya criticado: la isometría flota con grandes vacíos, su trazo se pierde en el celular y la pieza se vuelve genérica. Defecto común a la 1 y la 2: grano y turquesa de fondo en la imagen, que se corrigen aparte."
+  }
+ },
+ {
+  "galeria": "G14",
+  "rubrica": "pred-crit2-b",
+  "jueces": "2",
+  "david": [
+   "1"
+  ],
+  "cita": "1° A sangre",
+  "resumenes": {
+   "prediccion": "La banda de texto es idéntica en las tres opciones; solo cambia el tratamiento de la imagen. Predigo que David elige la 2 (en caja). La imagen queda alineada al margen del texto, el fondo oscuro de marca enmarca toda la pieza y las cruces de registro caen sobre fondo oscuro, lo que la hace más sobria y ordenada sin perder el carácter del collage. La 1 (a sangre) queda cerca: tiene más impacto, pero se lee como imagen turquesa con pie y las cruces de arriba ensucian la imagen. La 3 (isometría) cumple la marca, pero en el celular el trazo fino se pierde, la ilustración flota con vacíos laterales y la pieza se vuelve genérica. Los defectos de la imagen que comparten la 1 y la 2 (fondo turquesa, grano, sujeto a la derecha) se anotan aparte y no desempatan."
+  }
+ },
+ {
+  "galeria": "G14",
+  "rubrica": "pred-sin-a",
+  "jueces": "2",
+  "david": [
+   "1"
+  ],
+  "cita": "1° A sangre",
+  "resumenes": {
+   "prediccion": "Predigo la opción 2, aunque por poco frente a la 1. En el celular la caja deja la pieza entera sobre fondo oscuro: el contorno se sostiene en cualquier feed, las crucetas quedan sobre lo oscuro y la imagen se alinea con la columna de texto y con la etiqueta EJEMPLO. Eso sigue la preferencia por estructura limpia que David mostró al elegir la banda en G12. El ajuste pendiente es abrir el espacio entre la caja y el antetítulo, hoy unos 46 px contra 129 px de margen. La opción 1, la base, tiene más impacto, pero su borde crema se funde con un feed claro y el margen de papel queda desparejo. La opción 3 no sirve: sus líneas de unos 0,36 px CSS desaparecen en el celular y la imagen no cuenta la noticia."
+  }
+ },
+ {
+  "galeria": "G14",
+  "rubrica": "pred-sin-b",
+  "jueces": "2",
+  "david": [
+   "1"
+  ],
+  "cita": "1° A sangre",
+  "resumenes": {
+   "prediccion": "Elijo la opción 2: la caja usa el mismo margen izquierdo que el texto (grilla), las cuatro cruces de esquina quedan sobre el fondo oscuro y la pieza se ve terminada y técnica, en la línea de la banda que David eligió en G12. La 1 tiene más impacto, pero el margen crema de la imagen hace que no se vea a sangre y deja un corte duro con la banda. La 3 es de marca, pero en el celular se ve débil y no cuenta la noticia. Ajuste menor en la 2: dar más aire entre la caja y «ARTÍCULO»."
+  }
+ },
+ {
+  "galeria": "G14",
+  "rubrica": "v1",
+  "jueces": "3",
+  "david": [
+   "1"
+  ],
+  "cita": "1° A sangre",
+  "resumenes": {
+   "jerarquia": "Por jerarquía elijo la 2. La caja con margen contiene la imagen, así que acompaña sin disputarle el protagonismo al titular, y el pie sigue legible. La 1 sirve con ajustes: a sangre, la imagen es la masa más fuerte, y su franja crema inferior distrae justo encima del antetítulo. La 3 tiene la jerarquía más limpia, pero la ilustración es tan tenue que a tamaño de feed la mitad superior se ve vacía. En la 1 y la 2 conviene separar más el antetítulo de la imagen.",
+   "posicion": "Desde la posición, elijo la 3: la isometría está entera, centrada al píxel en los dos ejes, con márgenes parejos, sin tocar las marcas y con aire frente al texto. La 2 sirve con ajustes: la caja respeta la grilla y no toca las marcas, pero el codo del robot queda a 28 px del borde de la caja, el pedestal sale cortado y la caja queda apretada contra ARTÍCULO. La 1 también sirve con ajustes, pero es la más débil: las marcas superiores caen sobre la imagen, el codo queda a 56 px del corte con márgenes desiguales (163 contra 56) y el pedestal sale cortado. En ninguna opción hay veto, porque el brazo protagonista se ve entero en las tres.",
+   "costuras": "Ninguna opción tiene parches rectangulares, así que no hay veto: no hubo fondo extendido y las fotos se recortan sin rellenar. La 3 es la más limpia por costuras: el fondo oscuro es continuo, la isometría queda contenida, no hay turquesa cortado en el borde y las cruces están libres. Su único detalle es el límite de la trama, que solo se ve de cerca. La 2 es la mejor de las que llevan foto: la caja calza con la grilla, las cruces quedan fuera de la imagen y el paspartú crema de la fuente queda dentro de la caja, donde se lee como intencional. La 1 sirve con ajustes: el paspartú crema nativo sobrevive arriba y abajo, así que la imagen no parece a sangre y deja una franja crema antes de la banda, y la cruz superior derecha cae sobre el borde crema/turquesa. Para corregirla habría que recortar el paspartú de la fuente y suprimir las cruces sobre la imagen. El escalón vertical de tono en el centro del turquesa (Q1 y Q2) es de la fuente, no del motor."
+  }
+ },
+ {
+  "galeria": "G14",
+  "rubrica": "v2",
+  "jueces": "2",
+  "david": [
+   "1"
+  ],
+  "cita": "1° A sangre",
+  "resumenes": {
+   "jerarquia": "La banda de texto es idéntica en las tres. El titular llena su banda y el kicker y la bajada rondan el 27 % de su tamaño, así que cumplen G10 y G13. La diferencia está en cuánto compite la imagen con el titular. La 2 es la mejor: la caja con margen se alinea a la columna del texto, baja el peso de la imagen y deja una sola columna de lectura, de la imagen al kicker y al titular. En la 1, la imagen a sangre es la masa más brillante y le disputa la primera mirada al titular. En la 3, el titular manda sin rival, pero la isometría es tan tenue que a tamaño de feed la mitad de arriba se lee vacía; además está centrada y crea un segundo eje.",
+   "lectura": "Desde la lectura, las tres opciones casi no se distinguen. En las tres todo el texto va sobre la misma banda oscura lisa y sin textura, con iguales medidas: contraste mínimo de 7,24:1 y letra mínima de 11 px. Ninguna opción tiene vetos. La única diferencia que ve esta lente está en el kicker: en la 1 y la 2 queda unos 5 px CSS bajo el borde crema de la imagen, mientras que la ilustración de la 3 le deja más aire. Por eso elijo la 3, pero por muy poco, y no debería pesar en la decisión. Hay un defecto común que conviene anotar aparte: a tamaño de feed, la palabra del logo mide unos 7,5 px CSS.",
+   "composicion": "La opción 1 es la que mejor resuelve la división del vertical de noticia: la imagen manda arriba, sus bordes coinciden con los del lienzo y la banda de abajo se lee como banda. La 2 tiene la mejor alineación, con la caja exactamente sobre la columna de texto (127–2032 px). Pero rompe su propio ritmo de márgenes, porque deja 127 px arriba y a los lados y solo ≈29 px hasta el antetítulo; sirve con ajustes. La 3 no sirve para composición: la isometría flota centrada sin relación con la columna izquierda, deja vacíos laterales grandes y el peso cae entero en el título. Defecto común a las tres, que no cuenta para elegir: la banda de texto queda apretada arriba (≈29 px) frente a ≈151 px bajo el pie.",
+   "posicion": "Por posición gana la 3: la isometría va entera, centrada al píxel en la zona libre, con holguras parejas arriba y abajo, y no toca marcas ni panel. Su único reparo es que flota con vacíos laterales grandes, algo que debe mirar la lente de composición. La 1 y la 2 usan la misma fuente con el sujeto a la derecha, y el recorte lateral les corta el pedestal del robot. En la 1 se pierden 14 px de lienzo y el anillo queda a 27 px del borde; además, las marcas superiores caen sobre la imagen. La 2 recorta más (25 px de lienzo, anillo a 13 px del borde de la caja) y su caja queda a 24 px del texto, contra 64 en los otros lados, aunque deja libres las marcas. Las dos sirven con ajustes; la 2 es la que más roza el veto.",
+   "costuras": "Ninguna opción tiene parche ni veto. La 1 (a sangre) deja a la vista el marco crema propio de la fuente en el borde superior y sobre la banda, así que no se lee como sangre. Además, la cruz de arriba a la derecha cae justo en el borde del panel turquesa. Sirve con ajustes: región útil para la imagen y quitar las cruces sobre la imagen. La 2 (en caja) tiene bordes limpios y cruces despejadas, y el mismo marco crema se nota poco dentro de la caja. La 3 no tiene imagen y queda fuera de mi lente. Elijo la 2."
+  }
+ },
+ {
+  "galeria": "G15",
+  "rubrica": "pred-crit2-a",
+  "jueces": "1",
+  "david": [
+   "2"
+  ],
+  "cita": "2° Bajada blanca",
+  "resumenes": {
+   "prediccion": "David elegiría la 1° (la base). La banda oscura con bajada gris a 7,2:1 ya se lee sobre fondo liso, mantiene la bajada claramente secundaria y conserva el turquesa de marca en el kicker y en el llamado, como el Preset 01. La 2° solo agrega contraste a la bajada, y eso aplana la jerarquía. La 3° pierde el turquesa y deja el «BIM» del logo en unos 2,8:1 y la bajada en 4,6:1. Los defectos de la imagen son comunes a las tres y no deciden."
+  }
+ },
+ {
+  "galeria": "G15",
+  "rubrica": "pred-crit2-b",
+  "jueces": "1",
+  "david": [
+   "2"
+  ],
+  "cita": "2° Bajada blanca",
+  "resumenes": {
+   "prediccion": "Creo que David elegiría la 1°. La banda oscura separa bien la imagen del texto y conserva el turquesa de marca en el kicker y el llamado. La bajada gris, a 7,2:1 sobre fondo liso, se lee bien y queda claramente secundaria; es la opción más sobria y con más carácter. La 2° queda cerca porque David suele pedir más contraste, pero la bajada blanca aplana un poco la jerarquía sin necesidad. La 3° no sirve tal cual: la bajada a 4,6:1 cae en el rango que David ya vio flojo, la pieza pierde el turquesa y la imagen se funde con el panel."
+  }
+ },
+ {
+  "galeria": "G15",
+  "rubrica": "pred-ej-a",
+  "jueces": "1",
+  "david": [
+   "2"
+  ],
+  "cita": "2° Bajada blanca",
+  "resumenes": {
+   "prediccion": "Predigo que David elige la 1. Ya prefirió en G05 el gris de marca con acento turquesa frente al blanco. Con el gris, la bajada queda claramente debajo del titular, como en G13, y la pieza sigue la familia oscura del Preset 01. La 2 sirve, aunque la bajada blanca le compite algo al titular. La 3 no sirve tal cual: la bajada mide 4,6:1, un valor que ya se vio flojo, y el panel claro se funde con el crema de la imagen."
+  }
+ },
+ {
+  "galeria": "G15",
+  "rubrica": "pred-ej-b",
+  "jueces": "1",
+  "david": [
+   "2"
+  ],
+  "cita": "2° Bajada blanca",
+  "resumenes": {
+   "prediccion": "Predigo la 1° (base). David ya prefirió el gris de marca con acento turquesa frente al blanco en el Preset 01 (G05). El gris mide 7,2:1 sobre fondo liso y mantiene la bajada claramente secundaria (G13). Suele quedarse con la base cuando el cambio no mejora algo que él haya pedido. La 2° queda cerca: es más legible, pero iguala el color del titular y rompe la coherencia entre presets. La 3° no sirve tal cual: la bajada a 4,6:1 cae en el rango que ya vio flojo, el panel claro se funde con el borde crema de la imagen y el logo pierde contraste."
+  }
+ },
+ {
+  "galeria": "G15",
+  "rubrica": "pred-sin-a",
+  "jueces": "1",
+  "david": [
+   "2"
+  ],
+  "cita": "2° Bajada blanca",
+  "resumenes": {
+   "prediccion": "Predigo que David elige la 1. La banda oscura repite los negros de la ilustración y separa bien imagen y texto. En la bajada, el gris de marca deja una jerarquía clara entre título, bajada y llamado sin perder lectura (7,2:1), y el turquesa la mantiene coherente con el Preset 01. La 2 sirve y se lee algo mejor, pero la bajada blanca compite con el título y aplana el bloque. La 3 se aleja de lo que elegiría: el crema y el blanco quedan en una costura que parece error, pierde el turquesa en el feed y su bajada (4,6:1) es la más débil en el celular."
+  }
+ },
+ {
+  "galeria": "G15",
+  "rubrica": "pred-sin-b",
+  "jueces": "1",
+  "david": [
+   "2"
+  ],
+  "cita": "2° Bajada blanca",
+  "resumenes": {
+   "prediccion": "Predigo que David elige la 1. Es la base que repite el lenguaje del Preset 01: banda oscura que ancla la ilustración clara, turquesa vivo en «Artículo» y en el llamado, y una bajada gris que marca la jerarquía con buen contraste (7,2:1). La 2 queda cerca porque se lee mejor, pero aplana la jerarquía y rompe la coherencia con la serie. La 3 se aleja: el panel claro se funde con la franja crema de la imagen y con el feed en modo claro, el turquesa pasa a verde oscuro y su bajada tiene el contraste más bajo (4,6:1)."
+  }
+ },
+ {
+  "galeria": "G15",
+  "rubrica": "v1",
+  "jueces": "1",
+  "david": [
+   "2"
+  ],
+  "cita": "2° Bajada blanca",
+  "resumenes": {
+   "jerarquia": "La 1° tiene la jerarquía más limpia. La banda oscura separa la imagen del texto, el título blanco manda, la bajada gris queda un escalón abajo y el turquesa marca «Artículo» y el llamado. El llamado se lee bien y el logo es legible, salvo el texto «Umbral BIM», muy chico a tamaño de feed. La 2° sirve, pero la bajada blanca aplana el escalón con el título. La 3° sirve con ajustes: el corte entre imagen y banda se debilita, la ilustración gana peso frente al titular y «BIM» en turquesa sobre el panel claro pierde contraste.",
+   "posicion": "Desde la posición, las tres piezas son iguales: misma imagen, mismo recorte y misma caja de texto. El robot entra completo, sin veto, y no toca el panel ni las marcas. Tiene dos detalles: el pedestal queda cortado por el borde derecho y el anillo del codo deja poco margen de ese lado. La opción 1 empata con la 2. La 3 baja un poco porque la franja crema inferior de la imagen se funde con el panel claro y pierde el marco.",
+   "costuras": "Las tres usan la misma imagen, puesta a cubrir y sin extensión de fondo; el crema de arriba y de abajo ya viene en el original de Midjourney. No hay parches rectangulares ni acentos turquesa cortados en el borde. Para costuras, la 1 y la 2 son idénticas, porque solo cambia el color de la bajada. Elijo la 1 por ser la base, empatada con la 2: la banda oscura corta limpio. La 3 pierde puntos porque el panel claro casi iguala al crema de la imagen, y ese escalón (ΔE≈15) se lee como costura a tamaño de feed. En las tres, la cruz superior derecha cae sobre el borde turquesa del dibujo y se pierde; conviene bajar las cruces de arriba o ajustar su separación del borde."
+  }
+ },
+ {
+  "galeria": "G15",
+  "rubrica": "v2",
+  "jueces": "1",
+  "david": [
+   "2"
+  ],
+  "cita": "2° Bajada blanca",
+  "resumenes": {
+   "posicion": "Esta galería solo cambia el color de la banda. La posición de la imagen es idéntica en las tres (verificado píxel a píxel en la zona de imagen): brazo entero, sin corte de máscara, márgenes crema parejos y sin choque con la banda. Mi lente no ve diferencia, así que no elijo. Defectos comunes, todos menores: la marca superior derecha queda montada sobre el borde turquesa, y el sujeto está a la derecha, no al centro, como ya se eligió en G14.",
+   "composicion": "Las tres tienen la misma disposición: imagen a sangre arriba y banda de 4 de 8 filas abajo. Solo cambia el color, así que la lente mira cómo ese color afecta la división y el aire. En la 1° y la 2°, la banda oscura deja la división nítida y da una base pesada que equilibra la imagen clara de arriba. La 1° queda primera porque la bajada en gris escalona el bloque de texto y deja aire entre el título y la bajada. En la 2° ese bloque se vuelve más compacto, aunque la diferencia es pequeña. En la 3°, el panel claro se funde con la franja crema de la ilustración (cerca de 1,1:1): se pierde la separación entre imagen y banda, y la imagen se lee como un bloque encajado. Sirve con ajustes.",
+   "lectura": "Esta galería solo cambia el color de la banda. Para la lectura, la 2 es la mejor: la bajada blanca llega a 15,8:1 y ningún texto baja de 9,9:1. La 1 también sirve: su bajada gris mide 7,2:1 sobre un fondo liso. La 3 sirve con ajustes: «BIM» del logotipo cae a 2,8:1 y la bajada a 4,6:1, un valor que David ya vio flojo. Hay que corregir las dos cosas antes de aprobarla. Las tres comparten el texto mínimo justo en 11 px CSS.",
+   "jerarquia": "La lente de jerarquía sí ve diferencias en el color. La 1° es la que mejor ordena la lectura: el titular blanco manda, la bajada gris (7,2:1) queda claramente secundaria y legible, y el turquesa separa el kicker y el llamado. El logo se lee a 9,9:1. La 2° iguala la bajada al blanco del titular, la separa solo por tamaño y le da más peso del que corresponde en una noticia. La 3° conserva el orden, pero el «BIM» del logo baja a 2,8:1 en la esquina inferior izquierda, la bajada queda algo lavada y la banda se distingue menos de la imagen. Elijo la 1°.",
+   "costuras": "En costuras, 1 y 2 empatan: tienen la misma banda oscura y la misma unión con la imagen, así que mi lente no ve diferencia entre ellas. Pongo la 1 solo porque es la base, no porque la prefiera. La 3 pierde puntos porque el crema de la imagen choca con el panel claro y se ve una línea pálida a tamaño de feed (media). No hay parches rectangulares ni acentos turquesa cortados. Los defectos comunes (la cruz superior derecha sobre el borde del dibujo y el crema plano frente al crema con grano) son de la imagen fijada en G14 y no desempatan."
+  }
+ },
+ {
+  "galeria": "G16",
+  "rubrica": "pred-crit-a",
+  "jueces": "1",
+  "david": [
+   "3",
+   "4"
+  ],
+  "cita": "3 y 4",
+  "resumenes": {
+   "prediccion": "Vistas en el celular, la 1°, la 2° y la 4° son casi iguales: las cruces y la trama son detalles que no se notan a tamaño de feed. La única diferencia visible es el botón turquesa de la 3°. Predigo que David elige la 1° (base): mantiene la familia del Preset 01 y conserva los detalles que hacen la composición más compleja. Además, el llamado ya se lee con holgura (9,9:1 sobre fondo liso). El botón de la 3° vuelve el turquesa una superficie en vez de un acento, contra su criterio de sobriedad en el panel oscuro, y le quita fuerza al logo. Defecto común a las cuatro, que no desempata: el logotipo «Umbral BIM» queda en unos 7,5 px CSS en el celular, bajo la referencia de 11 px."
+  }
+ },
+ {
+  "galeria": "G16",
+  "rubrica": "pred-crit-b",
+  "jueces": "1",
+  "david": [
+   "3",
+   "4"
+  ],
+  "cita": "3 y 4",
+  "resumenes": {
+   "prediccion": "Predigo que David elige la 1° (base). Es el último paso y las variantes son sutiles: en G05 y G13 se quedó con la base. Además, la 1° conserva la coherencia con el Preset 01 (cruces y trama), que en el celular apenas se ven y no estorban. La 2° y la 4° son casi idénticas a la 1° en el feed: quitan detalles invisibles sin ganar nada. La 3° es la única con una diferencia visible: el llamado se lee más fuerte, pero el bloque turquesa rompe la sobriedad del panel oscuro, compite con la bajada y suma más turquesa a una imagen que ya lo tiene. La pongo última. Todas tienen el texto a ≥9,9:1 sobre el panel liso y el titular manda. El único detalle común es el logotipo, que está en el mínimo de 11 px."
+  }
+ },
+ {
+  "galeria": "G16",
+  "rubrica": "pred-crit2-a",
+  "jueces": "1",
+  "david": [
+   "3",
+   "4"
+  ],
+  "cita": "3 y 4",
+  "resumenes": {
+   "prediccion": "Las opciones 1, 2 y 4 casi no se distinguen en el celular, mientras que la 3 cambia la lectura del pie. Predigo la 1, la base. Conserva las cruces y la trama, que dan carácter y la ligan al Preset 01 sin afectar la lectura (9,92:1; 11 px). La 2 y la 4 simplifican sin ganar nada visible, y la 4 resta un poco más de carácter. La 3 sirve con ajustes: el bloque turquesa compite con el titular y rompe la sobriedad del acento. Hay un defecto común que conviene anotar aparte: el nombre del logo se ve muy chico en el feed."
+  }
+ },
+ {
+  "galeria": "G16",
+  "rubrica": "pred-crit2-b",
+  "jueces": "1",
+  "david": [
+   "3",
+   "4"
+  ],
+  "cita": "3 y 4",
+  "resumenes": {
+   "prediccion": "Todas las opciones ya cumplen el contraste (9,92:1) y el tamaño mínimo (11 px CSS), así que la lectura no decide. La 3 es la que menos se parece a lo que David elegiría: el botón turquesa lleno convierte el acento en una masa, compite en el pie y vuelve la pieza más genérica. Entre la 1, la 2 y la 4 la diferencia en el celular es mínima. La 1 conserva las cruces y la trama del Preset 01, que dan carácter técnico sin quitar sobriedad. Quitar cualquiera de las dos solo resta identidad sin mejorar nada. Predigo la 1."
+  }
+ },
+ {
+  "galeria": "G16",
+  "rubrica": "pred-ej-a",
+  "jueces": "1",
+  "david": [
+   "3",
+   "4"
+  ],
+  "cita": "3 y 4",
+  "resumenes": {
+   "prediccion": "Predigo la 1 (base). Repite lo que David eligió en el paso 5 del Preset 01: cruces y trama de puntos, con el llamado en texto. En G06 no eligió quitar las cruces ni el llamado como botón, y eligió agregar la trama. La 4 deshace esa elección y la 2 rompe la coherencia de familia sin ganar nada visible en el feed. La 3 es la única que cambia la pieza en el celular, pero el bloque turquesa grande saca al turquesa de su papel de acento y le resta protagonismo al titular. La lectura y el contraste (9,9:1) son iguales en las cuatro."
+  }
+ },
+ {
+  "galeria": "G16",
+  "rubrica": "pred-ej-b",
+  "jueces": "1",
+  "david": [
+   "3",
+   "4"
+  ],
+  "cita": "3 y 4",
+  "resumenes": {
+   "prediccion": "Predigo la 1 (Base). Repite el pie y los detalles que David ya eligió para el Preset 01 en G06: cruces y trama de puntos, con logo y llamado en texto. Además, en el Preset 02 David se ha quedado con la base en casi todos los pasos. La 3 es la única que cambia algo visible en el celular y podría atraerle por el peso del llamado. Pero convierte el turquesa en superficie, y en G06 David no eligió el botón. La 2 y la 4 casi no se distinguen de la 1 a tamaño de feed, y cada una quita algo que David conservó o eligió en G06; la 4 queda última porque quita la trama, que él eligió expresamente. Hay dos defectos comunes menores: las cruces superiores caen sobre la imagen y la de la derecha se pierde en el turquesa, y el texto del logotipo queda justo en 11 px CSS."
+  }
+ },
+ {
+  "galeria": "G16",
+  "rubrica": "v1",
+  "jueces": "2",
+  "david": [
+   "3",
+   "4"
+  ],
+  "cita": "3 y 4",
+  "resumenes": {
+   "jerarquia": "En las cuatro opciones la jerarquía base se sostiene. La imagen está separada por la banda y no compite con el título, que es claramente lo más grande. El llamado en texto se lee bien. La 4° (banda lisa) es la que deja el fondo más limpio detrás del título y de la bajada. La 1° y la 2° casi no se distinguen entre sí, porque las cruces no pesan. La 3° es la que más asegura que el botón se lea, pero lo sube por encima de la bajada y deja el logo débil a su lado: sirve con ajustes. Hay un problema común a las cuatro: el nombre del logo queda en unos 7 a 8 px CSS en el móvil, demasiado chico. Conviene agrandarlo o dejar solo el isotipo.",
+   "posicion": "En las cuatro piezas la imagen es la misma (diferencia ≤1 en la zona de imagen; en la 2° solo cambian las cruces). Por eso la posición casi no las distingue. El robot está entero y no toca el panel de texto, que empieza en y=1326 con una franja crema de por medio. Los peros, comunes a todas: el plinto sale por el borde derecho y el codo queda a unos 55 px del borde (el margen es de 128). Elijo la 2° porque, sin cruces, ninguna marca toca la imagen. En la 1°, la 3° y la 4°, la cruz de arriba a la derecha se monta sobre el panel turquesa. El botón de la 3° queda bien alineado.",
+   "costuras": "Para costuras, la mejor es la 2°. Al quitar las cruces desaparece el único choque real: la cruz de arriba a la derecha cae sobre el borde del rectángulo turquesa del dibujo y se pierde turquesa sobre turquesa. Ese choque está en la 1°, la 3° y la 4°, que quedan en «sirve con ajustes». Ninguna opción tiene parche rectangular ni fondo extendido: la imagen se recorta a los lados y su unión con la banda oscura es limpia. Quedan dos detalles que solo se ven de cerca: la trama de puntos está corrida unos 46 px a la izquierda, y el escalón vertical en el turquesa viene de la ilustración original."
+  }
+ },
+ {
+  "galeria": "G16",
+  "rubrica": "v2",
+  "jueces": "2",
+  "david": [
+   "3",
+   "4"
+  ],
+  "cita": "3 y 4",
+  "resumenes": {
+   "composicion": "En composición las cuatro variantes son muy parecidas, porque solo cambian detalles del pie. Elijo la 3: el botón turquesa le da peso al pie, coincide en altura con el logo y en el margen derecho con la etiqueta EJEMPLO, y repite el turquesa de la imagen. Lo flojo es que su borde izquierdo no cae en ninguna columna del texto. La 2 limpia las cruces de arriba, que casi no se ven sobre el turquesa, y no cambia nada más. La 4 pierde la trama que hacía visible la grilla y queda más simple. Hay dos defectos comunes, aparte de la elección: el antetítulo pegado al borde de la imagen (≈49 px frente a ≈134 px bajo el pie) y la franja crema bajo la ilustración.",
+   "posicion": "Mi lente no ve diferencia entre las opciones. La zona de imagen es idéntica en las cuatro piezas: entre S1, S3 y S4 la diferencia máxima es de 1 nivel de color, y S2 solo cambia en las cruces superiores. El robot está entero, sin cortes de la máscara, y no toca marcas ni el panel de texto. Las franjas crema miden 59 px arriba y 62 px abajo, o sea parejas. Hay un defecto común: el sujeto está desplazado a la derecha, con el codo a unos 56 px del borde. Va anotado aparte y no desempata. No elijo por otra lente.",
+   "jerarquia": "En las cuatro opciones manda el titular (el kicker y la bajada miden cerca del 26 % de su altura de mayúscula) y la imagen no invade la banda. La única diferencia fuerte para esta lente es la 3: su botón turquesa macizo, que ocupa dos tercios del ancho útil, le quita el segundo lugar a la bajada y gasta el turquesa como relleno, así que sirve solo con ajustes. La 1, la 2 y la 4 casi no se distinguen: las cruces no afectan la jerarquía y la trama de puntos solo agrega ruido detrás del texto de cerca. Me quedo con la 4 por poco, porque deja limpio el fondo del texto y conserva el llamado en texto, legible y en su lugar.",
+   "lectura": "Las cuatro se leen bien a tamaño de feed: el texto está sobre una banda lisa con un contraste mínimo de 9,92:1, el texto de lectura no baja de 11 px CSS y las separaciones son parejas (unos 33, 41 y 48 px). La 3 es la única que cambia algo visible para la lectura: el llamado como botón gana presencia y se lee mejor sin perder contraste (9,9:1). Le sigue la 4, que deja liso el fondo bajo el texto chico, aunque la ganancia es mínima porque la trama casi no se ve. En la 2, quitar las cruces no cambia la lectura, así que queda igual que la 1. Las cuatro comparten un defecto: «Umbral BIM» en el logo mide unos 7,7 px CSS, demasiado chico para el feed, y conviene revisarlo aparte.",
+   "costuras": "La imagen está recortada a los lados, no extendida: la fuente de 1456×816 se escala ×1,625 y se recortan unos 103 px por lado. Las costuras se ven limpias: no hay parche ni rectángulo, el corte con la banda en y=1326 es neto, no hay esquinas redondeadas sobrantes y no queda cortado ningún acento de marca. Las cuatro opciones tienen la zona de imagen idéntica salvo las dos cruces superiores (296 px de diferencia), así que mi lente solo ve esa diferencia. En 1, 3 y 4, la cruz superior derecha cae sobre el borde crema/turquesa del dibujo y queda a medias. La 2 la elimina, así que no queda nada que choque. El escalón de color en x≈1085 viene de la imagen original y es común a las cuatro. Elijo la 2. Las 1, 3 y 4 sirven con ajustes: mover o quitar las cruces de la zona de imagen."
+  }
+ },
+ {
+  "galeria": "G22",
+  "rubrica": "pred-crit2-b",
+  "jueces": "3",
+  "david": [
+   "1"
+  ],
+  "cita": "Sin bajada · LinkedIn, piezas completas: 1 peor el boton mas pequeño",
+  "resumenes": {
+   "prediccion": "La galería solo cambia la posición vertical del bloque de texto. La 3 es la única que cumple a la vez dos cosas: «Artículo», titular y botón quedan a 32 px parejos, como pidió David en G20, y el botón sigue cerrando la columna al pie, con el margen inferior igual al superior, que es lo que pesa en el LinkedIn sin bajada. A cambio deja aire entre el logo y el kicker, pero arriba y con intención. La 1 es la base de G20 4° con un ritmo correcto, pero del titular al botón quedan 68 px y no aplica la separación pareja. La 2 centra el bloque, deja un vacío bajo el botón y saca el botón del pie, así que queda como «sirve con ajustes». Común a las tres y sin efecto en la elección: el texto del botón mide 9,3 px CSS (aviso, no veto) y el contraste mínimo es de 9,92:1."
+  }
+ },
+ {
+  "galeria": "G22",
+  "rubrica": "pred-ej-a",
+  "jueces": "3",
+  "david": [
+   "1"
+  ],
+  "cita": "Sin bajada · LinkedIn, piezas completas: 1 peor el boton mas pequeño",
+  "resumenes": {
+   "prediccion": "La 3 es la única que cumple a la vez dos cosas que David pidió. Mantiene el botón al pie, cerrando la columna, en la misma posición que la 1 y con los márgenes de arriba y abajo simétricos (128 px). Y deja «Artículo», el titular y el botón a la misma distancia, 32 px, como pidió en G20. Su riesgo es el aire entre el logo y el bloque. La 1 es la alternativa cercana: es la base que ya conocía (G20 4°) y reparte el texto en tres zonas, pero la distancia del titular al botón no es pareja. La 2 se aleja: el botón flota y deja un vacío abajo. Predicción con confianza moderada: 3 por sobre 1."
+  }
+ },
+ {
+  "galeria": "G22",
+  "rubrica": "pred-sin-a",
+  "jueces": "3",
+  "david": [
+   "1"
+  ],
+  "cita": "Sin bajada · LinkedIn, piezas completas: 1 peor el boton mas pequeño",
+  "resumenes": {
+   "prediccion": "Creo que David elegiría la 3. Junta «Artículo», el titular y el botón a 32 px entre sí, que es su criterio de G21, y deja el botón al pie, donde ya lo aceptó en G20 4°. Así el bloque se apoya en el margen inferior y queda alineado con el peso de la ilustración, y el logo funciona como cabecera. La 2 también iguala las distancias, pero el bloque flota y deja vacío abajo. La 1 mantiene el botón lejos del titular, que es lo que esta galería busca corregir. Contraste (9,92:1) y texto mínimo (9,3 px) son iguales en las tres y no deciden."
+  }
+ },
+ {
+  "galeria": "G22",
+  "rubrica": "pred-sin-b",
+  "jueces": "3",
+  "david": [
+   "1"
+  ],
+  "cita": "Sin bajada · LinkedIn, piezas completas: 1 peor el boton mas pequeño",
+  "resumenes": {
+   "prediccion": "Elegiría la 3. Mantiene el botón exactamente donde estaba en la pieza que David eligió en G20 (fila 977-1125 del PNG, margen inferior de 64 px igual al superior) y además deja los tres textos a 32 px entre sí, que es lo que pidió. La 1 cumple los 32 px solo entre «Artículo» y el titular: el botón queda a 68 px y se ve suelto. La 2 iguala las distancias, pero deja el bloque alto, con 105 px vacíos abajo y los márgenes desparejos. Las tres tienen el mismo contraste (9.92:1), el mismo texto mínimo (9.3 px CSS) y ningún choque, así que la diferencia está solo en la composición."
+  }
+ },
+ {
+  "galeria": "G22",
+  "rubrica": "v1",
+  "jueces": "3",
+  "david": [
+   "1"
+  ],
+  "cita": "Sin bajada · LinkedIn, piezas completas: 1 peor el boton mas pequeño",
+  "resumenes": {
+   "jerarquia": "En las tres opciones el titular manda y la imagen acompaña: su foco, el brazo robótico, queda lejos del texto. El botón se lee igual en todas. Elijo la 3. «Artículo», el titular y el botón van a 32 px entre sí, y el bloque se apoya abajo con el mismo margen que arriba (unos 64 px). El logo queda solo y con aire, y se lee de arriba abajo: logo, etiqueta, titular, botón. La 1 también sirve, aunque mezcla 32 y 68 px. La 2 flota y deja el pie vacío. En todas, el nombre del logo, a 9,3 px CSS, queda al límite en móvil.",
+   "posicion": "Las tres usan la misma imagen, así que lo que compara la lente de posición es la columna de texto. La pinza, el acento, queda entera y centrada en la parte libre. El brazo sale por el borde derecho y el marco crema no aparece en ese lado; es un detalle común a las tres y no lo cuento como veto. La 3 es la única con márgenes parejos (128/129 px) y los tres textos a la misma distancia (≈32 CSS). La 1 deja el botón despegado (68 CSS) y la 2 deja 211 px de vacío al pie. Elijo la 3.",
+   "costuras": "Las tres opciones sirven y, desde la lente de costuras, empatan. La mitad de imagen es igual píxel a píxel en las tres (diferencia 0) y solo cambia la columna de texto, que no tiene costuras. El panel es plano y no hay vetos.\n\n- **Fondo:** los márgenes crema de arriba (y 0–55) y de abajo (y 1191–1254) son del mismo crema que el interior del dibujo (246,233,206), con variación menor a 1. No hay escalón de color ni parche rectangular.\n- **Cruces:** las del lado oscuro no tocan el texto ni el botón.\n- **Fallos menores:** las dos cruces del lado de la imagen caen sobre el filo del dibujo, porque van a 64 px del borde y el margen mide 55–63 px. La de abajo se monta sobre el bloque negro. Además, la división corta a ras un taco turquesa (y ≈805–870).\n\nTodo esto se ve solo de cerca. Mi lente no distingue entre las tres, así que no elijo una."
+  }
+ },
+ {
+  "galeria": "G22",
+  "rubrica": "v2",
+  "jueces": "3",
+  "david": [
+   "1"
+  ],
+  "cita": "Sin bajada · LinkedIn, piezas completas: 1 peor el boton mas pequeño",
+  "resumenes": {
+   "lectura": "Las tres opciones tienen el mismo tamaño de texto y el mismo contraste: 9,92:1 sobre el panel liso, y 9,3 px CSS en el botón, que es solo un aviso. Por eso la diferencia está en las separaciones y en dónde queda el botón. Mejor la 3: separaciones parejas de unos 32 px, medidas de tinta a tinta, y botón al pie de la columna, con el logo solo arriba. La 1 deja el botón a unos 68 px del titular, más del doble que entre «Artículo» y el titular. La 2 empareja las separaciones, pero saca el botón del pie y deja aire muerto abajo, justo lo que David pone por delante en el LinkedIn sin bajada.",
+   "composicion": "La única diferencia está en cómo se reparte el texto en vertical dentro del panel. Las medidas están a 1x, con el lienzo de 1200×627. La 3 es la única que cumple las dos reglas de David a la vez. «Artículo», el titular y el botón quedan a 32 px parejos. El botón sigue cerrando la columna sobre el margen inferior de 64 px, el mismo que en la 1. El aire de unos 100 px bajo el logo separa la marca del bloque de lectura de forma deliberada. La 1 cumple la excepción del botón al pie, pero deja separaciones de 32 y 68 px. La 2 pierde el apoyo al pie y deja unos 105 px vacíos bajo el botón, por eso queda como «sirve con ajustes». La división del lienzo (panel de unos 609 px e imagen a sangre) y el chip EJEMPLO, que no choca ni quita espacio, son iguales en las tres.",
+   "jerarquia": "Las tres opciones tienen el mismo titular de 102 px y en todas manda sin discusión. La imagen va en su propio panel y no le disputa la zona de lectura. La diferencia está en dónde va el botón. En la 1° el ritmo es parejo: unos 63 px del logo a «Artículo», unos 69 px del titular al botón y unos 64 px hasta el borde. «Artículo» y el titular forman el grupo de contenido y el botón queda aparte, cerrando la columna, así que la separación desigual (32 px frente a unos 77 px en el código) ordena la jerarquía en vez de dañarla. La 3° funciona: el bloque queda apoyado abajo, pero el titular cae bajo la mitad y el logo queda aislado. La 2° es la más débil: el bloque flota alto y la columna termina en vacío. Con los tres textos a 32 px el botón saturado se pega al titular y deja de leerse como cierre. Defecto común a las tres: el botón es tan ancho como el kicker y es la masa más saturada del panel, conviene aligerarlo. El chip EJEMPLO va en la fila del logo, no choca con nada ni le quita espacio al texto. Aviso de transparencia: al buscar medidas en el código vi por accidente la elección de David en G22 (en elecciones.yaml y en el pack AA1). Puntué por mi lente, pero este voto no es ciego.",
+   "costuras": "Desde costuras no hay diferencia entre las opciones: la zona de imagen es idéntica en las tres, con el mismo md5, y no elijo por otra lente. El recorte es limpio: no hay fondo extendido, ni escalón, ni parche, y no hay veto. Los defectos son comunes a las tres. Las dos cruces de la derecha chocan con el dibujo: la de arriba queda sobre el canto turquesa y la de abajo sobre el bloque negro. Propongo moverlas al centro de las franjas crema, no quitarlas. El filo de la división se pierde donde el negro de la ilustración toca el panel.",
+   "posicion": "Mi lente no ve diferencia entre las opciones: la imagen tiene la misma fuente, el mismo encaje y el mismo foco, y su zona es idéntica píxel a píxel en las tres. El texto queda siempre en x 64–592 y la imagen empieza en x 608. Por eso las puntúo igual y no elijo ninguna. Las tres comparten un defecto heredado de la base de G20: con el recorte centrado, el brazo robótico queda cortado (faltan el codo y la base), lo que es el veto de mi lente. Además, el círculo negro queda partido contra el panel. El arreglo está en el encuadre de la imagen (foco x≈0.73), no en la elección de esta galería."
+  }
+ },
+ {
+  "galeria": "G25",
+  "rubrica": "pred-crit-a",
+  "jueces": "3",
+  "david": [
+   "2"
+  ],
+  "cita": "2°, 85 y 75",
+  "resumenes": {
+   "prediccion": "Las tres opciones resuelven la queja de G24: el edificio queda entero y centrado en cada máscara (medido, márgenes simétricos). Solo cambia el tamaño. David prefiere la imagen con presencia, y le pareció bien un sujeto grande aunque llegue al borde. Por eso elegiría el 85 % en todos los formatos (opción 3): el edificio pesa más en el feed, cubre mejor la máscara y evita la franja lisa del fondo extendido que deja el 75 % en el 4:5 y el 9:16. La opción 2 queda cerca. Solo difiere en la historia, donde el 75 % se ve claramente peor, y en los LinkedIn, donde es apenas más aireada; la pieza con bajada al 85 % queda algo justa en su columna. La opción 1 deja el objeto chico, sobre todo en las bandas. Defecto común a las tres: en el 16:9 y el 1:1 con bajada, la máscara baja deja el objeto pequeño y vacíos laterales, y eso se resuelve con otra división, no con el porcentaje."
+  }
+ },
+ {
+  "galeria": "G25",
+  "rubrica": "pred-crit-b",
+  "jueces": "3",
+  "david": [
+   "2"
+  ],
+  "cita": "2°, 85 y 75",
+  "resumenes": {
+   "prediccion": "Las tres opciones resuelven la queja de G24: el objeto queda entero y centrado en su máscara en todos los formatos (lo comprobé midiendo los márgenes en los LinkedIn y en el 9:16). Comparando los píxeles, la opción 2 es la 3 en las bandas y la 1 en las columnas: la única diferencia real es el tamaño del objeto. Visto en el celular, el 85 % le da al edificio la presencia que David busca cuando elige la imagen protagonista y llegando al borde, mientras que el 75 % deja el objeto chico y rodeado de vacíos, sobre todo en las bandas. Predigo la opción 3 (85 % en todos los formatos). La opción 2 queda cerca, como alternativa más aireada para las columnas. En las tres queda pendiente la 16:9, donde el objeto sigue chico en una banda muy ancha."
+  }
+ },
+ {
+  "galeria": "G25",
+  "rubrica": "pred-crit2-a",
+  "jueces": "3",
+  "david": [
+   "2"
+  ],
+  "cita": "2°, 85 y 75",
+  "resumenes": {
+   "prediccion": "Las tres opciones corrigen la queja de G24: el edificio queda entero y centrado en la máscara de cada formato, sin cortes ni desplazamientos. Lo único que cambia es el tamaño. Al 75 % (opción 1) el objeto se ve chico en las bandas anchas (4:5, 1:1 y 16:9) y en la historia, y deja vacíos y una franja de fondo extendido sobre el texto. Al 85 % (opción 3) llena cada máscara con más presencia, cerca de lo «a sangre» que David viene eligiendo, sin cortar nada. En la historia 9:16 es claramente mejor. La opción 2 es casi igual a la 3 en las bandas, pero deja la historia y los LinkedIn al 75 %. En LinkedIn es casi un empate y en la historia pierde. Predigo la 3 por la regla única y la imagen más fuerte. El único reparo es el poco aire vertical en los LinkedIn de columna, que es de gravedad baja. Si David lo nota, la 2 queda como alternativa razonable."
+  }
+ },
+ {
+  "galeria": "G25",
+  "rubrica": "pred-crit2-b",
+  "jueces": "3",
+  "david": [
+   "2"
+  ],
+  "cita": "2°, 85 y 75",
+  "resumenes": {
+   "prediccion": "Las tres opciones corrigen la queja de G24: el edificio queda entero y centrado en cada máscara, sin corte arriba ni desplazamiento a la derecha. La diferencia está solo en la escala del objeto. Predigo la opción 3 (85 % en todos los formatos): da más presencia a un dibujo de línea fina que en el celular se lee mejor grande, la serie mantiene un tamaño parejo y en los LinkedIn el alto del edificio se alinea con la columna de texto. La opción 2 está cerca, pero baja la historia y los LinkedIn al 75 % sin ganar nada visible. La opción 1 deja el objeto chico en las máscaras anchas. El defecto común de las tres son los flancos lisos de las máscaras apaisadas, sobre todo en la 16:9."
+  }
+ },
+ {
+  "galeria": "G25",
+  "rubrica": "pred-ej-a",
+  "jueces": "3",
+  "david": [
+   "2"
+  ],
+  "cita": "2°, 85 y 75",
+  "resumenes": {
+   "prediccion": "Las tres opciones arreglan lo que David reclamó en G24: el edificio queda entero y centrado en su máscara en los siete formatos, sin cortes ni desplazamientos. Lo que cambia entre ellas es el tamaño. Al 75 % (opción 1), las bandas y la diapositiva quedan con el objeto chico y mucho aire sin función. Al 85 % en todo (opción 3), la imagen gana presencia sin quedar apretada, ni siquiera en la columna angosta del LinkedIn con bajada. Además aplica una sola regla en todos los formatos, que se lee mejor como sistema. Predigo que David elige la 3, con la 2 cerca. El defecto común es el fondo liso a los lados en el 16:9 y en las bandas 1:1."
+  }
+ },
+ {
+  "galeria": "G25",
+  "rubrica": "pred-ej-b",
+  "jueces": "3",
+  "david": [
+   "2"
+  ],
+  "cita": "2°, 85 y 75",
+  "resumenes": {
+   "prediccion": "Las tres opciones corrigen la queja de G24: el edificio va entero y centrado en su máscara en todos los formatos. La diferencia es solo de tamaño. Al 85 % en todo (opción 3), el objeto tiene la presencia que David suele preferir. La imagen cubre la máscara y llega limpia al borde, sin la retícula desvanecida, y aun así conserva margen en las columnas. La mezcla (opción 2) queda cerca, pero en las columnas pierde fuerza y vuelve el borde difuso. Con el 75 % en todo (opción 1), el objeto queda chico en las bandas bajas. Defecto común a todas: la 16:9 sigue con grandes vacíos laterales."
+  }
+ },
+ {
+  "galeria": "G25",
+  "rubrica": "pred-sin-a",
+  "jueces": "3",
+  "david": [
+   "2"
+  ],
+  "cita": "2°, 85 y 75",
+  "resumenes": {
+   "prediccion": "Las tres opciones corrigen el reclamo de G24: el edificio ya va entero y centrado en todos los formatos. Predigo que David elige la 3 (85 % en todo). En el celular el objeto tiene presencia y se acerca a lo que le gustó de G24 (imagen grande), pero sin cortes. La mayoría de las piezas no muestran la costura del fondo extendido y la regla es una sola y fácil de explicar. La 2 queda muy cerca: solo cambian la historia y los LinkedIn al 75 %, que dan más aire pero hacen que la serie se vea menos pareja. Las columnas al 85 % no se ven apretadas al punto de justificar ese cambio. La 1 se queda corta: en el 16:9 y el 1:1 de banda 5/8 el edificio se lee chico y sobra fondo. Pendientes comunes a las tres: el 16:9 sigue con poco objeto por la franja ancha, y el texto mínimo de 7,1 px en el LinkedIn sin bajada (AB2)."
+  }
+ },
+ {
+  "galeria": "G25",
+  "rubrica": "v2",
+  "jueces": "1",
+  "david": [
+   "2"
+  ],
+  "cita": "2°, 85 y 75",
+  "resumenes": {
+   "jerarquia": "La lente de jerarquía no ve diferencia entre las tres opciones. El titular manda igual en todas, en su banda o columna oscura propia, con el kicker, la bajada, el botón y el logo en su lugar. El objeto al 75 % o al 85 % nunca entra en la zona del titular, así que según el criterio G14 su tamaño no cambia la jerarquía. Por eso les doy el mismo puntaje y no elijo; la decisión corresponde a la lente de composición o encuadre. Hay defectos comunes a las tres. El más visible está en el 16:9: el titular mediano deja demasiado aire oscuro en la banda. Además, el botón pesa casi como la bajada en el 4:5, el 1:1 y el 9:16. El texto de 7,1 px del botón AB2 queda como aviso.",
+   "lectura": "Para la lente de lectura, las tres opciones son iguales. La galería solo cambia la escala del objeto dentro de la máscara (75 % u 85 %), y la imagen nunca queda debajo de un texto. En los 21 PNG, el kicker, el titular, la bajada, el botón y el logo van sobre el mismo panel liso oscuro, con contraste mínimo de 9,92:1 y separaciones iguales. Los tamaños mínimos también coinciden: 11 px CSS en celular, 14 px en la diapositiva, 9,3 px en el LinkedIn con bajada y 7,1 px en el botón del LinkedIn sin bajada. Todas sirven a tamaño de feed. Los únicos avisos son comunes a las tres: el botón de 7,1 px y el LinkedIn pensado para computador, y ambos ya fueron aceptados por David. Como mi lente no ve diferencia entre las opciones, no elijo ganadora y dejo la decisión a la lente de composición o imagen.",
+   "posicion": "Las tres opciones corrigen lo que David señaló en G24. Según la medición, el edificio sale entero y centrado con ±1 px en la máscara de los siete formatos, y no hay cortes ni corrimientos. La única diferencia está en la escala. Al 75 % en todos los formatos (opción 1), el objeto queda dentro del marco de las cruces, con al menos 99 px de aire en cada pieza y los márgenes más parejos. Al 85 % en las bandas (opciones 2 y 3), el vértice llega a la fila de cruces o la pasa: en T1 queda a 58 px, frente a los 64 px de las cruces. Además, la opción 3 aprieta las columnas de LinkedIn. Mi lente elige la 1. Un defecto común a las tres, que no desempata: en las bandas anchas (16:9 y T1) el objeto queda chico y aislado. Eso corresponde a la lente de composición.",
+   "composicion": "Las tres opciones resuelven la queja de G24: el edificio va entero y centrado en todas las máscaras, sin cortes ni corrimientos. La diferencia está en el tamaño. En las bandas (4:5, 1:1 y 16:9), el 85 % gana: la trama llega al borde de la banda, la imagen se lee a sangre y el objeto tiene más presencia. En las columnas de LinkedIn, el 75 % deja un aire parejo, cercano al margen del texto, mientras el 85 % aprieta el objeto contra los bordes y las cruces. Por eso elijo la opción 2, que decide el tamaño según la forma de la máscara. Ajuste: tratar el 9:16 como banda y pasarlo al 85 %. Defectos comunes a las tres, anotados aparte: en el 16:9, y en menor medida en el 1:1, quedan vacíos laterales grandes porque el objeto es alto y la banda ancha.",
+   "costuras": "Ninguna opción tiene escalón de color ni parche rectangular, así que no hay vetos. El fondo propio de la imagen ya es #F9F7F5 exacto (80–95 % de la máscara) y el borde difuso desvanece la trama en unos 40–100 px, sin corte recto. Ningún acento turquesa queda a menos de 148 px del borde de la máscara. Para mi lente, la diferencia está en las cruces de registro. Al 75 % siempre quedan sobre fondo extendido limpio. Al 85 %, en las piezas donde la imagen llena la máscara, la trama tenue roza las cruces: P02, T3 y AB2 (U2 casi). Son roces leves, solo visibles de cerca; propongo mover la cruz o dejarle unos 25 px de fondo limpio. La opción 2 es una mezcla exacta de las otras dos (P02, T1, T2 y T6 de la opción 3; T3, U2 y AB2 de la opción 1), así que hereda solo el roce del P02. Elijo la opción 1."
+  }
+ },
+ {
+  "galeria": "G28",
+  "rubrica": "pred-crit-a",
+  "jueces": "2",
+  "david": [
+   "6"
+  ],
+  "cita": "la mejor fue de la 36 a la 42",
+  "resumenes": {
+   "prediccion": "David elegiría la opción 2, B con Nano Banana 2.1, variante 1. Es la única en que el objeto queda entero y centrado en todas las máscaras, y su apaisada baja y ancha llena la banda del 16:9 (cerca del 85 % del ancho). La línea es limpia, con fondo claro, y el choque marcado en turquesa cuenta el hallazgo del artículo. Como ajustes, la apaisada usa una vista frontal distinta de la principal isométrica y el trazo es algo más grueso que el de Magnific One.\n\nLa opción 1 (Magnific One) tiene la principal más fina, pero su apaisada es abocetada y en el 16:9 llena solo la mitad de la banda. La opción 3 corre el objeto hacia un lado por el anclaje.\n\nEn el camino A, la mejor es la opción 4 (A1): fondo coherente y a sangre, aunque carga demasiado turquesa en las bandas. Se puede proponer como variante del camino A junto a la 2 (criterio 41). La opción 5 mezcla dos líneas y corta acentos en el borde. Los rescates (6, 7 y 8) no sirven: recortes que se leen como objeto cortado, composición de afiche y cifras dentro de la imagen.\n\nEl veredicto va por formato. La opción 2 sirve en todos. La opción 1 sirve en vertical, historia y LinkedIn, pero no en el 16:9."
+  }
+ },
+ {
+  "galeria": "G28",
+  "rubrica": "pred-crit-b",
+  "jueces": "2",
+  "david": [
+   "6"
+  ],
+  "cita": "la mejor fue de la 36 a la 42",
+  "resumenes": {
+   "prediccion": "Predigo que David elige la opción 2 (Nano Banana 2.1, variante 1). Es la única del camino B que cumple en todos los formatos. La principal es isométrica, limpia y queda centrada en vertical, historia y LinkedIn. La apaisada es baja y ancha, y llena las bandas de 2,05, 2,66 y 3,64:1 con cerca del 85 % del ancho. Ajustes que se anotan: el choque se lee menos directo porque el turquesa va en la viga y no en el tubo, y la apaisada tiene vista frontal frente a la isométrica de la principal. La opción 1 (Magnific One) cuenta mejor el choque en la principal, pero su apaisada oblicua y de boceto deja vacía la banda del 16:9 (≈52 % del ancho). La opción 3 cuenta bien la historia, pero el anclaje por acento corre el objeto a la izquierda en el vertical y la historia, que es el defecto de G24. En el camino A, la opción 5 es la mejor como variante de fondo (trazo coherente entre principal y apaisada), aunque corta un acento en el borde del 16:9. Igual que la 4, pierde las cruces de las esquinas superiores. Los rescates 6 a 8 no sirven: traen números en la imagen, composición de afiche o un tercio vacío con turquesa cortado. Si se quiere un fondo además del gráfico, propondría la 2 y la 5 como variantes."
+  }
+ },
+ {
+  "galeria": "G28",
+  "rubrica": "pred-crit2-a",
+  "jueces": "2",
+  "david": [
+   "6"
+  ],
+  "cita": "la mejor fue de la 36 a la 42",
+  "resumenes": {
+   "prediccion": "David elegiría la opción 2 (Nano Banana 2.1, variante 1). El cubo es isométrico, limpio y legible en el celular, y el choque tubo-viga queda marcado en turquesa. Queda bien centrado en todas las máscaras, y la apaisada llena cerca del 85 % de cada banda (vertical, cuadrados, historia, slide y LinkedIn). Hay que anotar que la apaisada se ve en elevación frontal y no en isometría, y que su trazo es más grueso. Magnific One (1) tiene la principal más fina, pero su apaisada abocetada no llena la banda 16:9. NB2 (3) corre el objeto a la izquierda y su apaisada tiene un error de dibujo. En el camino A, A1 (4) es un fondo correcto que funciona en todos los formatos y sirve como variante de ese camino; A3 (5) es parecido, con una apaisada de trazo más gris. Los rescates (6, 7 y 8) no sirven: traen fragmentos de objeto cargados de turquesa, composición de afiche o números dentro de la imagen. Todo el camino A pierde las cruces de registro sobre la imagen."
+  }
+ },
+ {
+  "galeria": "G28",
+  "rubrica": "pred-crit2-b",
+  "jueces": "2",
+  "david": [
+   "6"
+  ],
+  "cita": "la mejor fue de la 36 a la 42",
+  "resumenes": {
+   "prediccion": "David elegiría la opción 2, Nano Banana 2.1 v1: es la única donde el objeto queda entero y centrado en las 7 máscaras. Su apaisada es baja y ancha, llena el 85 % de la banda en la slide y los cuadrados, y el dibujo es isométrico, plano, de trazo limpio, con el choque del tubo marcado en turquesa, que cuenta el artículo. Ajuste anotado: la apaisada tiene vista casi frontal y la principal es isométrica.\n\nMagnific One (opción 1) sirve en el vertical, la historia y LinkedIn, pero falla en la slide y queda floja en los cuadrados: su apaisada es oblicua, de boceto, y en la slide solo cubre el 52 % del ancho de la banda.\n\nLa NB v2 (opción 3) queda corrida a la izquierda en el 4:5 y en el 9:16 por el anclaje, y su apaisada tiene errores de dibujo.\n\nDel camino A, A1 (opción 4) es un fondo válido, pero la apaisada carga turquesa. En A3 (opción 5), el recorte corta acentos en el borde. Los rescates (opciones 6 a 8) no sirven: tienen números en la planta, turquesa masivo cortado y composición de afiche."
+  }
+ },
+ {
+  "galeria": "G28",
+  "rubrica": "v2",
+  "jueces": "1",
+  "david": [
+   "6"
+  ],
+  "cita": "la mejor fue de la 36 a la 42",
+  "resumenes": {
+   "jerarquia": "Mi lente (jerarquía) no ve diferencias entre las 8 opciones, así que no elijo ninguna. La galería solo cambia la imagen y cómo se encuadra en la máscara. El bloque de texto es idéntico formato por formato: mismo kicker, titular, bajada, botón y logo, con las mismas medidas. En ninguna pieza la imagen tapa, cruza ni disputa la zona del titular, porque el texto va siempre en su panel oscuro liso. Por eso la fuerza o el tamaño de la imagen no restan, según G14. Esto incluye las losas turquesa de R1/R3 y la trama densa de A1/A3. Por formato, sirven el vertical 4:5, los dos cuadrados, la historia, LinkedIn con bajada y LinkedIn sin bajada. El slide 16:9 sirve con ajustes, porque el titular queda mediano y deja aire de sobra en la banda. Esos defectos son comunes a todas las opciones y van aparte. El orden entre opciones lo deben decidir otras lentes, como posición en la máscara y calidad de imagen.",
+   "marca": "Por marca, gana la opción 1 (Magnific One): la principal es la más fiel a la línea aprobada, isométrica, plana, de trazo fino y con un solo acento turquesa. Sirve en los 7 formatos. En T1, T6 y T2 se anota un ajuste: la apaisada tiene trazo de boceto y vista oblicua. Nano Banana engruesa el trazo hacia el ícono de diagrama. La apaisada de la variante 2 tiene geometría rota y caras casi negras: sirve con ajustes en los formatos verticales (P02, T3, U2 y AB2) y queda en el límite en T1, T6 y T2. En el camino A, A1 es más coherente que A3. A3 mezcla un fondo de alambre con ruido. Rescates: R1 no sirve en T1, T6 ni T2 por los seudonúmeros de las cotas de h063. En P02, T3, U2 y AB2 sirve con ajustes, porque el recorte de G-AFI-04 llena la máscara de turquesa. R3 tiene la apaisada más de marca (h023), pero la ampliación le deja halos. Conviene pedirla otra vez en alta resolución, no aceptarla así. R2 tiene sombreado tonal y aire de stock. No hay defectos de imagen comunes a todas las opciones.",
+   "serie": "Para una serie solo funciona el camino B: cada artículo tendría su propio gráfico con el hallazgo en turquesa. La opción 1 (Magnific One) es la que mejor cuenta el choque en las dos imágenes y mantiene la isométrica en todos los formatos. Por formato, sirve tal cual en vertical (1°), historia (3°) y LinkedIn (5° y 7°), y sirve con ajustes en los formatos que usan la apaisada (2°, 4° y 6°), que sale en boceto con otra mano. Para esos, conviene pedir otra apaisada con 2 o 3 variantes en el estilo de la p1. Nano Banana 2.1 da un estilo más parejo, pero pierde el hallazgo (opción 2) o rompe la geometría (opción 3) y cambia a alzado en las apaisadas. El camino A (opciones 4 y 5) es un patrón genérico que haría que todos los artículos se vieran iguales. Los rescates (6 a 8) no son repetibles, y R2 es el lugar común de la IA. Las piezas con fondo a sangre del camino A pierden las cruces de registro de arriba: hay que reponerlas.",
+   "composicion": "La maquetación de texto es igual en las 8 opciones; mi lente solo ve diferencias en cómo la imagen ocupa su máscara. Gana la opción 2, la variante 1 de Nano Banana. El cubo queda centrado y al 85 % en la banda y al 75 % en la columna, como pide G25. El estante apaisado, bajo y ancho, llena el 85 % del ancho en el 2.66:1 y en el 16:9 (3.64:1), con aire parejo arriba y abajo: es el caso que David pidió en G25. Por formato, sirve en el vertical, la historia, el 1:1 de 5/8, el slide y los dos LinkedIn. Necesita ajuste en el 1:1 de banda 2.05:1, donde el estante deja vacío el 60 % del alto de la máscara. Para esa máscara conviene una imagen de ~2–2,5:1 o subir el umbral de imagen ancha; es un defecto de la imagen, no de la maquetación. La opción 1 (Magnific One) falla en las bandas anchas (16:9 al 52 % del ancho) y la opción 3 descentra el cubo con el anclaje. Las opciones 4 y 5 llenan sin vacíos, pero son textura sin foco. La opción 6 tiene la mejor banda de la galería (la planta en V), pero sus piezas en columna quedan cargadas al borde. La opción 7 carga toda la pieza a la izquierda. La opción 8 no llega a llenar sus bandas.",
+   "forma": "Lente de forma. En el camino B gana la opción 2 (Nano Banana 2.1, variante 1). El cubo es compacto y queda centrado en la máscara: el anclaje lo corre solo 22 a 28 px. El estante apaisado mide unos 4,3:1 y llena el 85 % del ancho en el slide (3,64:1) y en el cuadrado de 2,66:1, igual que la referencia que aprobó David.\n\nFormato por formato, la opción 2 sirve en el vertical, el cuadrado de 2,66:1, la historia, el slide y los dos LinkedIn. En el cuadrado de 2,05:1 sirve con un ajuste menor: el estante ocupa solo el 40 % del alto.\n\nLa opción 1 (Magnific One) falla en el slide: su banca de 2,1:1 llena solo el 52 % de la banda. La opción 3 corre el cubo a la izquierda en la historia (7,5 %) y en el vertical (5,3 %), y su estante apaisado está inconcluso.\n\nEn el camino A, la opción 4 (A1) es un fondo válido: densidad pareja, recortable en cualquier parte y del mismo trazo en todos los formatos. La 5 cumple, pero mezcla trazo grueso y fino entre formatos. Los tres rescates (6, 7 y 8) no sirven: tienen composición de afiche o son fragmentos de objeto cortados, no fondos.\n\nSi David quiere conservar los dos caminos, propongo como variantes la opción 2 para el camino B y la opción 4 para el camino A.",
+   "contenido": "Mi lente elige la opción 1 (Magnific One), la única en que la imagen cuenta la misma comparación que el texto: la tubería y la viga del choque van marcadas en turquesa, hay alternativas sin ruta elegida y no aparece el remedio. Por formato, sirve en los que usan la imagen principal (1° vertical, 3° historia, 5° y 7° LinkedIn). En los apaisados (2°, 4° y 6°) sirve con ajustes: el trazo es de boceto, la tubería cruza otros pilares sin marcar y las alternativas no se ven. Conviene pedir otra apaisada con variantes, no aceptarla tal cual.\n\nNano Banana 2.1 dibuja más limpio, pero pierde el hallazgo. En la variante 1, la principal marca solo la viga y la apaisada no muestra choque. En la variante 2, la principal pinta una viga paralela que no cruza la tubería (falla en el 9:16) y su apaisada puede leerse como pase resuelto.\n\nEl camino A lo juzgo solo por si sus elementos son del tema, porque a un fondo no le corresponde contar el titular. A1 y A3 están bien, y A3 un poco mejor porque su apaisada trae tuberías. R2 trae una ciudad y una red de nodos, ajenas a la obra. R1 arrastra un resto de la plantilla de webinar y números falsos en las cotas. R3 sirve con su cliché de nodos.\n\nPara ampliar la losa de nb2 hice dos recortes temporales en el scratchpad y ya los borré. No gasté créditos.",
+   "posicion": "Mi lente elige la Opción 2 (Nano Banana 2.1, variante 1). Sirve en los 7 formatos: el objeto está entero y casi centrado en todas las máscaras, y su apaisada baja y ancha llena las bandas al 85 % (T1, T6 y T2). Solo T3, U2 y AB2 quedan un 4 % altos. La Opción 1 sirve con ajustes: en el slide el objeto ocupa la mitad del ancho y en U2 queda corrido a la derecha. La Opción 3 falla en T3 (alta) y en P02 (media): el anclaje por acento corre el cubo a la izquierda, y ahí se ve el problema común del método, que descentra el objeto cuando el acento no está al centro; conviene limitarlo con una tolerancia de márgenes. En el camino A, los rescates R1, R2 y R3 no sirven: cortan el sujeto o los acentos turquesa en el borde y dejan composición de afiche. A1 y A3 no tienen objeto que posicionar, así que su puntaje refleja solo el recorte. A todo el camino A le faltan las cruces sobre la imagen.",
+   "unidad": "Lente UNIDAD. La 7 (H021 en las dos máscaras) es la más unida, porque repite la misma imagen: la unidad se mantiene en los 7 formatos. Solo pierde nota por el sombreado gris y porque el acento se reduce a puntos.\n\nEntre las parejas de imágenes distintas gana la 4 (A1): trazo idéntico, vista isométrica y mismo tono. Sirve tal cual en P02, T3, U2 y AB2, y con ajustes en T1, T6 y T2, por los muros en U y la retícula gris.\n\nLa 1 (MO) mantiene los objetos, el grosor medido y el acento, pero su apaisada es oblicua y abocetada: es un ajuste, no un veto. La 2 (NB1) cambia a alzado frontal y su principal se ve más gruesa (4,8 px contra 2,9 px). La 5 (A3) es más pálida y transparente.\n\nNo sirven la 3, por la geometría imposible y los rellenos negros, ni las parejas cruzadas 6 y 8, que unen familias distintas: planos turquesa grandes contra planta o red de nodos.\n\nNo llamé a Magnific, no gasté créditos y no escribí archivos.",
+   "oficio": "Por oficio gana la opción 4 (A1, fondos p1 y a1): isometría coherente, uniones limpias, sin artefactos y el mismo trazo fino en la principal y la apaisada. Sirve en los 7 formatos; en el 9:16 la trama no tiene protagonista, pero como es un tipo de pieza nuevo eso cuenta como señal, no como veto.\n\nLa opción 5 comparte la principal, pero su apaisada (a2) es de línea capilar con la retícula pasando por dentro de los objetos. Sirve con ajustes en T1, T6 y T2.\n\nEn el camino B, la mejor es la 1 (Magnific One). La principal está a la altura del 9:16 y sirve en P02, T3, U2 y AB2, aunque al pilar del fondo le falta el tramo inferior. La apaisada es un boceto (líneas dobles, extremo sin resolver, ejes que no son paralelos), así que T1, T6 y T2 sirven con ajustes; conviene pedir otra apaisada con variantes.\n\nNano Banana 2.1 dibuja más nítido pero con trazo más grueso, y su acento no muestra el choque:\n- Opción 2: su apaisada mezcla proyecciones y corta la tubería en tramos. Sirve con ajustes en todos los formatos.\n- Opción 3: sirve con ajustes en P02, T3, U2 y AB2, y no sirve en T1, T6 ni T2 porque su apaisada tiene un error de proyección: la losa se fuga hacia ambos lados.\n\nLos rescates no sirven tal cual:\n- Opciones 6 y 8: el recorte de G-AFI-04 arrastra la línea divisoria turquesa del original y halos de la ampliación.\n- Opción 6: además, la planta de H063 trae cotas ilegibles generadas por la IA.\n- Opción 7: H021 está fuera de la familia de trazo fino.",
+   "costuras": "Lente de costuras. En las tres opciones B (1, 2 y 3) el fondo extendido no tiene escalón (0 niveles en la costura) ni rectángulo, ningún acento turquesa toca el borde y las 4 cruces no chocan con el dibujo. Sirven en los 7 formatos. Entre ellas mi lente casi no ve diferencia: elijo la 1 porque solo extiende el fondo en T6, y la 2 queda empatada.\n\nEl camino A pierde las cruces sobre la imagen en todos los formatos (motor 0.3o, contra el criterio de David). A1 (4) y R2 (7) sirven con ajustes en los 7 formatos: devolver las cruces. A3 (5) sirve con ajustes, y en T2 y T6 además corta vigas turquesa.\n\nR1 (6) y R3 (8) no sirven en vertical, historia ni en los dos LinkedIn: hay planos turquesa cortados, la máscara queda 9 a 12 % turquesa y un filete turquesa vertical se lee como costura. En cuadrados y slide sirven con ajustes.\n\nEl método de recorte óptimo, que David aún no valida, funcionó en A1 pero no evitó los cortes en A3 ni en R1/R3. No escribí archivos ni gasté créditos."
+  }
+ },
+ {
+  "galeria": "M01",
+  "rubrica": "imagenes-lectura-ciega",
+  "jueces": "2",
+  "david": [],
+  "cita": "n9o me gistó ninguna",
+  "resumenes": {
+   "lectura_ciega": "1: acierta; 2: acierta; 3: acierta; 4: acierta"
+  }
+ },
+ {
+  "galeria": "M01",
+  "rubrica": "imagenes-pred-crit-a",
+  "jueces": "1",
+  "david": [],
+  "cita": "n9o me gistó ninguna",
+  "resumenes": {
+   "prediccion": "Predigo que David elige la 1. Es la única que cuenta la premisa completa como transformación visual: el volumen opaco atraviesa el marco de revisión, queda a la vista su estructura y salen tres piezas turquesa que nadie ha decidido todavía. Es el tipo de abstracción que David elogió en G28, en la línea isométrica fina y con la composición más compleja. Por formato, la principal 16:9 sirve. La apaisada 21:9 necesita ajustes: cambia de vista, el marco no se lee y el acento queda pegado al borde. Falta además asegurar que el recorte no corte las piezas turquesa. La 2 queda muy cerca: tiene la metáfora más legible (la canica espera en la compuerta) y la mejor apaisada, pero solo cuenta la decisión, no tiene relación con la obra y lleva textura de madera. La 4 funciona más como fondo de marca que como idea y le sobra turquesa. La 3 es un hecho técnico literal y no sirve tal cual."
+  }
+ },
+ {
+  "galeria": "M01",
+  "rubrica": "imagenes-pred-crit-b",
+  "jueces": "1",
+  "david": [],
+  "cita": "n9o me gistó ninguna",
+  "resumenes": {
+   "prediccion": "Predigo que David elige la 1. Es la única que cuenta la premisa como una transformación: un volumen opaco pasa por el marco de revisión, queda la estructura a la vista y salen tres piezas turquesa apartadas. Va en la línea isométrica de trazo fino sobre fondo claro con retícula y tiene una composición compleja, lo que David premió en G28 (43–49). La rival cercana es la 2: es la metáfora más nítida de «falta decidir», pero cuenta solo esa mitad, es un juguete y la madera la aparta de la línea, sobre todo en la apaisada. La 4 es más fondo que idea y carga demasiado turquesa sobre un fondo gris. La 3 dibuja un hecho técnico literal y en la principal ni se lee el desfase. Ajustes de la 1: acercar las piezas turquesa al centro para las máscaras de columna, hacer visibles los tres huecos de donde salieron y unificar la vista de la apaisada. Por formato, la 1 sirve en bandas (diapositiva 16:9 y 21:9 con 1a) y en columnas (LinkedIn, 9:16, 4:5) corre riesgo de corte. Confianza media: si David pesa más la claridad que la línea, gana la 2."
+  }
+ },
+ {
+  "galeria": "M01",
+  "rubrica": "metaforas-v1",
+  "jueces": "4",
+  "david": [],
+  "cita": "n9o me gistó ninguna",
+  "resumenes": {
+   "alineacion": "1: FAIL; 2: FAIL; 3: OK; 4: OK",
+   "lectura_ciega": "1: acierta; 2: acierta; 3: falla; 4: acierta"
+  }
+ },
+ {
+  "galeria": "M02",
+  "rubrica": "imagenes-lectura-ciega",
+  "jueces": "4",
+  "david": [],
+  "cita": "me gustó la propuesta artistica, pero aun le falta a las ideas  y la conexion de la iddeas y los graficos",
+  "resumenes": {
+   "lectura_ciega": "1: acierta; 2: falla; 3: falla; 4: acierta"
+  }
+ },
+ {
+  "galeria": "M02",
+  "rubrica": "imagenes-pred-crit-a",
+  "jueces": "4",
+  "david": [],
+  "cita": "me gustó la propuesta artistica, pero aun le falta a las ideas  y la conexion de la iddeas y los graficos",
+  "resumenes": {
+   "prediccion": "Predigo que David elige la 4 (retícula tejida), porque retoma los dos rasgos que sí le engancharon: el campo denso con losas turquesa y la idea de red. Antes de aprobarla hay que reforzar los hilos para que la metáfora se lea en el celular y aplanar las losas claras con aire de resplandor. Le sigue la 1 (bandada): es la más poética, pero su composición de afiche se rompe en los recortes y las aves salen borrosas. La 3 tiene buen oficio, pero queda gris y lavada y repite las placas levantadas. La 2 es literal y no engancha. Hay riesgo de un nuevo «ninguna» si siente que la 4 es solo el fondo de G28 con garabatos."
+  }
+ },
+ {
+  "galeria": "M02",
+  "rubrica": "imagenes-pred-crit-b",
+  "jueces": "1",
+  "david": [],
+  "cita": "me gustó la propuesta artistica, pero aun le falta a las ideas  y la conexion de la iddeas y los graficos",
+  "resumenes": {
+   "prediccion": "Predigo que David elegirá la 1, la bandada que se posa en la obra, y no «ninguna». Es la única idea nueva que engancha: convierte un campo disperso en orden sobre la estructura, se lee sin texto y calza con «la IA entra a la obra». Hay que anotarle dos ajustes: los pájaros borroneados y la composición de afiche, que complica los recortes fuera del 16:9. La 4 queda segunda, porque gusta, pero por ser la retícula ya vista y no por su idea. La 3 es compleja, pero gris y sin IA. La 2 es literal y no sirve."
+  }
+ }
+]

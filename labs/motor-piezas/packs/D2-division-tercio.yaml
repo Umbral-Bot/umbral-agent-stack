@@ -1,0 +1,8 @@
+id: D2
+nombre: "Tercio · texto en 4 de 12 columnas, la imagen manda"
+alternativa: paso1
+paso: division
+hereda: packs/D1-division-mitad.yaml
+decision_david: "G02 2°, 2026-11-06: elegida para el paso 1 («se ve mejor el 2»); pidió más contraste en las letras de abajo a la izquierda"
+valores:
+  division: tercio          # lo único que cambia respecto de D1

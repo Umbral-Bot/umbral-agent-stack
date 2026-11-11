@@ -1,0 +1,66 @@
+{
+ "galeria": "G16",
+ "seccion": null,
+ "rubrica": "pred-sin-b",
+ "retro": true,
+ "criterios_hasta": null,
+ "sellado": "2026-11-11T00:45:38",
+ "hash_rubrica": "2afef7084991",
+ "hash_criterios": "fd98b8707561",
+ "votos": [
+  {
+   "id": "G16-qb-prediccion",
+   "galeria": "G16",
+   "version": "pred-sin-b",
+   "lente": "prediccion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 7.5,
+    "2": 7,
+    "3": 8,
+    "4": 6.5
+   },
+   "hallazgos": [
+    {
+     "opcion": "1",
+     "donde": "cruces superiores, sobre la imagen",
+     "problema": "Las dos cruces de arriba caen sobre la ilustración: la izquierda queda turquesa claro sobre crema y la derecha, turquesa sobre turquesa. Se leen como marcas sueltas, no como marco. Abajo, sobre la banda oscura, sí funcionan.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1",
+     "donde": "llamado 'LEE EL ARTÍCULO · umbralbim.io'",
+     "problema": "En el celular, el llamado en texto turquesa espaciado se lee, pero pesa poco frente a la bajada blanca; el cierre de la pieza queda débil.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "esquinas",
+     "problema": "Quitar las cruces casi no se nota en el feed. Arriba limpia la imagen, pero abajo la pieza pierde el marco técnico que la emparenta con el Preset 01.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "botón turquesa del pie",
+     "problema": "Es el único cambio que se ve en el feed. Cierra el recorrido en Z abajo a la derecha y queda alineado con la etiqueta EJEMPLO. A cambio, suma un tercer acento turquesa fuerte (ARTÍCULO, logo y botón) y parece un botón pulsable en un post estático.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "cruces superiores",
+     "problema": "Hereda las cruces de arriba sobre la imagen, igual que la opción 1.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "4",
+     "donde": "banda de texto",
+     "problema": "En el celular, quitar la trama no cambia nada visible: la pieza se ve igual que la 1° y pierde la textura que la emparenta con el Preset 01, sin ganar legibilidad (el contraste es el mismo, 9,92:1).",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "3",
+   "veredicto": "sirve",
+   "resumen": "Las cuatro piezas comparten contraste (9,92:1), texto mínimo de 11 px y ninguna tiene choques. En el celular, las cruces y la trama son casi invisibles, así que las opciones 1, 2 y 4 se ven prácticamente iguales. La única diferencia que se ve en el feed es el botón de la 3°, que da al pie un cierre claro y conserva los detalles del Preset 01. Predigo que David elige la 3°; la 1° base va segunda. Un detalle común a la 1°, 3° y 4°: las cruces de arriba quedan sobre la imagen y se ven como marcas sueltas."
+  }
+ ]
+}

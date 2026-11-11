@@ -1,0 +1,102 @@
+{
+ "galeria": "G02",
+ "seccion": null,
+ "rubrica": "pred-crit-a",
+ "retro": true,
+ "criterios_hasta": "G02",
+ "sellado": "2026-11-11T00:43:02",
+ "hash_rubrica": "2afef7084991",
+ "hash_criterios": "fd98b8707561",
+ "votos": [
+  {
+   "id": "G02-pca-prediccion",
+   "galeria": "G02",
+   "version": "pred-crit-a",
+   "lente": "prediccion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 7,
+    "2": 4.5,
+    "3": 6,
+    "4": 7.5
+   },
+   "hallazgos": [
+    {
+     "opcion": "4",
+     "donde": "esquina superior derecha, a la derecha del título (x≈1450-2576, y≈0-740 de 2576)",
+     "problema": "El velo sobre la parte clara de la imagen deja una placa gris plana y sin función. Solo la ocupa la etiqueta EJEMPLO. Detrás del título el fondo queda en dos tonos: verde azulado oscuro a la izquierda y gris medio a la derecha.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4",
+     "donde": "borde superior del bloque de imagen (y≈740)",
+     "problema": "El borde del velo corta en horizontal la masa oscura de edificios. Las puntas quedan atenuadas arriba y el cuerpo a plena luz abajo, así que el sujeto se lee cortado. Aun así, el bloque se alinea bien con la primera línea de datos y con la columna 4/12.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4",
+     "donde": "esquina superior izquierda del bloque de imagen, junto al borde derecho de los datos",
+     "problema": "La mancha turquesa más brillante cae justo en la esquina del bloque, pegada a la columna de datos, y tira la mirada hacia ese resplandor.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "4",
+     "donde": "pie, columna izquierda",
+     "problema": "El pie queda encajonado en 4 columnas y el CTA queda muy cerca del logo. Debajo de los datos queda un hueco moderado antes del pie.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1",
+     "donde": "costura vertical en la mitad del lienzo (x≈1304)",
+     "problema": "La columna turquesa y el borde izquierdo de la masa oscura quedan bajo el velo. El sujeto se apoya contra la costura y el tercio derecho de la mitad de imagen queda gris y vacío: el sujeto no queda bien puesto en su máscara.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "entre el subtítulo y los datos (y≈660-850)",
+     "problema": "Queda un hueco vertical sin función entre el bloque del título y las filas de datos. Se afina en el paso 2.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "título",
+     "problema": "El título baja de 176 a 98 px. A tamaño de feed en el celular pierde la jerarquía y la imagen le gana. Es la opción que más se aleja de una pieza legible de un vistazo.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "2",
+     "donde": "8/12 de imagen, centro",
+     "problema": "Es la opción que más deja a la vista la columna turquesa brillante: el resplandor manda en la pieza, y eso choca con el veto de marca contra el brillo.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "columna de texto: hueco subtítulo-datos y pie",
+     "problema": "Queda un hueco grande (y≈600-850) entre el subtítulo, partido en 2 líneas, y los datos. En el pie, el CTA y el logo quedan apretados.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "banda de imagen superior (y≈0-708)",
+     "problema": "La masa oscura queda casi entera bajo la banda de texto y solo asoman las puntas de los edificios. Arriba se ve textura y resplandor turquesa sin sujeto: el objeto queda mal puesto en la máscara, como en la queja anterior de David.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "banda de texto inferior",
+     "problema": "La banda está bien llena: título a la izquierda y datos a la derecha, sin vacíos. Pero el título baja a 143 px y la imagen queda reducida a franja decorativa.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "imagen de fondo (común, no desempata)",
+     "problema": "Es una pintura abstracta texturada con resplandor turquesa, no la línea isométrica plana de Magnific One aprobada como dirección. Queda fijada desde G01 y se anota aparte.",
+     "gravedad": "media"
+    }
+   ],
+   "mejor": "4",
+   "veredicto": "sirve",
+   "resumen": "Predigo la 4 (Ele) por poco sobre la 1 (Mitad). En la 4 el título se queda en 176 px a todo el ancho, la lectura más fuerte en el celular. Además, el bloque de imagen se alinea con la primera línea de datos y con la columna 4/12, justo lo que David pedía para que la imagen no flote. Le juegan en contra la placa gris vacía a la derecha del título y el corte del velo sobre los edificios. La 1 es la base conocida y está limpia, pero apoya el sujeto contra la costura. La 3 esconde el sujeto bajo la banda. La 2 cae: el título baja a 98 px y lo que más se ve es el resplandor turquesa. Aparte, común a todas: la imagen no sigue la línea isométrica aprobada."
+  }
+ ]
+}

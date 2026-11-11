@@ -1,0 +1,53 @@
+{
+ "galeria": "G22",
+ "seccion": null,
+ "rubrica": "pred-sin-a",
+ "retro": true,
+ "criterios_hasta": null,
+ "sellado": "2026-11-11T00:45:38",
+ "hash_rubrica": "2afef7084991",
+ "hash_criterios": "fd98b8707561",
+ "votos": [
+  {
+   "id": "G22-qa-prediccion",
+   "galeria": "G22",
+   "version": "pred-sin-a",
+   "lente": "prediccion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 5.5,
+    "2": 7,
+    "3": 8
+   },
+   "hallazgos": [
+    {
+     "opcion": "1",
+     "donde": "columna izquierda, entre el titular y el botón",
+     "problema": "«Artículo» queda a 32 px del titular, pero el botón está a unos 69 px (1x) del titular. Los tres textos no tienen la misma distancia, que es justo lo que David pidió en G21 al elegir «32 px entre los textos». En el celular, el botón se ve suelto.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "tercio inferior de la columna izquierda",
+     "problema": "El bloque no se apoya en ningún borde. Bajo el botón queda una franja vacía de unos 40 px (1x) antes del margen inferior. El botón deja de estar en la posición al pie que David ya aceptó en G20 4°, y la esquina inferior izquierda se ve vacía.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "entre el logo y «Artículo»",
+     "problema": "Hay un hueco de unos 110 px (1x) que deja el logo solo arriba. Funciona como cabecera, pero la mitad superior de la columna se ve algo vacía.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1, 2 y 3",
+     "donde": "botón «LEE EL ARTÍCULO / umbralbim.io»",
+     "problema": "El relleno vertical del botón es justo y «LEE EL ARTÍCULO» queda casi pegado al borde superior. Es igual en las tres, así que no cambia la elección.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "3",
+   "veredicto": "sirve",
+   "resumen": "Creo que David elegiría la 3. Junta «Artículo», el titular y el botón a 32 px entre sí, que es su criterio de G21, y deja el botón al pie, donde ya lo aceptó en G20 4°. Así el bloque se apoya en el margen inferior y queda alineado con el peso de la ilustración, y el logo funciona como cabecera. La 2 también iguala las distancias, pero el bloque flota y deja vacío abajo. La 1 mantiene el botón lejos del titular, que es lo que esta galería busca corregir. Contraste (9,92:1) y texto mínimo (9,3 px) son iguales en las tres y no deciden."
+  }
+ ]
+}

@@ -1,0 +1,66 @@
+{
+ "galeria": "G16",
+ "seccion": null,
+ "rubrica": "pred-ej-b",
+ "retro": true,
+ "criterios_hasta": "G16",
+ "sellado": "2026-11-11T01:09:47",
+ "hash_rubrica": "b71ce177d875",
+ "hash_criterios": "c375ba4695d4",
+ "votos": [
+  {
+   "id": "G16-ejb-prediccion",
+   "galeria": "G16",
+   "version": "pred-ej-b",
+   "lente": "prediccion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 8,
+    "2": 6.5,
+    "3": 7,
+    "4": 6
+   },
+   "hallazgos": [
+    {
+     "opcion": "4",
+     "donde": "Banda de texto (fondo)",
+     "problema": "Quita la trama de puntos que David eligió para el Preset 01 en G06 («4»). Rompe la familia entre presets, aunque en el celular la diferencia casi no se ve.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "Esquinas del lienzo",
+     "problema": "Quita las cruces que David conservó en G06, porque allí no eligió «Sin cruces». En el celular la diferencia es casi imperceptible y deja la pieza menos coherente con el Preset 01.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "Pie, a la derecha (llamado)",
+     "problema": "El bloque turquesa #2DD4BF ocupa casi la mitad del ancho del pie. El turquesa deja de ser un acento y pasa a ser superficie, en contra de la sobriedad que David eligió en G05. Además repite la mancha turquesa del kicker. No mejora la lectura medida (9,9:1, igual que el llamado en texto); solo le da más peso. En G06 David no eligió el botón.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1, 3 y 4",
+     "donde": "Esquinas superiores, sobre la imagen",
+     "problema": "Defecto común. Las dos cruces de arriba caen sobre la imagen a sangre, no sobre la banda. La de la derecha casi desaparece sobre el turquesa de la ilustración y la de la izquierda se lee como ruido sobre el crema.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "Pieza entera vista a 390 px",
+     "problema": "Defecto común. A tamaño de feed, la 1, la 2 y la 4 se ven prácticamente iguales, porque la trama y las cruces apenas se perciben. La elección entre ellas se decide por coherencia con el Preset 01, no por lo que se ve.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "Pie, a la izquierda (logotipo «Umbral BIM»)",
+     "problema": "Defecto común. El texto del logotipo es el texto más chico de la pieza, con 11,0 px CSS, justo en la referencia mínima para el celular. Se lee, pero sin holgura.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "1",
+   "veredicto": "sirve",
+   "resumen": "Predigo la 1 (Base). Repite el pie y los detalles que David ya eligió para el Preset 01 en G06: cruces y trama de puntos, con logo y llamado en texto. Además, en el Preset 02 David se ha quedado con la base en casi todos los pasos. La 3 es la única que cambia algo visible en el celular y podría atraerle por el peso del llamado. Pero convierte el turquesa en superficie, y en G06 David no eligió el botón. La 2 y la 4 casi no se distinguen de la 1 a tamaño de feed, y cada una quita algo que David conservó o eligió en G06; la 4 queda última porque quita la trama, que él eligió expresamente. Hay dos defectos comunes menores: las cruces superiores caen sobre la imagen y la de la derecha se pierde en el turquesa, y el texto del logotipo queda justo en 11 px CSS."
+  }
+ ]
+}

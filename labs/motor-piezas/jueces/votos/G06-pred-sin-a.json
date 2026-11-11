@@ -1,0 +1,72 @@
+{
+ "galeria": "G06",
+ "seccion": null,
+ "rubrica": "pred-sin-a",
+ "retro": true,
+ "criterios_hasta": null,
+ "sellado": "2026-11-11T00:45:35",
+ "hash_rubrica": "2afef7084991",
+ "hash_criterios": "fd98b8707561",
+ "votos": [
+  {
+   "id": "G06-qa-prediccion",
+   "galeria": "G06",
+   "version": "pred-sin-a",
+   "lente": "prediccion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 7,
+    "2": 6.5,
+    "3": 7.5,
+    "4": 6
+   },
+   "hallazgos": [
+    {
+     "opcion": "1",
+     "donde": "pie del panel de texto, a la derecha del logo",
+     "problema": "El llamado «INSCRÍBETE · umbralbim.io» va en texto chico y espaciado. En el feed del celular se pierde y la pieza no tiene una acción visible.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "panel de texto, entre el subtítulo y la fila 01",
+     "problema": "Queda un vacío alto entre el subtítulo y los datos, que se lee como hueco más que como aire.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1",
+     "donde": "cruces de las esquinas derechas, sobre la imagen clara",
+     "problema": "Sobre el gris claro las cruces casi no se ven, y en el celular ninguna cruz se distingue. El detalle no cambia la lectura.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "extremos de los filetes y esquinas",
+     "problema": "Al quitar las cruces la pieza queda igual a tamaño de feed. Solo de cerca se pierde el guiño técnico de plano. Conserva el mismo llamado débil de la 1°.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "pie del panel, logo solo abajo a la izquierda",
+     "problema": "Con el botón sobre los datos, el logo queda solo y la esquina inferior derecha del panel queda vacía. El pie pierde algo de equilibrio.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "botón turquesa bajo la fila 03",
+     "problema": "En una imagen estática el botón no se puede pulsar y puede leerse como interfaz falsa. Además suma una tercera masa turquesa a «SAVE THE DATE» y al subtítulo.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "4",
+     "donde": "trama de puntos en el fondo del panel de texto",
+     "problema": "En el celular la trama no se percibe. De cerca solo añade ruido detrás del título y no aporta. Conserva el mismo llamado débil de la 1°.",
+     "gravedad": "media"
+    }
+   ],
+   "mejor": "3",
+   "veredicto": "sirve",
+   "resumen": "En el celular, la 1°, la 2° y la 4° se ven idénticas: las cruces y la trama de puntos no llegan a tamaño de feed. La única variante que cambia lo que se ve es la 3°. El bloque turquesa convierte «Inscríbete» en una acción clara y sube los datos, con lo que se acorta el vacío del panel. Predigo que David elige la 3°. La 1° queda muy cerca, como base, si a David el botón le parece demasiado de web. La 4° es la más floja, porque añade ruido sin aportar nada visible."
+  }
+ ]
+}

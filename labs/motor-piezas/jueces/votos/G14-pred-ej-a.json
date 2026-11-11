@@ -1,0 +1,65 @@
+{
+ "galeria": "G14",
+ "seccion": null,
+ "rubrica": "pred-ej-a",
+ "retro": true,
+ "criterios_hasta": "G14",
+ "sellado": "2026-11-11T01:09:46",
+ "hash_rubrica": "b71ce177d875",
+ "hash_criterios": "c375ba4695d4",
+ "votos": [
+  {
+   "id": "G14-eja-prediccion",
+   "galeria": "G14",
+   "version": "pred-ej-a",
+   "lente": "prediccion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 8.5,
+    "2": 6.5,
+    "3": 4
+   },
+   "hallazgos": [
+    {
+     "opcion": "1",
+     "donde": "cruces de registro de las esquinas de arriba",
+     "problema": "Las cruces turquesa caen sobre la imagen: arriba a la izquierda sobre el crema y arriba a la derecha en el borde entre crema y turquesa, y casi no se ven. Conviene quitarlas en la parte de la imagen o pasarlas a la banda.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1",
+     "donde": "borde inferior de la imagen, contra la banda",
+     "problema": "Entre el dibujo y la banda oscura queda una franja crema de unos 50 px que es el margen propio de la imagen. Se lee como un borde intencional, pero de cerca parece un recorte sin ajustar.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "imagen en caja, mitad de arriba",
+     "problema": "Está bien alineada a la grilla (comparte bordes con la columna de texto), pero con el margen y el radio la imagen pierde escala y el robot se lee más chico en el celular. Es la misma alternativa que David descartó en G04 frente al sangrado.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "ilustración isométrica, mitad de arriba",
+     "problema": "Las líneas finas turquesa sobre el fondo oscuro pesan poco a tamaño de feed. La figura flota centrada, rodeada de vacío y desalineada del texto, que va a la izquierda. Muestra «la obra» pero no la IA, y el titular pierde la relación con el dibujo que sí tiene el brazo robótico que construye. David también rechazó la ilustración en G04.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "1, 2",
+     "donde": "imagen (común)",
+     "problema": "El turquesa ocupa grandes áreas como fondo de la imagen, rozando el veto de turquesa como fondo, y el brazo tiene algo de modelado por luz. Es común a ambas opciones y viene de la imagen ya elegida, así que no desempata.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "banda de texto (común)",
+     "problema": "La banda es idéntica en las tres: mínimo de 7,24:1 y texto más chico de 11 px CSS, justo en la referencia del celular. El logo y el llamado van sobre un fondo liso oscuro, así que se leen bien. No hay diferencia que puntuar.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "1",
+   "veredicto": "sirve",
+   "resumen": "Lo único que cambia es cómo ocupa la imagen la parte de arriba. En G04 David enfrentó esta misma disyuntiva (sangrado, caja o ilustración) y eligió el sangrado. La 1 repite esa decisión: la imagen manda a sangre, el brazo robótico se ve grande en el celular y el titular «La IA entra a la obra» se relaciona directo con el dibujo. La 2 está ordenada, pero achica la imagen. La 3 se ve débil a tamaño de feed, flota en el vacío y pierde la metáfora de la IA. Ajustes menores en la 1: las cruces que caen sobre la imagen y la franja crema del borde."
+  }
+ ]
+}

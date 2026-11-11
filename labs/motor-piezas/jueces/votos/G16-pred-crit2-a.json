@@ -1,0 +1,72 @@
+{
+ "galeria": "G16",
+ "seccion": null,
+ "rubrica": "pred-crit2-a",
+ "retro": true,
+ "criterios_hasta": "G16",
+ "sellado": "2026-11-11T00:51:30",
+ "hash_rubrica": "b71ce177d875",
+ "hash_criterios": "11070cf84d18",
+ "votos": [
+  {
+   "id": "G16-raa-prediccion",
+   "galeria": "G16",
+   "version": "pred-crit2-a",
+   "lente": "prediccion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 8,
+    "2": 7.5,
+    "3": 6,
+    "4": 7
+   },
+   "hallazgos": [
+    {
+     "opcion": "3",
+     "donde": "Pie de la banda, llamado «LEE EL ARTÍCULO · umbralbim.io»",
+     "problema": "El bloque turquesa lleno es la mancha más brillante de la banda a tamaño de feed: le quita la mirada al titular y usa el turquesa como relleno en vez de como acento. El panel pierde sobriedad y el pie queda con aire de botón genérico. Se lee bien (9,9:1), pero David no elige el llamado más llamativo cuando todas las opciones ya se leen.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "Esquinas del lienzo",
+     "problema": "Al quitar las cruces se pierde el marco técnico que une la pieza con el Preset 01. A tamaño de celular casi no se nota, pero la pieza queda un poco más genérica.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "4",
+     "donde": "Fondo de la banda de texto",
+     "problema": "Sin la trama de puntos, la banda queda plana y se aparta del Preset 01. La trama no afectaba la lectura, porque el mínimo medido es de 9,92:1 sobre el fondo real; quitarla solo resta carácter.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1",
+     "donde": "Cruces superiores sobre la imagen",
+     "problema": "Las dos cruces de arriba caen sobre la imagen, y la derecha queda justo en el borde entre la franja crema y el turquesa. De cerca se ven como marcas sueltas. Es un detalle que también tienen la 3 y la 4.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "Logo «Umbral BIM», abajo a la izquierda",
+     "problema": "Es un defecto común a las cuatro opciones, así que no entra en la elección. El nombre del logotipo se ve muy chico a tamaño de feed: se estima en unos 7 px CSS a 390 px de vista, por debajo de la referencia de 11 px. El contraste está bien, pero el logo cuenta como texto chico.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "todas",
+     "donde": "Titular en la banda",
+     "problema": "Es un defecto común y ya está fijado en pasos anteriores. Como el alto obliga a reducir el titular a 156 px, deja cerca de un cuarto de la banda vacío a la derecha.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "Imagen",
+     "problema": "Es un defecto común. La imagen tiene un campo turquesa grande de fondo y grano marcado. Conviene vigilarlo frente al veto de turquesa como fondo y frente a la línea isométrica plana de referencia, aunque el código la da como conforme a UB-3.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "1",
+   "veredicto": "sirve",
+   "resumen": "Las opciones 1, 2 y 4 casi no se distinguen en el celular, mientras que la 3 cambia la lectura del pie. Predigo la 1, la base. Conserva las cruces y la trama, que dan carácter y la ligan al Preset 01 sin afectar la lectura (9,92:1; 11 px). La 2 y la 4 simplifican sin ganar nada visible, y la 4 resta un poco más de carácter. La 3 sirve con ajustes: el bloque turquesa compite con el titular y rompe la sobriedad del acento. Hay un defecto común que conviene anotar aparte: el nombre del logo se ve muy chico en el feed."
+  }
+ ]
+}

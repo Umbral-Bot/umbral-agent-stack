@@ -1,0 +1,65 @@
+{
+ "galeria": "G15",
+ "seccion": null,
+ "rubrica": "pred-crit2-b",
+ "retro": true,
+ "criterios_hasta": "G15",
+ "sellado": "2026-11-11T00:51:30",
+ "hash_rubrica": "b71ce177d875",
+ "hash_criterios": "11070cf84d18",
+ "votos": [
+  {
+   "id": "G15-rab-prediccion",
+   "galeria": "G15",
+   "version": "pred-crit2-b",
+   "lente": "prediccion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 8,
+    "2": 7,
+    "3": 4.5
+   },
+   "hallazgos": [
+    {
+     "opcion": "3",
+     "donde": "bajada gris sobre el panel claro",
+     "problema": "Mide 4,63:1, justo en el rango de 4,6 a 6,3:1 que David ya vio flojo. En el celular la bajada se ve lavada frente a la banda oscura de la 1° y la 2°.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "3",
+     "donde": "kicker «Artículo», llamado y «BIM» del logo",
+     "problema": "Con el tema claro, el turquesa de marca pasa a verde oscuro en el kicker y el llamado, y la pieza pierde carácter. El «BIM» turquesa del logo sobre el fondo casi blanco se ve con poco contraste; lo juzgo a ojo, sin medida.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "corte entre la imagen y la banda",
+     "problema": "El margen crema de abajo de la ilustración casi se funde con el panel claro. La división imagen/texto se ve menos nítida que con la banda oscura.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "bajada blanca (15,8:1)",
+     "problema": "Con el titular y la bajada del mismo blanco, la bajada deja de verse claramente secundaria (G13). Además, la 1° ya pasaba el contraste en fondo liso, así que la más legible no gana solo por eso (criterio 22). La jerarquía se sostiene igual por el tamaño.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "bordes superior e inferior de la ilustración",
+     "problema": "Es un defecto común y no desempata. La ilustración trae su propio margen crema arriba y abajo: arriba no llega limpia al borde, y abajo deja una franja crema fina antes de la banda.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "esquinas y etiqueta «EJEMPLO»",
+     "problema": "Es común a todas. Las cruces de registro y la etiqueta «EJEMPLO» son marcas del laboratorio y hay que quitarlas antes de publicar.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "1",
+   "veredicto": "sirve",
+   "resumen": "Creo que David elegiría la 1°. La banda oscura separa bien la imagen del texto y conserva el turquesa de marca en el kicker y el llamado. La bajada gris, a 7,2:1 sobre fondo liso, se lee bien y queda claramente secundaria; es la opción más sobria y con más carácter. La 2° queda cerca porque David suele pedir más contraste, pero la bajada blanca aplana un poco la jerarquía sin necesidad. La 3° no sirve tal cual: la bajada a 4,6:1 cae en el rango que David ya vio flojo, la pieza pierde el turquesa y la imagen se funde con el panel."
+  }
+ ]
+}

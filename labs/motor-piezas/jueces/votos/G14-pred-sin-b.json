@@ -1,0 +1,71 @@
+{
+ "galeria": "G14",
+ "seccion": null,
+ "rubrica": "pred-sin-b",
+ "retro": true,
+ "criterios_hasta": null,
+ "sellado": "2026-11-11T00:45:37",
+ "hash_rubrica": "2afef7084991",
+ "hash_criterios": "fd98b8707561",
+ "votos": [
+  {
+   "id": "G14-qb-prediccion",
+   "galeria": "G14",
+   "version": "pred-sin-b",
+   "lente": "prediccion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 6.5,
+    "2": 7.5,
+    "3": 4.5
+   },
+   "hallazgos": [
+    {
+     "opcion": "1",
+     "donde": "borde superior e inferior de la imagen",
+     "problema": "La imagen generada trae su propio margen crema: arriba una franja de ~60 px y abajo otra justo antes de la banda oscura. No se ve a sangre: parece un marco accidental y deja un corte crema-negro duro sobre «ARTÍCULO».",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "esquinas superiores",
+     "problema": "Las marcas de cruz de las esquinas superiores quedan sobre la imagen (la izquierda sobre crema, la derecha en el borde turquesa). Casi no se ven y rompen el marco técnico que sí se lee abajo, sobre el fondo oscuro.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "unión de la caja con la banda",
+     "problema": "Entre la caja y «ARTÍCULO» quedan unos 48 px, frente a los ~129 px del margen superior y lateral. La imagen queda pegada al bloque de texto y el reparto vertical no es parejo.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "imagen dentro de la caja",
+     "problema": "El margen crema propio de la imagen dentro de la caja con radio forma un doble marco. Se lee como un passe-partout intencional, pero la imagen pierde algo de tamaño e impacto en el feed frente a la opción 1.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "ilustración isométrica (mitad superior)",
+     "problema": "Las líneas turquesa de unos 2 px sobre el fondo oscuro se pierden a tamaño de feed (390 px). La mitad superior queda casi vacía y la pieza no detiene el scroll.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "contenido de la imagen",
+     "problema": "Es un edificio genérico de marca y no cuenta la noticia (la IA que entra a la obra). En un post de noticia se pierde el gancho visual que sí da el brazo robótico.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "cota bajo el rombo base",
+     "problema": "La línea de cota horizontal cruza el rombo de la base en vez de quedar fuera. Parece un error de dibujo.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "2",
+   "veredicto": "sirve",
+   "resumen": "Elijo la opción 2: la caja usa el mismo margen izquierdo que el texto (grilla), las cuatro cruces de esquina quedan sobre el fondo oscuro y la pieza se ve terminada y técnica, en la línea de la banda que David eligió en G12. La 1 tiene más impacto, pero el margen crema de la imagen hace que no se vea a sangre y deja un corte duro con la banda. La 3 es de marca, pero en el celular se ve débil y no cuenta la noticia. Ajuste menor en la 2: dar más aire entre la caja y «ARTÍCULO»."
+  }
+ ]
+}

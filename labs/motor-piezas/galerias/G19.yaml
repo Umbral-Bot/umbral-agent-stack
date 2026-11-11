@@ -1,0 +1,64 @@
+id: G19
+fecha: 2026-11-10
+titulo: "Galería 19 · tono de la bajada y distribución del texto en LinkedIn"
+descripcion: >
+  David eligió las dos alternativas de G18 («me gusta que esten ambas alternativas, hariuia un
+  prset sin bajada y uno con bajada»): el Preset 02 queda con bajada y sale un preset sin
+  bajada. Esta galería trae los dos ajustes que pidió. Arriba, el tono de la bajada en el 1:1
+  (G18 1°), con la hoja 01_detalle.jpg. Abajo, la posición y la distribución del texto en
+  LinkedIn, tres opciones para cada preset; las tres llevan más margen (64 px en vez de 36).
+  Laboratorio: no publicar.
+resumen: >
+  El tono de la bajada (1° a 4°) y tres distribuciones del texto en LinkedIn, con bajada (5° a 7°)
+  y sin bajada (8° a 10°).
+como_elegir: >
+  Elige un tono (1° a 4°) y una distribución para cada preset (por ejemplo «3, 6 y 9»).
+contenido: contenido/articulo-ejemplo.yaml
+detalle:
+  titulo: "DETALLE · TONO DE LA BAJADA"
+  recorte: [0, 420, 1080, 940]
+  secciones: [p02-tono-bajada]
+secciones:
+  - alternativa: p02-tono-bajada
+    titulo: "Con bajada · tono de la bajada (1:1, 1080×1080)"
+    descripcion: >
+      Pedido de David sobre G18 1°: «al 1 le falta que la bajada este en un tono un poquiiito gris
+      para diferenciar deltitulo». La marca no tiene un token entre el blanco de texto
+      (--ub-text) y el gris (--ub-text-muted): la 2° y la 3° usan el blanco con opacidad.
+    pasos:
+      - "Blanca, como en G18 1° (referencia)"
+      - "Apenas gris: el blanco al 90 %"
+      - "Un poco gris: el blanco al 80 %"
+      - "El gris de texto de la marca (el de G15 1°, que antes quedó atrás frente a la blanca)"
+    piezas:
+      - packs/V1-noticia-1x1-bajada-blanca.yaml
+      - packs/V2-noticia-1x1-bajada-90.yaml
+      - packs/V3-noticia-1x1-bajada-80.yaml
+      - packs/V4-noticia-1x1-bajada-gris-marca.yaml
+  - alternativa: p02-linkedin-distribucion
+    titulo: "Con bajada · LinkedIn (1200×627), pensada para computador"
+    descripcion: >
+      Pedido de David sobre G18 4°: «les falta diseño grafico, encuanto posicion y distribución
+      de los textos en el espacio». Las tres llevan 64 px de margen, el logo más grande y la
+      bajada en líneas parejas.
+    pasos:
+      - "Al centro: el bloque a media altura y el logo abajo"
+      - "Arriba y abajo: el mensaje arriba; botón y logo en la misma línea abajo"
+      - "Logo arriba: marca arriba, el texto al medio y el botón abajo"
+    piezas:
+      - packs/W1-noticia-linkedin-centro.yaml
+      - packs/W2-noticia-linkedin-arriba-abajo.yaml
+      - packs/W3-noticia-linkedin-logo-arriba.yaml
+  - alternativa: sin-bajada-linkedin-distribucion
+    titulo: "Sin bajada · LinkedIn (1200×627), pensada para celular"
+    descripcion: >
+      Las mismas tres distribuciones sobre G18 5°. En la 9° el logo queda en el mínimo para que
+      el botón quepa a su lado.
+    pasos:
+      - "Al centro: el bloque a media altura y el logo abajo"
+      - "Arriba y abajo: el mensaje arriba; botón y logo en la misma línea abajo"
+      - "Logo arriba: marca arriba, el titular al medio y el botón abajo"
+    piezas:
+      - packs/X1-noticia-linkedin-centro.yaml
+      - packs/X2-noticia-linkedin-arriba-abajo.yaml
+      - packs/X3-noticia-linkedin-logo-arriba.yaml

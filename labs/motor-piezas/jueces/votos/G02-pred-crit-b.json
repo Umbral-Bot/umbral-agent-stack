@@ -1,0 +1,102 @@
+{
+ "galeria": "G02",
+ "seccion": null,
+ "rubrica": "pred-crit-b",
+ "retro": true,
+ "criterios_hasta": "G02",
+ "sellado": "2026-11-11T00:43:02",
+ "hash_rubrica": "2afef7084991",
+ "hash_criterios": "fd98b8707561",
+ "votos": [
+  {
+   "id": "G02-pcb-prediccion",
+   "galeria": "G02",
+   "version": "pred-crit-b",
+   "lente": "prediccion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 6.5,
+    "2": 3.5,
+    "3": 5,
+    "4": 6.8
+   },
+   "hallazgos": [
+    {
+     "opcion": "4",
+     "donde": "Zona superior derecha, al lado del título (x>2100, y<1103)",
+     "problema": "El velo oscuro sobre la parte gris clara de la imagen deja un plano gris turbio de cerca de un tercio del lienzo, donde solo está la etiqueta EJEMPLO. En el feed se ve sucio y sin función.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4",
+     "donde": "Borde superior de la ventana de imagen (y=1103, x=1338)",
+     "problema": "Está bien anclada: el borde superior coincide con la primera regla de datos y el izquierdo con la columna 4/12; además llega al borde del lienzo. Pero la masa oscura sigue por encima, bajo el velo, y se nota la costura entre la imagen velada y la imagen limpia.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "4",
+     "donde": "Columna de datos, entre la última regla (y≈1655) y el pie (y≈1980)",
+     "problema": "Queda un vacío de unos 300 px bajo los datos. Toca la hipótesis de los vacíos sin función bajo los datos, aunque el reparto vertical se ajusta en el paso 2.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1",
+     "donde": "Columna de texto, entre el subtítulo (y≈1000) y la primera regla de datos (y≈1275)",
+     "problema": "Hay un hueco de unos 270 px sin función. El título baja a 149 px frente a los 176 px de la 4°, así que en el celular tiene menos fuerza que la Ele.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1",
+     "donde": "Mitad derecha (x>1943)",
+     "problema": "La mitad de imagen es casi toda gris claro y blanca, con el sujeto oscuro al centro. El corte duro claro/oscuro en x=1943 parte la pieza en dos bloques que se relacionan poco entre sí.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "Título y subtítulo en la columna 4/12",
+     "problema": "El título baja de 176 a 98 px (un 44 % menos) y el subtítulo se parte en dos líneas. En el celular pierde la jerarquía que David ya había elegido.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "2",
+     "donde": "Pie (logo y CTA)",
+     "problema": "El logo y «INSCRÍBETE · umbralbim.io» quedan casi pegados en una columna de 581 px.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "Imagen en 8/12 columnas",
+     "problema": "Al dar dos tercios a la imagen, el resplandor cian brillante pasa a ser el protagonista, justo lo que vetan las reglas de brillo/resplandor y turquesa dominante.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "Entre el subtítulo (y≈900) y los datos (y≈1275)",
+     "problema": "Hay un vacío vertical de unos 370 px en la columna angosta.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "Banda de texto desde y=1055 (49 %) con velo de 0,77",
+     "problema": "La banda tapa la masa oscura, que es el sujeto de la imagen. Arriba queda solo textura y resplandor cian, y la imagen pierde su sujeto.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "Título a la izquierda y datos a la derecha dentro de la banda",
+     "problema": "La lectura se reparte en horizontal. En un 16:9 visto en el celular, los datos quedan lejos del título y se ven más chicos.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "Imagen base (heredada de la 12° de G01)",
+     "problema": "Es una pintura abstracta tipo grunge con resplandor cian y zonas casi blancas, no la línea isométrica plana de Magnific One aprobada como referencia, y choca con el veto de brillo/resplandor. Es común a las cuatro opciones; no la uso para desempatar.",
+     "gravedad": "media"
+    }
+   ],
+   "mejor": "4",
+   "veredicto": "sirve con ajustes",
+   "resumen": "Predigo que David elegiría la 4° (Ele), aunque la 1° queda muy cerca. La Ele tiene el título más grande (176 px, sin reducir), el que mejor se lee en el celular, y una ventana de imagen anclada a la grilla: su borde superior coincide con la primera regla de datos y el izquierdo con la columna 4/12, y llega a los bordes del lienzo. Le falta corregir la zona gris turbia junto al título. La 1° (Mitad, la base que él ya eligió) está limpia y equilibrada, pero el título es más chico y queda un hueco sobre los datos. La 3° (Banda) tapa el sujeto con el velo y deja arriba solo textura. La 2° (Tercio) achica el título un 44 %, aprieta el pie y deja que domine el resplandor cian."
+  }
+ ]
+}

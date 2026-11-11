@@ -1,0 +1,53 @@
+id: G18
+fecha: 2026-11-09
+titulo: "Galería 18 · el Preset 02 en más formatos"
+descripcion: >
+  El post de noticia (Preset 02, 4:5) llevado a 1:1, historia 9:16, LinkedIn y diapositiva 16:9.
+  Se mantienen la banda abajo, la bajada blanca y el llamado como botón; en LinkedIn la banda
+  deja el titular muy chico, así que se usa una columna. Lo que se decidió para los formatos del
+  Preset 01 (por ejemplo, LinkedIn pensado para computador) no se da por hecho: se vuelve a
+  mostrar. Laboratorio: no publicar.
+resumen: >
+  El Preset 02 en 1:1, 9:16, LinkedIn y 16:9. En 1:1 y LinkedIn hay dos opciones; en 9:16 y 16:9,
+  una.
+como_elegir: >
+  Elige una opción por formato (por ejemplo «1, 4») y dime qué cambiarías. Con eso el Preset 02
+  queda en todos sus formatos.
+contenido: contenido/articulo-ejemplo.yaml
+secciones:
+  - alternativa: 1x1
+    titulo: "1:1 · cuadrado (1080×1080)"
+    descripcion: >
+      Feed de Instagram o LinkedIn, visto en el celular.
+    pasos:
+      - "Banda en 5 de 8 filas: imagen arriba, titular y bajada abajo"
+      - "Banda en la mitad, sin bajada: la imagen gana y el titular crece"
+    piezas:
+      - packs/T1-noticia-1x1-banda.yaml
+      - packs/T2-noticia-1x1-sin-bajada.yaml
+  - alternativa: 9x16
+    titulo: "9:16 · historia (1080×1920)"
+    descripcion: >
+      Historia de Instagram o LinkedIn, visto en el celular.
+    pasos:
+      - "Banda en 3 de 8 filas: la imagen ocupa más de la mitad, titular y bajada abajo"
+    piezas:
+      - packs/T3-noticia-historia.yaml
+  - alternativa: linkedin
+    titulo: "LinkedIn · imagen de enlace (1200×627)"
+    descripcion: >
+      Al compartir el enlace del artículo. Columna en la mitad con la imagen a la derecha.
+    pasos:
+      - "Pensada para computador: titular, bajada y botón"
+      - "Pensada para celular: sin bajada; el botón va en dos líneas"
+    piezas:
+      - packs/T4-noticia-linkedin-computador.yaml
+      - packs/T5-noticia-linkedin-celular.yaml
+  - alternativa: 16x9
+    titulo: "16:9 · diapositiva (1920×1080)"
+    descripcion: >
+      Para presentar el artículo en una charla, vista en notebook.
+    pasos:
+      - "Banda en la mitad: imagen arriba, titular y bajada abajo"
+    piezas:
+      - packs/T6-noticia-slide.yaml

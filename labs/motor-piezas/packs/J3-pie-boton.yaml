@@ -1,0 +1,8 @@
+id: J3
+nombre: "Llamado como botón · bloque turquesa con el texto en el color del fondo (9,9:1)"
+alternativa: paso5
+paso: pie
+hereda: packs/J1-pie-base.yaml
+decision_david: null
+valores:
+  cta_estilo: boton

@@ -1,0 +1,30 @@
+id: G23
+fecha: 2026-11-10
+titulo: "Galería 23 · LinkedIn sin bajada con el botón más chico"
+descripcion: >
+  Elección de David en G22: «1 peor el boton mas pequeño» (la 1°, con el botón más chico). Se
+  mantiene la 1° de G22, con 32 px entre «Artículo» y el titular y el botón al pie de la columna.
+  Aquí solo cambia el tamaño del botón. Laboratorio: no publicar.
+resumen: >
+  La 1° de G22 con el texto del botón un 12 % más chico (1°), un 24 % más chico (2°) y un 24 %
+  más chico con menos relleno (3°).
+como_elegir: >
+  Elige una del 1° al 3°. La hoja 01_detalle.jpg muestra la columna de texto más grande.
+contenido: contenido/articulo-ejemplo.yaml
+detalle:
+  titulo: "DETALLE · COLUMNA DE TEXTO"
+  recorte: [0, 0, 640, 627]
+  secciones: [sin-bajada-linkedin-boton]
+secciones:
+  - alternativa: sin-bajada-linkedin-boton
+    titulo: "Sin bajada · LinkedIn (1200×627), la 1° de G22 con el botón más chico"
+    descripcion: >
+      En la 1° de G22 el botón medía 301×74 px. El titular se mantiene en 102 px en las tres.
+    pasos:
+      - "El texto del botón un 12 % más chico; el mismo relleno"
+      - "El texto del botón un 24 % más chico; el mismo relleno"
+      - "El texto un 24 % más chico y un módulo menos de relleno"
+    piezas:
+      - packs/AB1-noticia-linkedin-sin-bajada-boton-75.yaml
+      - packs/AB2-noticia-linkedin-sin-bajada-boton-65.yaml
+      - packs/AB3-noticia-linkedin-sin-bajada-boton-65-ajustado.yaml

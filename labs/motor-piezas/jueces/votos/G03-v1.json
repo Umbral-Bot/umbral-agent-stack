@@ -1,0 +1,171 @@
+{
+ "galeria": "G03",
+ "seccion": null,
+ "rubrica": "v1",
+ "retro": true,
+ "criterios_hasta": null,
+ "sellado": "2026-11-11T00:00:24",
+ "hash_rubrica": "de3f9cdef0fe",
+ "hash_criterios": "-",
+ "votos": [
+  {
+   "id": "G03-v1-jerarquia",
+   "galeria": "G03",
+   "version": "v1",
+   "lente": "jerarquia",
+   "puntajes": {
+    "1": 6,
+    "2": 6.5,
+    "3": 6,
+    "4": 7.5
+   },
+   "hallazgos": [
+    {
+     "opcion": "1, 2 y 3",
+     "donde": "Pie del panel izquierdo, 'INSCRÍBETE · umbralbim.io' junto al logo",
+     "problema": "El llamado tiene el mismo tamaño que las etiquetas (14 px CSS) y comparte la línea con el logo, así que no se destaca como acción. En la hoja numerada, a tamaño de feed, casi no se lee.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "todas",
+     "donde": "Imagen, columna de cian brillante pegada al panel (x≈1640-1940 px reales, a la altura de los datos)",
+     "problema": "Es el punto más luminoso de la pieza y está justo al lado del bloque de texto, así que en un scroll rápido el ojo llega ahí antes que al título. El título sigue ganando por tamaño y contraste, pero la imagen le disputa la primera mirada. Este paso no cambia la imagen, pero conviene tenerlo presente.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "Hueco entre el subtítulo y la primera fila de datos (≈380 px reales)",
+     "problema": "El vacío parte el panel en dos bloques: arriba el título y abajo datos más pie. Así los datos parecen parte del pie y no una consecuencia del título.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "Subtítulo en una línea, 'TALLER PRÁCTICO · UMBRAL BIM'",
+     "problema": "Llega a ≈60 px reales del borde del panel, mientras el margen izquierdo mide ≈130 px. Queda apretado contra la imagen y descompensado. Además, el hueco sobre los datos crece y repite el corte de la opción 1.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "Tercio superior del panel (y≈190-510 px reales, solo con la etiqueta EJEMPLO)",
+     "problema": "El título pierde su arranque arriba a la izquierda y todo el texto se aprieta abajo: entre el subtítulo y la regla de datos quedan ≈80 px. El aire de arriba se lee más como un hueco que como una pausa intencional.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "4",
+     "donde": "Subtítulo 'TALLER PRÁCTICO / UMBRAL BIM' más grande y en turquesa",
+     "problema": "Al crecer un 29 %, el subtítulo pasa a ser el segundo elemento más fuerte y acorta el salto respecto del título. El título sigue mandando, pero la distancia entre los dos niveles es menor que en las otras opciones.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "4",
+     "donde": "Logo solo en el pie (isotipo ≈105 px reales y texto 'Umbral BIM' chico)",
+     "problema": "Legible y sin choques. En móvil el texto del logotipo queda en el límite, aunque en las otras tres opciones pasa lo mismo.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "4",
+   "veredicto": "sirve",
+   "resumen": "En las cuatro opciones el título manda sobre la imagen, porque va en blanco, a 98 px y sobre el panel oscuro. Lo que las distingue es el llamado. En la 1, la 2 y la 3 queda en 14 px, pegado al logo e indistinguible de las etiquetas, y a tamaño de feed casi no se lee. La 4 lo saca a su propia línea bajo los datos y sube el texto mínimo a 18 px. Así el orden se lee completo: kicker, título, subtítulo, datos, llamado y logo, y el logo queda solo y limpio. A cambio, el subtítulo se acerca un poco al título. La 2 da más peso a los datos, pero aprieta el subtítulo contra el borde y conserva el hueco de la 1. La 3 agrupa bien el texto, aunque deja un vacío arriba que parece error. Elijo la 4. La imagen no cambia en este paso, pero ojo con el brillo cian pegado al panel: compite con el título por la primera mirada en todas las opciones."
+  },
+  {
+   "id": "G03-v1-posicion",
+   "galeria": "G03",
+   "version": "v1",
+   "lente": "posicion",
+   "puntajes": {
+    "1": 6,
+    "2": 5.5,
+    "3": 5.5,
+    "4": 6.5
+   },
+   "hallazgos": [
+    {
+     "donde": "Imagen, borde con el panel (x≈1338, y≈1430–1900 de 2160), en las 4 opciones",
+     "problema": "La base oscura de la masa queda pegada al corte del tercio: luminancia 3–22 justo en el borde, contra 32 del panel. La silueta se corta en la línea del panel en lugar de terminar dentro de la zona de imagen. No lo cuento como veto: es una mancha abstracta sin contorno y el foco (haz cian y torre) se ve entero. Igual roza el veto si se lee como objeto.",
+     "gravedad": "media",
+     "opcion": "1, 2, 3, 4"
+    },
+    {
+     "donde": "Imagen, encuadre de la masa en la zona derecha (x 1338–3840), en las 4 opciones",
+     "problema": "La masa está descentrada hacia abajo y hacia el panel. El centroide oscuro está en x≈2237, 352 px a la izquierda del centro de la zona (2589), y en y≈1441, contra el centro en 1080. A la derecha quedan unos 840 px de gris vacío (x 3000–3840) y a la izquierda 0 px. Arriba hay unos 720 px de aire y abajo unos 200 px. Los márgenes no quedan parejos.",
+     "gravedad": "media",
+     "opcion": "1, 2, 3, 4"
+    },
+    {
+     "donde": "Imagen, acento cian (centroide x≈1766, y≈968)",
+     "problema": "El acento está a 428 px del panel, a un 17 % del ancho de la zona. Si su destino es hacer de puente con el texto, sirve. Si se buscaba el acento al centro, está corrido a la izquierda.",
+     "gravedad": "baja",
+     "opcion": "1, 2, 3, 4"
+    },
+    {
+     "donde": "Panel, subtítulo en una línea (y≈700–800)",
+     "problema": "«TALLER PRÁCTICO · UMBRAL BIM» termina en x=1272, a 66 px del corte con la imagen, mientras el margen izquierdo es de 130 px. El margen queda desparejo y el texto se arrima al borde de la imagen.",
+     "gravedad": "baja",
+     "opcion": "2"
+    },
+    {
+     "donde": "Panel, reparto vertical",
+     "problema": "Al apoyar todo el texto abajo, quedan 352 px vacíos bajo EJEMPLO. El kicker empieza en y=523 y el texto termina a 130 px del borde inferior, así que el bloque no queda centrado en el panel.",
+     "gravedad": "baja",
+     "opcion": "3"
+    },
+    {
+     "donde": "Panel, hueco entre subtítulo y datos (y 894–1263)",
+     "problema": "Este hueco de 369 px es el mayor del panel. El bloque de texto se parte en dos masas en vez de repartirse parejo. En la opción 4 el mayor hueco es de 136 px.",
+     "gravedad": "baja",
+     "opcion": "1"
+    }
+   ],
+   "mejor": "4",
+   "veredicto": "sirve con ajustes",
+   "resumen": "Comparé píxel a píxel la zona de imagen de las 4 opciones y es idéntica: 0 píxeles distintos a la derecha de x=1345. Desde la posición del objeto, las 4 empatan. La masa no queda cortada por la máscara de forma grave, pero está descentrada hacia abajo y hacia el panel. Su base oscura toca el corte del tercio (y≈1430–1900) y a la derecha sobran unos 840 px de gris vacío. Por eso todas sirven con ajustes. Para que la masa se despegue del panel, propongo correr el recorte unos 300–400 px a la derecha, o aceptar ese contacto como puente con el texto. Ninguna opción toca las marcas de esquina. Desempato por los márgenes dentro del panel: la 4 reparte el texto más parejo (mayor hueco 136 px). La 1 deja un hueco de 369 px, la 3 vacía la parte de arriba y la 2 arrima el subtítulo a 66 px del corte."
+  },
+  {
+   "id": "G03-v1-costuras",
+   "galeria": "G03",
+   "version": "v1",
+   "lente": "costuras",
+   "puntajes": {
+    "1": 7.5,
+    "2": 7.5,
+    "3": 7,
+    "4": 7.5
+   },
+   "hallazgos": [
+    {
+     "donde": "Borde del velo de lectura (x≈669 de 1920), tramo y≈443–670 px (y tramos menores más arriba)",
+     "problema": "Una franja turquesa del cuadro (≈RGB 65,182,189) toca el borde duro del velo y queda cortada en seco: hay turquesa en cerca del 45 % del alto de ese borde. Bajo el velo sigue apagada (≈22,42,46) y en la hoja numerada se ve como una lonja cortada contra el tercio. Se arregla corriendo imagen_foco a la derecha (≈0.55) para que el haz no toque el borde.",
+     "gravedad": "media",
+     "opcion": "todas (1, 2, 3 y 4: misma imagen y mismo velo)"
+    },
+    {
+     "donde": "Borde superior del lienzo, x≈830–935 px de 1920",
+     "problema": "El haz turquesa sale por arriba del cuadro. Se lee como un haz que continúa, no como un acento recortado; el foco brillante (x≈850–950, y≈400–550) queda entero dentro.",
+     "gravedad": "baja",
+     "opcion": "todas"
+    },
+    {
+     "donde": "Zona vacía superior del tercio, ≈x 280–390 / y 120–250 px de 1920",
+     "problema": "Al bajar todo el texto, queda a la vista un bloque oscuro casi rectangular que la pintura tiene bajo el velo (luminancia ≈20 contra ≈40 alrededor). No es un parche de extensión, porque está en el original mj3_V-S2b_0 de 1456×816, pero en el aire se lee como un rectángulo. En 1, 2 y 4 queda tapado por el título.",
+     "gravedad": "baja",
+     "opcion": "3"
+    },
+    {
+     "donde": "Cruces de registro derechas, (1888,32) y (1888,1048) px de 1920",
+     "problema": "No chocan con el dibujo: el fondo es limpio, con desviación de 6.5 y 0.1 sobre luminancia 244 y 255. Pero el turquesa sobre claro queda tenue (≈1,9:1) y se ve desparejo frente a las cruces izquierdas, que van sobre oscuro.",
+     "gravedad": "baja",
+     "opcion": "todas"
+    },
+    {
+     "donde": "Horizonte blanco abajo a la derecha, y≈964–968 px, x 1580–1920 (de 1920×1080)",
+     "problema": "Paso casi recto de gris (≈150) a blanco puro (≈250). Viene de la pintura original (el blanco puro ya ocupa el 2,5 % de la fuente) y su borde va levemente inclinado y texturado; no es una costura. Lo anoto solo para que no se confunda con un parche.",
+     "gravedad": "baja",
+     "opcion": "todas"
+    }
+   ],
+   "mejor": "1",
+   "veredicto": "sirve",
+   "resumen": "Por costuras, las cuatro opciones son casi iguales, porque comparten la imagen, el velo y las cruces. El fondo no está extendido: la fuente es 16:9 nativa (1456×816), cubre el lienzo completo con velo y no tiene escalones internos (el salto máximo entre filas es de ≈4/255). Tampoco hay parches rectangulares, así que no aplica el veto. El único punto a corregir es común a todas: una franja turquesa queda cortada en seco contra el borde del velo del tercio, en un tramo de ≈21 % del alto. Se resuelve corriendo el foco de la imagen a la derecha. Las cruces de registro no chocan con el dibujo. La 3 pierde medio punto porque su aire superior deja ver un bloque oscuro rectangular de la pintura bajo el velo. Elijo la 1, que empata con la 2 y la 4 y no expone nada extra."
+  }
+ ]
+}

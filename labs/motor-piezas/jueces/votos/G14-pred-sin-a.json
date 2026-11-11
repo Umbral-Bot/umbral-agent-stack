@@ -1,0 +1,83 @@
+{
+ "galeria": "G14",
+ "seccion": null,
+ "rubrica": "pred-sin-a",
+ "retro": true,
+ "criterios_hasta": null,
+ "sellado": "2026-11-11T00:45:36",
+ "hash_rubrica": "2afef7084991",
+ "hash_criterios": "fd98b8707561",
+ "votos": [
+  {
+   "id": "G14-qa-prediccion",
+   "galeria": "G14",
+   "version": "pred-sin-a",
+   "lente": "prediccion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 6.5,
+    "2": 7.5,
+    "3": 3
+   },
+   "hallazgos": [
+    {
+     "opcion": "3",
+     "donde": "isometría, mitad superior",
+     "problema": "Los trazos miden unos 2 px en 2160, o sea unos 0,36 px CSS en una vista de 390 px. En el celular la ilustración casi desaparece y la mitad de arriba queda como un bloque oscuro vacío.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "3",
+     "donde": "contenido de la parte superior",
+     "problema": "Un edificio isométrico genérico no cuenta la noticia, que es la IA en la obra. El post pierde el gancho visual que en las opciones 1 y 2 da el brazo robótico.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "3",
+     "donde": "placa superior y base con cotas",
+     "problema": "La placa flotante se solapa con las torres y la cota atraviesa el rombo de la base, así que se lee como un dibujo técnico sin terminar.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1",
+     "donde": "borde superior de la pieza",
+     "problema": "La franja de papel crema de la ilustración llega al borde de arriba. En un feed claro (LinkedIn o Instagram en modo claro) se funde con el fondo de la app y la pieza pierde su contorno superior.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "márgenes de la ilustración",
+     "problema": "El margen de papel crema aparece arriba y abajo de la imagen pero no a los lados, así que el «a sangre» se lee como un recorte desparejo y no como una imagen que sale de la pieza.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "esquinas superiores",
+     "problema": "Las crucetas de marca de arriba caen sobre la imagen (crema y turquesa) en vez de sobre el fondo oscuro, y quedan como manchas sin función.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "entre la caja y el antetítulo ARTÍCULO",
+     "problema": "La caja termina en y≈1325 y el antetítulo empieza en y≈1371: quedan unos 46 px, contra 129 px de margen exterior arriba y a los lados. El antetítulo queda pegado a la imagen y el ritmo vertical se rompe.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "radio de la caja",
+     "problema": "8 px sobre 2160 equivalen a unos 1,4 px CSS en el celular. El redondeo no se percibe y la caja se ve como un rectángulo recto.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "tamaño de la imagen",
+     "problema": "La imagen ocupa unos 1900 px de ancho contra 2160 en la opción 1, alrededor de un 12 % menos, y pierde algo de impacto en el feed.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "2",
+   "veredicto": "sirve con ajustes",
+   "resumen": "Predigo la opción 2, aunque por poco frente a la 1. En el celular la caja deja la pieza entera sobre fondo oscuro: el contorno se sostiene en cualquier feed, las crucetas quedan sobre lo oscuro y la imagen se alinea con la columna de texto y con la etiqueta EJEMPLO. Eso sigue la preferencia por estructura limpia que David mostró al elegir la banda en G12. El ajuste pendiente es abrir el espacio entre la caja y el antetítulo, hoy unos 46 px contra 129 px de margen. La opción 1, la base, tiene más impacto, pero su borde crema se funde con un feed claro y el margen de papel queda desparejo. La opción 3 no sirve: sus líneas de unos 0,36 px CSS desaparecen en el celular y la imagen no cuenta la noticia."
+  }
+ ]
+}

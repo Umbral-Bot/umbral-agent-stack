@@ -1,0 +1,71 @@
+{
+ "galeria": "G09",
+ "seccion": null,
+ "rubrica": "pred-crit-a",
+ "retro": true,
+ "criterios_hasta": "G09",
+ "sellado": "2026-11-11T00:43:03",
+ "hash_rubrica": "2afef7084991",
+ "hash_criterios": "fd98b8707561",
+ "votos": [
+  {
+   "id": "G09-pca-prediccion",
+   "galeria": "G09",
+   "version": "pred-crit-a",
+   "lente": "prediccion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 6,
+    "2": 8,
+    "3": 5
+   },
+   "hallazgos": [
+    {
+     "opcion": "3",
+     "donde": "Pieza entera (banda con los tres datos)",
+     "problema": "Es justo la variante que el criterio de David descarta para LinkedIn. Ahí eligió solo la fecha con aire frente a una banda con los tres datos. La composición es más compleja y completa, pero la predicción la deja atrás.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "Franja de imagen superior",
+     "problema": "El recorte en banda deja fuera el sujeto: la silueta oscura queda cortada en el borde inferior y solo asoman las chimeneas. La franja muestra casi solo textura turquesa y gris, sin foco, y el turquesa domina la imagen casi como fondo.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "Subtítulo «TALLER PRÁCTICO · UMBRAL BIM» junto a la columna de datos",
+     "problema": "El subtítulo llega casi hasta la columna de datos, con unos 14 px de separación en el lienzo de 1200. Además repite «Umbral BIM», que ya está en el logo. Se ve apretado en el centro de la banda.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1",
+     "donde": "Columna de texto, de arriba abajo",
+     "problema": "La columna queda llena, sin aire: título, fecha y llamado ocupan todo el alto. El llamado en turquesa, grande y espaciado, compite en peso con la fecha, y el logo queda solo abajo. Es la misma base que la 2 en versión apretada, cuando en LinkedIn David prefirió la fecha con aire.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "Entre el título y la fila de la fecha",
+     "problema": "Queda un vacío oscuro grande, de cerca de un cuarto del alto, entre el título y los datos. Lo sostiene solo la trama del panel. Es el aire que David valoró en LinkedIn, pero conviene revisar que no se lea como un hueco.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "Etiqueta «FECHA», logo y llamado, vistos en celular (390 px)",
+     "problema": "Visto en celular, el texto más chico baja de 11 a unos 7,7 px CSS. Es un aviso, no un veto: David ya eligió una imagen de LinkedIn pensada para computador por debajo de ese mínimo.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "Imagen (defecto común, no desempata)",
+     "problema": "Es una textura pictórica abstracta con turquesa intenso y algo de contraste dramático, no la línea isométrica plana de Magnific One. Es común a las tres y viene del preset ya elegido, así que no se vuelve a discutir.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "2",
+   "veredicto": "sirve",
+   "resumen": "Predigo que David elige la 2: misma composición en columna, solo la fecha, texto más chico y con aire, pensada para verse en computador. Coincide con su criterio para LinkedIn (fecha con aire antes que una banda con los tres datos) y con su excepción al mínimo de 11 px. La 1 es la misma base pero apretada, con el llamado compitiendo con la fecha. La 3 es la más completa y compleja, pero es la banda que él descarta en LinkedIn, y su recorte deja fuera el sujeto de la imagen. El contraste medido (7,24:1) es igual en las tres y no desempata."
+  }
+ ]
+}

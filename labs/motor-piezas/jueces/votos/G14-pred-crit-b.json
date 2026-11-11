@@ -1,0 +1,89 @@
+{
+ "galeria": "G14",
+ "seccion": null,
+ "rubrica": "pred-crit-b",
+ "retro": true,
+ "criterios_hasta": "G14",
+ "sellado": "2026-11-11T00:43:05",
+ "hash_rubrica": "2afef7084991",
+ "hash_criterios": "fd98b8707561",
+ "votos": [
+  {
+   "id": "G14-pcb-prediccion",
+   "galeria": "G14",
+   "version": "pred-crit-b",
+   "lente": "prediccion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 7,
+    "2": 7.5,
+    "3": 3.5
+   },
+   "hallazgos": [
+    {
+     "opcion": "3",
+     "donde": "ilustración isométrica, mitad superior",
+     "problema": "El trazo es muy fino: unos 2–3 px en 2160 px, menos de 1 px CSS a 390 px de ancho. En el celular la ilustración casi desaparece (en la hoja numerada ya se ve apenas) y la mitad de arriba se lee vacía, sin ningún gancho de noticia.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "3",
+     "donde": "composición de la parte de arriba",
+     "problema": "Es una composición simple: la isometría flota centrada, con vacíos oscuros grandes a los lados, y no se alinea con la columna de texto (x≈103/1622). La cota horizontal cruza el rombo de base y parece un error.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "estilo de la ilustración",
+     "problema": "Es un wireframe de trazo y no sigue la línea isométrica plana de Magnific One que David aprobó como dirección. Además, el post pierde la imagen propia del artículo.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "borde superior de la imagen",
+     "problema": "La franja crema que trae la imagen arriba se funde con un feed en modo claro (en la hoja numerada ya se confunde con el fondo), así que la pieza pierde su borde superior. La opción 2 lo resuelve con el marco oscuro.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "esquinas superiores",
+     "problema": "Las cruces de registro de las esquinas caen sobre la imagen (crema y turquesa) con poco contraste y se leen como un residuo.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1",
+     "donde": "bordes de la imagen",
+     "problema": "La imagen trae franjas crema propias arriba y abajo, pero no a los lados. A sangre se lee como un recorte que no termina de llegar al borde.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "caja de imagen",
+     "problema": "La imagen queda cerca de un 20 % más chica que a sangre y pierde algo de impacto en el feed. Lo compensa que sus bordes coinciden con la columna del texto (x 103–1622).",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "entre la caja y el kicker",
+     "problema": "El aire entre el borde inferior de la caja y ARTÍCULO (unos 46 px reales) es mucho menor que el margen superior (unos 129 px), lo que deja un ritmo vertical algo desigual.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1 y 2 (común)",
+     "donde": "imagen",
+     "problema": "El fondo de la imagen es mayormente aguamarina, cerca del veto de turquesa como fondo. Ya venía en la base y no cambia la elección.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas (común)",
+     "donde": "pie, wordmark «Umbral BIM»",
+     "problema": "Es el texto más chico y queda justo en el piso de 11 px CSS a 390 px. Sobre el fondo oscuro liso se lee, pero no tiene holgura.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "2",
+   "veredicto": "sirve",
+   "resumen": "La banda de texto es igual en las tres y solo cambia la imagen. Predigo la 2: la caja se alinea con la columna del texto, el marco oscuro mantiene la pieza unida en cualquier feed y la imagen sigue mandando arriba. La 1 queda muy cerca y tiene más impacto, pero su borde crema superior se pierde en un feed claro y las cruces de las esquinas quedan sobre la imagen. La 3 no sirve: su isometría de trazo fino desaparece en el celular, flota con vacíos grandes y es más simple de lo que David valora."
+  }
+ ]
+}

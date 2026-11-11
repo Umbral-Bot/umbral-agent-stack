@@ -1,0 +1,8 @@
+id: S4
+nombre: "Sin trama · la banda de texto lisa, sin la retícula de puntos"
+alternativa: p02-paso5
+paso: pie
+hereda: packs/S1-noticia-pie-base.yaml
+decision_david: "G16 4°, 2026-11-09: elegida junto con la 3° («3 y 4»)"
+valores:
+  trama_visible: false

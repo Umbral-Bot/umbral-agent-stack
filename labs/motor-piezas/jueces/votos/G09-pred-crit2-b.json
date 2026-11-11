@@ -1,0 +1,77 @@
+{
+ "galeria": "G09",
+ "seccion": null,
+ "rubrica": "pred-crit2-b",
+ "retro": true,
+ "criterios_hasta": "G09",
+ "sellado": "2026-11-11T00:51:28",
+ "hash_rubrica": "b71ce177d875",
+ "hash_criterios": "11070cf84d18",
+ "votos": [
+  {
+   "id": "G09-rab-prediccion",
+   "galeria": "G09",
+   "version": "pred-crit2-b",
+   "lente": "prediccion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 6.5,
+    "2": 8,
+    "3": 5
+   },
+   "hallazgos": [
+    {
+     "opcion": "3",
+     "donde": "pieza entera (banda con los tres datos)",
+     "problema": "Repite la disyuntiva que David ya resolvió para LinkedIn en G08: eligió solo la fecha con aire frente a la banda con los tres datos. La banda está bien armada y se lee, pero los datos ya cumplen en todas las opciones, así que no gana por ser más completa ni más legible.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "3",
+     "donde": "franja de imagen arriba",
+     "problema": "El recorte a franja corta el sujeto de la imagen (la masa oscura queda fuera o apenas asoma) y deja a la vista sobre todo trazos turquesa: se pierde el sujeto y la parte turquesa pesa más en la pieza.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "subtítulo «TALLER PRÁCTICO · UMBRAL BIM»",
+     "problema": "El subtítulo turquesa, ancho y del tamaño del kicker, compite con la columna de datos y repite «Umbral BIM», que ya está en el logo. La banda queda densa y sin aire.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1",
+     "donde": "bloque de fecha y llamado",
+     "problema": "Está pensada para celular: la fecha y el llamado ocupan todo el ancho de la columna, casi pegados al margen derecho (la fecha llega al remate de la regla). Abajo queda apretada frente al vacío del medio, y el logo queda solo en una fila.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "decisión de formato",
+     "problema": "En LinkedIn David ya aceptó la pieza pensada para computador, por debajo del mínimo móvil. Agrandar todo para el celular no le suma y le quita el aire que él valoró.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "entre el título y la regla de la fecha",
+     "problema": "Queda un vacío de unos 355 px de 1254, cerca del 28 % del alto, sin función. Se puede recuperar subiendo un poco el bloque de datos o bajando el título.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "logotipo (abajo a la izquierda)",
+     "problema": "Defecto común a las tres: la palabra «Umbral BIM» del logo mide unos 21 px de alto en el PNG 2400×1254, cerca de 6–7 px CSS con el feed de 555 px y menos de 5 px en celular. El logo está sobre el panel oscuro, así que el contraste no es problema. No sirve para desempatar.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "contraste y texto mínimo",
+     "problema": "Las tres miden lo mismo: 7,24:1 como mínimo, sobre el panel oscuro y no sobre la textura. Todas cumplen el mínimo y ninguna llega al objetivo de referencia de 10:1. No hay diferencia entre opciones por lectura.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "2",
+   "veredicto": "sirve",
+   "resumen": "Predigo la 2, pensada para computador: columna con solo la fecha y más aire. Es lo que David ya eligió para LinkedIn en G08, cuando prefirió la fecha sola con aire a la banda con los tres datos. Además, la fila de abajo, con el logo y el llamado en la misma línea, queda más resuelta que en la 1. La 1 es la misma composición, pero apretada para celular: llena el ancho y pierde el aire. La 3 está bien armada y es la más completa, pero vuelve a plantear la banda que él ya descartó en LinkedIn y, al reducir la imagen a una franja, corta el sujeto. Las tres tienen el mismo contraste (7,24:1) y el mismo logo chico, así que eso no desempata. Ajuste menor para la 2: achicar el vacío entre el título y la fecha."
+  }
+ ]
+}

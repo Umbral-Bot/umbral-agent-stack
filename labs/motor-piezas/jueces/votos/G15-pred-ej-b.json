@@ -1,0 +1,65 @@
+{
+ "galeria": "G15",
+ "seccion": null,
+ "rubrica": "pred-ej-b",
+ "retro": true,
+ "criterios_hasta": "G15",
+ "sellado": "2026-11-11T01:09:47",
+ "hash_rubrica": "b71ce177d875",
+ "hash_criterios": "c375ba4695d4",
+ "votos": [
+  {
+   "id": "G15-ejb-prediccion",
+   "galeria": "G15",
+   "version": "pred-ej-b",
+   "lente": "prediccion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 8,
+    "2": 7,
+    "3": 4
+   },
+   "hallazgos": [
+    {
+     "opcion": "3",
+     "donde": "bajada gris sobre el panel claro",
+     "problema": "La bajada mide 4,63:1, justo en el rango de 4,6 a 6,3:1 que David ya vio flojo. En el celular se ve lavada frente al titular negro. Es la única opción por debajo de 7:1.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "3",
+     "donde": "unión entre la imagen y la banda",
+     "problema": "El panel claro se funde con el filete crema del borde inferior de la imagen. Se pierde el corte imagen/banda que hizo ganar a «Banda abajo» (G12) y la pieza entera queda pálida.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "logo, esquina inferior izquierda",
+     "problema": "«BIM» en turquesa sobre fondo claro tiene poco contraste. El logotipo cuenta como texto chico y David pide que esa esquina se lea con holgura (G01, G02).",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "bajada blanca",
+     "problema": "La bajada toma el mismo color que el titular y pierde una señal de subordinación. La jerarquía se sostiene por tamaño, pero la bajada queda menos «claramente secundaria» (G13). Además rompe la coherencia con el Preset 01, donde David mantuvo el gris en lugar del blanco (G05 1°).",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1",
+     "donde": "bajada gris",
+     "problema": "Mide 7,24:1 sobre fondo liso, por encima del rango que se vio flojo. A tamaño de feed se lee, aunque algo más apagada que en la 2°. Si David pidiera más contraste, el ajuste sería aclarar el gris, no pasarlo a blanco.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "bordes de la imagen",
+     "problema": "Defecto común a las tres, no desempata: la ilustración trae filetes crema arriba y abajo, así que no llega del todo a sangre en el borde superior ni en el corte con la banda. Además, los grandes campos turquesa rozan el veto de turquesa como fondo, aunque ya se aceptó en G14.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "1",
+   "veredicto": "sirve",
+   "resumen": "Predigo la 1° (base). David ya prefirió el gris de marca con acento turquesa frente al blanco en el Preset 01 (G05). El gris mide 7,2:1 sobre fondo liso y mantiene la bajada claramente secundaria (G13). Suele quedarse con la base cuando el cambio no mejora algo que él haya pedido. La 2° queda cerca: es más legible, pero iguala el color del titular y rompe la coherencia entre presets. La 3° no sirve tal cual: la bajada a 4,6:1 cae en el rango que ya vio flojo, el panel claro se funde con el borde crema de la imagen y el logo pierde contraste."
+  }
+ ]
+}

@@ -1,0 +1,30 @@
+id: G06
+fecha: 2026-11-06
+titulo: "Galería 06 · paso 5: pie y detalles"
+descripcion: >
+  Paso 5 de 5, el último. Quedan fijos el tercio, los datos fuertes, el sangrado lateral y el
+  color de marca (G05 1°, elegido por David). Cuatro variantes del pie y de los detalles; cada
+  una cambia una sola cosa respecto de la 1°. La hoja 01_detalle.jpg muestra el panel de texto
+  de las cuatro lado a lado. Laboratorio: no publicar.
+como_elegir: >
+  Elige un número (1° a 4°) o una combinación (por ejemplo «2° con 3°»). Con esa elección queda
+  armado el preset completo de esta pieza.
+contenido: contenido/workshop-bim-ia.yaml
+detalle:
+  titulo: "DETALLE · PANEL DE TEXTO"
+  recorte: [0, 0, 700, 1080]
+secciones:
+  - alternativa: paso5
+    titulo: "Paso 5 · Pie y detalles"
+    descripcion: >
+      Cada pieza hereda de la 1° (J1, que es la G05 1° sin cambios).
+    pasos:
+      - "Base: logo y llamado en texto en el pie; cruces de registro en las esquinas y en los extremos de las filas"
+      - "Sin cruces: se quitan las cruces de las esquinas y de las filas; quedan los filetes"
+      - "Llamado como botón: bloque turquesa con el texto en el color del fondo (9,9:1); no cabe junto al logo, así que va bajo los datos"
+      - "Trama de puntos: la retícula de puntos de la v2, solo en el panel de texto"
+    piezas:
+      - packs/J1-pie-base.yaml
+      - packs/J2-pie-sin-cruces.yaml
+      - packs/J3-pie-boton.yaml
+      - packs/J4-pie-trama.yaml

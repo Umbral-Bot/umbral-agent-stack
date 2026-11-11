@@ -1,0 +1,53 @@
+{
+ "galeria": "G23",
+ "seccion": null,
+ "rubrica": "pred-sin-b",
+ "retro": true,
+ "criterios_hasta": null,
+ "sellado": "2026-11-11T00:45:39",
+ "hash_rubrica": "2afef7084991",
+ "hash_criterios": "fd98b8707561",
+ "votos": [
+  {
+   "id": "G23-qb-prediccion",
+   "galeria": "G23",
+   "version": "pred-sin-b",
+   "lente": "prediccion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 6.5,
+    "2": 8,
+    "3": 5
+   },
+   "hallazgos": [
+    {
+     "opcion": "1",
+     "donde": "botón «LEE EL ARTÍCULO / umbralbim.io», al pie de la columna oscura",
+     "problema": "Un 12 % menos casi no se nota frente a la 1° de G22. El botón sigue ocupando unos 537 px de los 1216 de la columna y compite con el titular, cuando David pidió explícitamente un botón más chico.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "borde superior del botón",
+     "problema": "Al quitar un módulo de relleno, «LEE EL ARTÍCULO» queda casi pegado al borde superior (unos 4 px arriba contra 5 abajo y 15 a los lados). A tamaño de feed se ve como una etiqueta apretada y no como un botón.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "texto «umbralbim.io» del botón",
+     "problema": "El texto mínimo medido es de 7,1 px CSS en la vista de 390 px. Se lee en el celular, pero está en el límite. Es el costo aceptado de achicar el botón.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "relleno interior del botón",
+     "problema": "El relleno vertical (unos 12 px) es algo más justo que el lateral (unos 22 px). Solo se nota de cerca.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "2",
+   "veredicto": "sirve",
+   "resumen": "David pidió el botón más chico. La 2° lo achica de forma visible (24 %) y conserva el relleno, así que sigue leyéndose como botón y deja más protagonismo al titular. La 1° cambia demasiado poco para su pedido. La 3° achica lo mismo, pero pierde el relleno: el texto queda pegado al borde superior y el botón se ve apretado. Mi predicción es la 2°."
+  }
+ ]
+}

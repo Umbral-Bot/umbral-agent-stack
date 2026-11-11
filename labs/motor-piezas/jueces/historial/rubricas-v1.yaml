@@ -1,0 +1,58 @@
+# Rúbricas de los jueces del motor de piezas. Cada lente es un juez independiente (un agente) que
+# mira las imágenes con un solo criterio. El código mide antes (UB-3, objeto en la máscara,
+# turquesa en el recorte, contraste) y el juez recibe esas medidas: las usa, no las rehace.
+# Pregunta de David (2026-11-11): «como se define el juez?»
+
+escala: "0 a 10 por opción; 7 o más = sirve; 5 a 7 = sirve con ajustes; menos de 5 = no sirve"
+gravedad:
+  alta: "impide usar la opción tal cual"
+  media: "se nota a tamaño de feed; conviene corregir"
+  baja: "solo se ve de cerca o es un detalle"
+
+etapas:
+  imagen:            # antes de meter una imagen en piezas
+    lentes:
+      marca:
+        mira: "plano, trazo fino y parejo, fondo claro, turquesa solo como acento (B: 2 piezas como máximo), sin brillo, sombra, degradado, 3D ni foto"
+        veto: ["texto, letras, números o glifos legibles", "logo o algo que lo imite", "turquesa como fondo"]
+      oficio:
+        mira: "proyección coherente (isometría o la elegida), uniones resueltas, sin artefactos (tapas dobles, líneas sueltas), el trazo de la familia aprobada"
+        veto: ["un error que el público BIM nota a tamaño de feed"]
+      contenido:      # solo camino B
+        mira: "se lee el hallazgo; la imagen cuenta la misma comparación que el texto; no muestra el remedio que el texto niega"
+        veto: ["cuenta otra historia (caso CAND-WLCA-01 del repo)"]
+      forma:
+        mira: "B: objeto entero y de una pieza, compacto en 16:9 y bajo y ancho en 21:9 (2,5:1 o más). A: sin sujeto, densidad pareja, recortable en cualquier parte"
+        veto: []
+  pieza:             # la imagen ya puesta en los formatos
+    lentes:
+      posicion:
+        mira: "objeto entero y centrado (o con el acento en su destino), márgenes parejos, no toca las marcas ni el panel de texto"
+        veto: ["el objeto cortado por la máscara"]
+      costuras:
+        mira: "el fondo extendido sin escalón de color ni rectángulo visible; ningún acento turquesa cortado en el borde; las cruces de registro no chocan con el dibujo"
+        veto: ["un parche rectangular visible a tamaño de feed"]
+      jerarquia:
+        mira: "la imagen acompaña y no compite con el titular; el botón y el logo siguen legibles"
+        veto: []
+  campana:           # las piezas de un artículo vistas juntas
+    lentes:
+      unidad:
+        mira: "la imagen principal y la apaisada parecen de la misma familia (objetos, trazo, densidad, tono del turquesa)"
+        veto: []
+      serie:
+        mira: "sirve para una serie editorial: cada artículo tendría su imagen sin que todas se vean iguales"
+        veto: []
+
+salida:            # lo que devuelve cada juez (esquema del agente)
+  puntajes: "objeto {opcion: 0-10}"
+  hallazgos: "lista de {donde, problema, gravedad}"
+  mejor: "la opción que elige"
+  veredicto: "sirve | sirve con ajustes | no sirve"
+  resumen: "en castellano, corto"
+
+agregacion:
+  orden: "suma de puntajes de todas las lentes"
+  veto: "un hallazgo de gravedad alta que coincide con un veto de la lente deja la opción en «no sirve», sume lo que sume"
+  desempate: "camino B: manda la lente contenido; camino A: manda la lente marca"
+  calibracion: "comparar el ganador de los jueces con lo que eligió David en decisiones.csv; si difieren, se ajusta la rúbrica, no la elección"

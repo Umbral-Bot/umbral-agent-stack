@@ -1,0 +1,186 @@
+{
+ "galeria": "G14",
+ "seccion": null,
+ "rubrica": "v1",
+ "retro": true,
+ "criterios_hasta": null,
+ "sellado": "2026-11-11T00:00:25",
+ "hash_rubrica": "de3f9cdef0fe",
+ "hash_criterios": "-",
+ "votos": [
+  {
+   "id": "G14-v1-jerarquia",
+   "galeria": "G14",
+   "version": "v1",
+   "lente": "jerarquia",
+   "puntajes": {
+    "1": 6,
+    "2": 8,
+    "3": 7
+   },
+   "hallazgos": [
+    {
+     "donde": "Opción 1 · borde inferior de la imagen, sobre ARTÍCULO",
+     "problema": "La imagen trae una franja crema horneada arriba y abajo. La de abajo forma una línea clara justo antes de la banda oscura y tira de la vista más que el título. Además, la imagen no termina de leerse a sangre: parece una lámina enmarcada.",
+     "gravedad": "media",
+     "opcion": "1"
+    },
+    {
+     "donde": "Opción 1 · mitad superior",
+     "problema": "A sangre, la imagen es la masa más brillante y extensa de la pieza: cian y crema saturados, con el círculo negro y el brazo robótico. A tamaño de feed compite con el titular por el primer golpe de vista.",
+     "gravedad": "media",
+     "opcion": "1"
+    },
+    {
+     "donde": "Opción 1 y 2 · espacio entre la imagen y el antetítulo",
+     "problema": "ARTÍCULO queda a unos 50 px del borde de la imagen, mientras el margen lateral mide unos 129 px. El antetítulo parece pegado a la imagen en vez de encabezar el bloque de texto.",
+     "gravedad": "baja",
+     "opcion": "1, 2"
+    },
+    {
+     "donde": "Opción 1 · esquinas superiores",
+     "problema": "Las cruces de registro caen sobre la imagen crema y se ven como ruido.",
+     "gravedad": "baja",
+     "opcion": "1"
+    },
+    {
+     "donde": "Opción 2 · caja de la imagen",
+     "problema": "Hay doble marco: la caja con radio y, dentro, la franja crema propia de la imagen. Es redundante, aunque la caja sí contiene la imagen y deja que el titular mande.",
+     "gravedad": "baja",
+     "opcion": "2"
+    },
+    {
+     "donde": "Opción 3 · ilustración isométrica",
+     "problema": "Los trazos cian, de 1 a 2 px, casi desaparecen a tamaño de feed. En la hoja, la mitad superior se ve casi vacía y todo el peso queda abajo. No compite, pero apenas acompaña.",
+     "gravedad": "media",
+     "opcion": "3"
+    },
+    {
+     "donde": "Todas · pie (llamada a la acción y logo)",
+     "problema": "La llamada a la acción es texto con tracking, sin forma de botón, y el wordmark del logo es lo más chico de la pieza (11 px CSS en una vista de 390 px). Se leen, pero quedan en un segundo plano muy discreto.",
+     "gravedad": "baja",
+     "opcion": "1, 2, 3"
+    }
+   ],
+   "mejor": "2",
+   "veredicto": "sirve",
+   "resumen": "Por jerarquía elijo la 2. La caja con margen contiene la imagen, así que acompaña sin disputarle el protagonismo al titular, y el pie sigue legible. La 1 sirve con ajustes: a sangre, la imagen es la masa más fuerte, y su franja crema inferior distrae justo encima del antetítulo. La 3 tiene la jerarquía más limpia, pero la ilustración es tan tenue que a tamaño de feed la mitad superior se ve vacía. En la 1 y la 2 conviene separar más el antetítulo de la imagen."
+  },
+  {
+   "id": "G14-v1-posicion",
+   "galeria": "G14",
+   "version": "v1",
+   "lente": "posicion",
+   "puntajes": {
+    "1": 6,
+    "2": 7,
+    "3": 9
+   },
+   "hallazgos": [
+    {
+     "opcion": "1",
+     "donde": "esquinas superiores (marcas de registro en x≈63, y≈63 px)",
+     "problema": "Con la imagen a sangre desde y=0, las dos marcas de arriba caen sobre la imagen: la izquierda sobre la franja crema y la derecha justo en el borde entre crema y turquesa. La regla pide que el objeto no toque las marcas.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "codo del robot, borde derecho",
+     "problema": "El codo termina en x=2103, a 56 px del corte, dentro del margen de 128 px de la grilla. El círculo de la izquierda queda a 163 px del borde, así que los márgenes no son parejos (163 contra 56) y el protagonista se ve apretado contra el lado derecho.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "pedestal del robot, abajo a la derecha",
+     "problema": "La base del robot llega al borde (holgura de 3 px) y queda cortada. El brazo, la pinza y la columna se ven enteros, así que no lo trato como veto, pero el objeto no está completo.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "unión entre la imagen y el panel (la imagen termina en y≈1326; ARTÍCULO empieza en y≈1355)",
+     "problema": "Entre la imagen y el rótulo ARTÍCULO quedan unos 29–45 px, mientras que el margen exterior es de 128 px. El rótulo queda pegado al borde de la imagen.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "codo del robot contra el borde derecho de la caja (x=2032)",
+     "problema": "El codo termina a 28 px del borde redondeado de la caja. Dentro de la caja, el círculo izquierdo tiene unos 123 px de aire, así que el reparto es desigual y el codo casi toca el marco a tamaño de feed.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "pedestal del robot, abajo a la derecha de la caja",
+     "problema": "La base llega al borde de la caja (3 px) y queda cortada, igual que en la opción 1. El brazo protagonista se ve entero.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "borde inferior de la caja y rótulo ARTÍCULO",
+     "problema": "La caja termina en y≈1326 y el rótulo empieza en y≈1355. Ese espacio de 29–45 px es mucho menor que el margen de 127 px que rodea la caja por arriba y por los lados, así que la caja y el texto quedan apretados.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "caja completa",
+     "problema": "Aspecto positivo: la caja queda alineada con la grilla (127/128/127 px a la izquierda, a la derecha y arriba, igual que la columna de texto) y no toca las marcas de las esquinas.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "isometría (bbox x 696–1463, y 175–1278)",
+     "problema": "La isometría está entera y centrada: el eje horizontal cae en 1079,5 frente a 1080 y el vertical en 726 frente a 727 de la franja libre. Los márgenes laterales son parejos (696/697 px), no toca las marcas y deja 77 px hasta ARTÍCULO. El único detalle es que los volúmenes están unos 24 px a la derecha del centro de su rombo base, algo propio del dibujo.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "3",
+   "veredicto": "sirve",
+   "resumen": "Desde la posición, elijo la 3: la isometría está entera, centrada al píxel en los dos ejes, con márgenes parejos, sin tocar las marcas y con aire frente al texto. La 2 sirve con ajustes: la caja respeta la grilla y no toca las marcas, pero el codo del robot queda a 28 px del borde de la caja, el pedestal sale cortado y la caja queda apretada contra ARTÍCULO. La 1 también sirve con ajustes, pero es la más débil: las marcas superiores caen sobre la imagen, el codo queda a 56 px del corte con márgenes desiguales (163 contra 56) y el pedestal sale cortado. En ninguna opción hay veto, porque el brazo protagonista se ve entero en las tres."
+  },
+  {
+   "id": "G14-v1-costuras",
+   "galeria": "G14",
+   "version": "v1",
+   "lente": "costuras",
+   "puntajes": {
+    "1": 6.5,
+    "2": 8.5,
+    "3": 9
+   },
+   "hallazgos": [
+    {
+     "donde": "Q1 · borde superior y unión con la banda (y 0–60 y 1256–1328 px)",
+     "opcion": "1",
+     "problema": "El paspartú crema propio de la imagen fuente (mj3_V-S17b_0, 1456×816) se mantiene arriba (unos 60 px) y abajo (unos 66 px), pero el recorte lo corta en los lados. Arriba, el bloque turquesa queda flotando 60 px bajo el borde. Abajo, una franja crema de unos 12 px CSS a tamaño de feed se interpone antes de la banda oscura. La imagen no parece a sangre: parece un cuadro recortado con marco solo arriba y abajo. No es un parche del motor, porque no hubo fondo extendido (el encaje cover recorta sin rellenar).",
+     "gravedad": "media"
+    },
+    {
+     "donde": "Q1 · cruz de registro superior derecha (centro aprox. 2095, 63 px)",
+     "opcion": "1",
+     "problema": "La cruz se dibuja sobre la imagen, con el brazo horizontal justo en el borde crema/turquesa (el bloque turquesa empieza en y≈60). Como la cruz es turquesa (G=212) sobre turquesa (G≈200–210), su mitad inferior se pierde y choca con el dibujo. La superior izquierda también queda encima de la imagen, aunque sobre crema. A tamaño de feed mide unos 3 px CSS.",
+     "gravedad": "baja"
+    },
+    {
+     "donde": "Q1 y Q2 · centro horizontal de la imagen (x≈1085 px), cielo turquesa superior",
+     "opcion": "1",
+     "problema": "Hay un escalón vertical de tono en el turquesa: G pasa de 190 a 201 y R de 102 a 111 en unos 4 px. Viene de la fuente (también está en x≈730 de la imagen original), no del motor, y prolonga hacia arriba el canto del bloque crema, así que casi se lee como un bloque más del collage. Se ve en la hoja de vista previa.",
+     "gravedad": "baja"
+    },
+    {
+     "donde": "Q2 · interior de la caja",
+     "opcion": "2",
+     "problema": "El mismo paspartú crema nativo queda arriba (unos 52 px) y abajo (unos 50 px) dentro de la caja, mientras el turquesa toca los bordes laterales: es un marco interior asimétrico. Dentro de la caja con radio 8 px se lee como intencional. La caja calza con el margen de texto (x 129 y 2027 px), las cruces quedan en el margen oscuro sin tocarla y el canto antialias es limpio.",
+     "gravedad": "baja"
+    },
+    {
+     "donde": "Q3 · límite superior de la trama (y≈1372 px)",
+     "opcion": "3",
+     "problema": "La trama de puntos (alcance zona_texto) empieza en la fila del kicker. Sobre el mismo fondo oscuro, la zona de la ilustración no tiene puntos y forma un rectángulo de textura implícito. Solo se nota de cerca: a tamaño de feed los puntos no se leen. La ilustración queda contenida y las cruces están libres.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "3",
+   "veredicto": "sirve",
+   "resumen": "Ninguna opción tiene parches rectangulares, así que no hay veto: no hubo fondo extendido y las fotos se recortan sin rellenar. La 3 es la más limpia por costuras: el fondo oscuro es continuo, la isometría queda contenida, no hay turquesa cortado en el borde y las cruces están libres. Su único detalle es el límite de la trama, que solo se ve de cerca. La 2 es la mejor de las que llevan foto: la caja calza con la grilla, las cruces quedan fuera de la imagen y el paspartú crema de la fuente queda dentro de la caja, donde se lee como intencional. La 1 sirve con ajustes: el paspartú crema nativo sobrevive arriba y abajo, así que la imagen no parece a sangre y deja una franja crema antes de la banda, y la cruz superior derecha cae sobre el borde crema/turquesa. Para corregirla habría que recortar el paspartú de la fuente y suprimir las cruces sobre la imagen. El escalón vertical de tono en el centro del turquesa (Q1 y Q2) es de la fuente, no del motor."
+  }
+ ]
+}

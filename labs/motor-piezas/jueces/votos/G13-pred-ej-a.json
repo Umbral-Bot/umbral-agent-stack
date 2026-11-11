@@ -1,0 +1,66 @@
+{
+ "galeria": "G13",
+ "seccion": null,
+ "rubrica": "pred-ej-a",
+ "retro": true,
+ "criterios_hasta": "G13",
+ "sellado": "2026-11-11T01:09:46",
+ "hash_rubrica": "b71ce177d875",
+ "hash_criterios": "c375ba4695d4",
+ "votos": [
+  {
+   "id": "G13-eja-prediccion",
+   "galeria": "G13",
+   "version": "pred-ej-a",
+   "lente": "prediccion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 8.2,
+    "2": 6,
+    "3": 5.4,
+    "4": 6.3
+   },
+   "hallazgos": [
+    {
+     "opcion": "3",
+     "donde": "banda de texto, bajada de 17,6 px CSS",
+     "problema": "La bajada pasa a ser un bloque gris de tres líneas a todo el ancho, más ancho que la segunda línea del titular, que termina en el 55 % del ancho. En el celular su peso compite con el titular. Mide 36 % del tamaño del titular, así que cumple la regla, pero va contra la decisión de G03 de bajar el subtítulo para que no compita.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "banda de texto, entre el titular y el pie",
+     "problema": "Sin bajada, queda un vacío oscuro de cerca de 250 px, alrededor del 11 % del lienzo, sin función entre el titular y el pie. La pieza pierde contexto en el feed y la composición se vuelve simple. Va contra la preferencia de David por conservar la información en los formatos de feed y por la composición compleja.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4",
+     "donde": "banda de texto, a la derecha del titular y bajo la bajada",
+     "problema": "El titular de 110 px ocupa solo el 55 % del ancho. Deja aire a la derecha y un vacío bajo la bajada que no cumple ninguna función. La banda se ve a medio llenar y el titular pierde fuerza en el celular. El «aire» que David eligió en G09 era para LinkedIn visto en computador, no para el vertical de feed.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "banda de texto, bajada",
+     "problema": "La bajada gris mide 7,24:1, el mínimo de la pieza, y está por encima del rango de 4,6 a 6,3:1 que se vio flojo. Cae sobre fondo liso, no sobre la textura de la imagen, así que se lee bien. Solo como detalle: el espacio entre el titular y la bajada es algo más justo que el que hay entre la bajada y el pie.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "pie, logotipo «Umbral BIM»",
+     "problema": "Defecto común a todas: la palabra del logo mide unos 8 px CSS en la vista de 390 px, bajo la referencia de 11 px. El contraste es bueno porque cae sobre fondo liso, pero el logo se ve chico en el feed. No cambia la elección.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "todas",
+     "donde": "imagen",
+     "problema": "Defecto común, no es lo que se juega en este paso: la relación entre el titular y el dibujo es literal (brazo robótico = IA, bloques = obra) y falta una metáfora o idea abstracta. Además, el sujeto, el brazo, va cargado a la derecha y no al centro, y la ilustración trae su propio marco crema arriba y abajo antes de la banda. Corresponde revisarlo en el paso de imagen, no en el de jerarquía.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "1",
+   "veredicto": "sirve",
+   "resumen": "Creo que David elegiría la 1. Su titular de 156 px llena la banda y manda claramente, y la bajada de 14 px CSS, que mide un 25 % del titular, se lee en el celular sin competir. La banda queda equilibrada y sin vacíos. Se parece a cómo decidió en G03, con la jerarquía clara y el subtítulo subordinado, y a cómo decidió en G08, conservando la información en el feed. La 4 tiene buen tono, pero deja aire sin función y debilita el titular. La 2 tiene el titular más fuerte, pero pierde la bajada y deja un vacío bajo el título. La 3 le da a la bajada un peso que compite con el titular. Hay dos defectos comunes a todas, ajenos a este paso: la palabra del logo es chica, unos 8 px CSS, y la relación entre el titular y la imagen es literal, sin metáfora."
+  }
+ ]
+}

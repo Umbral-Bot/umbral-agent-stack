@@ -1,0 +1,11 @@
+id: X3
+nombre: "LinkedIn sin bajada · logo arriba, el texto al medio y el botón abajo"
+alternativa: sin-bajada-linkedin-distribucion
+paso: distribución del texto
+hereda: packs/T5-noticia-linkedin-celular.yaml
+decision_david: "G19, 2026-11-10: «= 10 pero mas pequeño el \"lee el ..\"»"
+valores:
+  margen_proporcional: 0.1
+  logo_altura_relativa: 0.07   # unos 44 px de alto; antes 36 (el mínimo de 120 px de ancho) y se veía chico
+  logo_posicion: superior_izquierda
+  pila_anclaje: centro

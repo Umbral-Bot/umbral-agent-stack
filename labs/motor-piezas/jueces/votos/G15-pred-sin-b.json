@@ -1,0 +1,65 @@
+{
+ "galeria": "G15",
+ "seccion": null,
+ "rubrica": "pred-sin-b",
+ "retro": true,
+ "criterios_hasta": null,
+ "sellado": "2026-11-11T00:45:37",
+ "hash_rubrica": "2afef7084991",
+ "hash_criterios": "fd98b8707561",
+ "votos": [
+  {
+   "id": "G15-qb-prediccion",
+   "galeria": "G15",
+   "version": "pred-sin-b",
+   "lente": "prediccion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 8,
+    "2": 7,
+    "3": 4
+   },
+   "hallazgos": [
+    {
+     "opcion": "1",
+     "donde": "bajada gris sobre la banda oscura",
+     "problema": "En la miniatura del feed la bajada gris (7,2:1) se ve algo apagada frente al título blanco. Se lee bien y marca la jerarquía, pero es la que menos resalta de las dos oscuras.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "bajada en blanco",
+     "problema": "Con la bajada del mismo blanco que el título, la jerarquía depende solo del tamaño y se pierde el escalón gris del Preset 01. Se lee mejor, pero la banda queda más uniforme y menos coherente con la serie.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "unión entre la imagen y la banda",
+     "problema": "El panel claro queda casi pegado a la franja crema de la ilustración. Se pierde el ancla oscura que separa imagen y texto, y en un feed en modo claro la pieza se funde con la interfaz.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "«Artículo» y llamado «Lee el artículo»",
+     "problema": "El turqueso pasa a verde oscuro: la marca pierde el acento brillante que tienen el Preset 01 y las opciones 1 y 2.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "bajada gris",
+     "problema": "Contraste mínimo de 4,63:1, el más bajo de las tres. Cumple, pero en el celular se lee más débil que en las versiones oscuras.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "«BIM» del logotipo, abajo a la izquierda",
+     "problema": "«BIM» en turquesa sobre el panel claro tiene poco contraste y, a tamaño de feed, casi desaparece.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "1",
+   "veredicto": "sirve",
+   "resumen": "Predigo que David elige la 1. Es la base que repite el lenguaje del Preset 01: banda oscura que ancla la ilustración clara, turquesa vivo en «Artículo» y en el llamado, y una bajada gris que marca la jerarquía con buen contraste (7,2:1). La 2 queda cerca porque se lee mejor, pero aplana la jerarquía y rompe la coherencia con la serie. La 3 se aleja: el panel claro se funde con la franja crema de la imagen y con el feed en modo claro, el turquesa pasa a verde oscuro y su bajada tiene el contraste más bajo (4,6:1)."
+  }
+ ]
+}

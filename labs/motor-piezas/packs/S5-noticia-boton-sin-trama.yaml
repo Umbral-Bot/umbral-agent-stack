@@ -1,0 +1,9 @@
+id: S5
+nombre: "Llamado como botón y sin trama (G16 «3 y 4»)"
+alternativa: p02-paso5
+paso: pie
+hereda: packs/S1-noticia-pie-base.yaml
+decision_david: "G16, 2026-11-09: combinación elegida («3 y 4»); cierra los cinco pasos del Preset 02"
+valores:
+  cta_estilo: boton
+  trama_visible: false

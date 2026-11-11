@@ -1,0 +1,12 @@
+id: D1
+nombre: "Mitad · texto en 6 de 12 columnas (base: la 12° de G01, contraste corregido)"
+alternativa: paso1
+paso: division
+hereda: packs/C4-imagen-slide-oscuro-S2b.yaml
+corrige: "G01 12° (David): faltaba contraste en los textos de abajo a la izquierda (4,6–6,3:1); ahora llegan a 7:1"
+decision_david: null
+valores:
+  division: mitad
+  columnas: 12              # la mitad cae en el mismo lugar que con 8; 12 permite tercios exactos
+  contraste_sobre_imagen: 7.0
+  colores_sobre_imagen: claros

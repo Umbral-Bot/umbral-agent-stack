@@ -1,0 +1,92 @@
+{
+ "galeria": "M01",
+ "seccion": null,
+ "rubrica": "imagenes-pred-crit-a",
+ "retro": false,
+ "criterios_hasta": null,
+ "sellado": "2026-11-11T01:55:10",
+ "hash_rubrica": "ae799f118a10",
+ "hash_criterios": "c375ba4695d4",
+ "votos": [
+  {
+   "puntajes": {
+    "1": 7.5,
+    "2": 7,
+    "3": 4,
+    "4": 5.5
+   },
+   "hallazgos": [
+    {
+     "opcion": "1",
+     "donde": "imagen principal 1p, estructura revelada",
+     "problema": "La metáfora habla de tres huecos vacíos, pero el dibujo muestra todas las celdas vacías. Se pierde la relación entre los huecos y las tres piezas turquesa apartadas: se entiende que «salen tres piezas», pero no de dónde salen.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "imagen principal 1p, esquina inferior derecha",
+     "problema": "Las tres piezas turquesa caen en la esquina inferior derecha y el sujeto cruza el lienzo en diagonal. En una máscara de columna (diapositiva con texto en un tercio o LinkedIn), el recorte se come el volumen opaco o las piezas, y la transformación necesita verse completa para leerse.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "imagen apaisada 1a",
+     "problema": "Cambia de isométrica a elevación frontal. El marco queda como un contorno turquesa delgado que no se lee como pórtico de revisión, las piezas turquesa quedan pegadas al borde derecho y la mitad izquierda es una caja vacía. Es un ajuste que se anota, no un veto, pero esta apaisada es más débil que la principal.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "metáfora, pieza entera",
+     "problema": "La metáfora cuenta muy bien la segunda mitad de la premisa (falta decidir el camino), pero no la primera (la IA encuentra lo que se escapaba). Además, un circuito de canicas de juguete no tiene relación con la obra ni con el rubro AEC.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "imágenes 2p y 2a, tratamiento",
+     "problema": "Las dos llevan veta de madera, más marcada en la 2a, que además tiene un trazo más grueso y una vista oblicua. Se aleja de la línea plana, clara y de trazo fino. Es un ajuste que se anota, no un veto.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "metáfora, pieza entera",
+     "problema": "Dibuja de forma literal un hecho técnico de obra (un desagüe fuera de la grilla), justo lo que David dijo que no basta. En la 3p el desagüe queda centrado en el hueco y no se ve el «fuera de grilla», así que la idea no se lee sin texto.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "3",
+     "donde": "imagen principal 3p",
+     "problema": "Es una losa pequeña y simple con mucho lienzo vacío alrededor, sin la composición compleja que David valora. El turquesa es un punto mínimo.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "imagen apaisada 3a",
+     "problema": "El foco (hueco y desagüe) cae en el tercio izquierdo: es composición de afiche y algún recorte lo cortaría. Además cambia a vista frontal con trazo más grueso y punteado de radier, y no comparte línea con la principal.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4",
+     "donde": "imágenes 4p y 4a, color",
+     "problema": "Las cinco placas turquesa grandes hacen del turquesa una superficie dominante y no un acento. La 4p, además, tiene el fondo gris y la retícula de trazo oscuro grueso. Es un ajuste según la regla a prueba de los fondos de la línea de marca.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4",
+     "donde": "imagen apaisada 4a",
+     "problema": "Cambia de sistema: aparece una banda gris de aparejo en elevación sobre una retícula isométrica, que no calza con la principal. Las cinco placas en fila pareja se leen como adorno, no como hallazgos.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4",
+     "donde": "metáfora, pieza entera",
+     "problema": "Sin texto, las placas flotando pueden leerse como piezas que se instalan o levitan. El «queda pendiente decidir» no se ve. Funciona mejor como fondo de la línea de marca que como imagen relacionada con idea.",
+     "gravedad": "media"
+    }
+   ],
+   "mejor": "1",
+   "veredicto": "sirve con ajustes",
+   "resumen": "Predigo que David elige la 1. Es la única que cuenta la premisa completa como transformación visual: el volumen opaco atraviesa el marco de revisión, queda a la vista su estructura y salen tres piezas turquesa que nadie ha decidido todavía. Es el tipo de abstracción que David elogió en G28, en la línea isométrica fina y con la composición más compleja. Por formato, la principal 16:9 sirve. La apaisada 21:9 necesita ajustes: cambia de vista, el marco no se lee y el acento queda pegado al borde. Falta además asegurar que el recorte no corte las piezas turquesa. La 2 queda muy cerca: tiene la metáfora más legible (la canica espera en la compuerta) y la mejor apaisada, pero solo cuenta la decisión, no tiene relación con la obra y lleva textura de madera. La 4 funciona más como fondo de marca que como idea y le sobra turquesa. La 3 es un hecho técnico literal y no sirve tal cual.",
+   "lente": "prediccion"
+  }
+ ]
+}

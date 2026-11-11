@@ -1,0 +1,90 @@
+{
+ "galeria": "G12",
+ "seccion": null,
+ "rubrica": "pred-crit2-a",
+ "retro": true,
+ "criterios_hasta": "G12",
+ "sellado": "2026-11-11T00:51:28",
+ "hash_rubrica": "b71ce177d875",
+ "hash_criterios": "11070cf84d18",
+ "votos": [
+  {
+   "id": "G12-raa-prediccion",
+   "galeria": "G12",
+   "version": "pred-crit2-a",
+   "lente": "prediccion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 8,
+    "2": 7,
+    "3": 4.5,
+    "4": 5
+   },
+   "hallazgos": [
+    {
+     "opcion": "3",
+     "donde": "franja de imagen a la derecha",
+     "problema": "El recorte de la franja corta el brazo robótico y deja solo la pinza, que en el celular no se reconoce: la imagen pierde su sujeto.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "3",
+     "donde": "columna de texto, bajo el llamado",
+     "problema": "Queda un vacío oscuro grande y sin función, cerca del 40 % del alto, entre umbralbim.io y el logo.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "titular y kicker",
+     "problema": "El titular baja a 107 px (156 px en las otras) y el kicker queda cerca del 45 % de su tamaño. La jerarquía se debilita frente a las otras opciones.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "etiqueta EJEMPLO",
+     "problema": "La etiqueta queda sobre el kicker, alineada al borde de la columna, y no en la misma línea que en la familia.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "4",
+     "donde": "velo bajo el texto",
+     "problema": "El velo plano al 0,86 se ve gris, no del oscuro de marca, y deja bloques fantasma de la imagen detrás del titular. La pieza se ve más sucia y genérica, aunque mida 10,19:1.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4",
+     "donde": "pinza del brazo junto a «entra» y EJEMPLO",
+     "problema": "El recorte ampliado mete la pinza bajo el velo, donde roza la zona del titular, y corta el círculo y el brazo en los bordes del lienzo.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4",
+     "donde": "franja inferior bajo el pie",
+     "problema": "El velo sobre el crema del borde deja una banda gris más clara al pie de la pieza.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "logo y llamado",
+     "problema": "El cierre de marca queda a media altura y la pieza termina en la franja crema de la imagen. Funciona, pero el pie pierde su lugar habitual abajo.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1, 2",
+     "donde": "unión entre la imagen y la banda",
+     "problema": "El marco crema propio de la imagen deja una franja clara delgada entre la imagen y el panel oscuro. Es común a las dos.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "logotipo y llamado",
+     "problema": "El texto más chico queda justo en 11,0 px CSS, en el piso. Defecto común a todas, no sirve para desempatar.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "1",
+   "veredicto": "sirve",
+   "resumen": "Predigo que David elige la 1. Muestra la imagen completa arriba con el brazo entero, y abajo va el panel oscuro con trama, el titular grande y el logo y el llamado en el pie, como en la serie. La 2 es casi igual, pero deja el cierre de marca a media altura y empieza con un bloque de texto pesado. La 3 es la que más se parece a la familia del Preset 01, pero corta el sujeto, deja un vacío grande y achica el titular. La 4 es la de mejor contraste, pero el velo gris y las formas que se ven detrás del texto la hacen más sucia y menos sobria. Que sea la más legible no basta para elegirla."
+  }
+ ]
+}

@@ -1,0 +1,271 @@
+{
+ "galeria": "G03",
+ "seccion": null,
+ "rubrica": "v2",
+ "retro": true,
+ "criterios_hasta": "G03",
+ "sellado": "2026-11-11T00:33:15",
+ "hash_rubrica": "f69064585452",
+ "hash_criterios": "fd98b8707561",
+ "votos": [
+  {
+   "id": "G03-v2-posicion",
+   "galeria": "G03",
+   "version": "v2",
+   "lente": "posicion",
+   "no_aplica": true,
+   "puntajes": {},
+   "hallazgos": [
+    {
+     "opcion": "todas",
+     "donde": "imagen del lado derecho (2/3 del lienzo)",
+     "problema": "Es común a las cuatro, así que no sirve para desempatar. La imagen es un fondo abstracto de tinta: no tiene un objeto que pueda quedar cortado o descentrado. El recorte y la posición son idénticos en E1 a E4. La mancha negra baja llega al borde del panel de texto (y≈900–1100), pero ya era así en la base elegida en G02.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "",
+   "veredicto": "no aplica",
+   "resumen": "Mi lente, la posición, no tiene qué juzgar en G03. La imagen es un fondo abstracto sin objeto y es idéntica en las cuatro opciones (mismo recorte, misma máscara en el tercio). Las opciones solo cambian la jerarquía del texto dentro del panel. Como no veo diferencia entre ellas, no elijo ninguna y tampoco desempato por otra lente."
+  },
+  {
+   "id": "G03-v2-jerarquia",
+   "galeria": "G03",
+   "version": "v2",
+   "lente": "jerarquia",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 7,
+    "2": 7,
+    "3": 6,
+    "4": 8
+   },
+   "hallazgos": [
+    {
+     "opcion": "4",
+     "donde": "bajada «TALLER PRÁCTICO / UMBRAL BIM»",
+     "problema": "La bajada crece el 29 %, va en turquesa y con mucho espaciado, así que se acerca al peso del título. El título sigue mandando, pero la distancia entre el primer y el segundo nivel se achica.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "4",
+     "donde": "panel izquierdo, parte superior",
+     "problema": "Queda menos aire: la etiqueta EJEMPLO, el kicker y el título se juntan y el panel se ve más lleno que en la base. A cambio, el orden de lectura es el más limpio de la galería: kicker, título, bajada, datos, llamado propio y logo solo al cierre.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1",
+     "donde": "pie, abajo a la izquierda (logo + INSCRÍBETE · umbralbim.io)",
+     "problema": "El llamado comparte fila con el logo y queda en el tamaño mínimo (14 px CSS). Tiene contraste de 10:1, pero a tamaño de feed se lee justo y no funciona como botón. Con el criterio de David (texto chico abajo a la izquierda legible con holgura), sale peor que la 4°.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "bajada frente a los datos",
+     "problema": "La bajada de 2 líneas en turquesa pesa más que la fecha. En un «save the date», la fecha debería quedar en segundo nivel, justo después del título.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "pie, abajo a la izquierda",
+     "problema": "Los datos crecen y el llamado sigue en 14 px dentro de la fila del logo. Queda proporcionalmente más débil que en la base: el botón pierde rango frente a los datos y queda corto de holgura según el criterio de David.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "centro del panel, entre la bajada y los datos",
+     "problema": "Con la bajada en una sola línea, el vacío intermedio crece (unos 300 px de alto en la vista de 1449 px) y el panel se parte en dos bloques con un hueco en medio.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "bajada en una línea",
+     "problema": "La bajada iguala al kicker en tamaño, color y espaciado, y ambos se leen como etiquetas gemelas. Además llega casi al borde derecho de la columna, pegada al corte con la imagen.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "tercio superior del panel",
+     "problema": "Todo el texto baja y arriba queda un vacío donde solo está la etiqueta EJEMPLO. El título pierde la esquina superior izquierda, que es la entrada natural de lectura, y queda a media altura.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "bajada pegada al bloque de datos",
+     "problema": "Sin aire entre la bajada y la primera regla de datos, el grupo «qué» y el grupo «cuándo/dónde» se funden en un solo bloque. La jerarquía queda sostenida solo por el tamaño y el color.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "todas",
+     "donde": "logotipo «Umbral BIM» abajo a la izquierda",
+     "problema": "Defecto común a las cuatro, no desempata: el texto del logotipo no crece ni en la 4°. Es de lo más chico de la pieza y a tamaño de feed se lee justo.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "4",
+   "veredicto": "sirve",
+   "resumen": "En las cuatro manda el título; la diferencia está en cómo se reparten los niveles de abajo. La 4° tiene el orden más claro: kicker, título, bajada, datos, llamado en línea propia y logo al cierre. Además es la única en que el texto chico de abajo a la izquierda pasa de 14 a 18 px, que es lo que pide David para que se lea con holgura. Su costo es menor: menos aire y una bajada algo más pesada. La 2° pone bien la fecha como segundo nivel, pero deja el llamado chico y un hueco al medio. La 1° es correcta, aunque la bajada pesa más que la fecha. La 3° pierde la entrada superior izquierda y funde los grupos. Defecto común: el texto del logotipo sigue chico en las cuatro."
+  },
+  {
+   "id": "G03-v2-costuras",
+   "galeria": "G03",
+   "version": "v2",
+   "lente": "costuras",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 9,
+    "2": 9,
+    "3": 9,
+    "4": 9
+   },
+   "hallazgos": [
+    {
+     "opcion": "todas",
+     "donde": "borde superior, x≈834–1153 px (de 1920)",
+     "problema": "La luz turquesa de la imagen toca el borde superior. Ya viene así en la fuente de Midjourney: el encaje no recorta nada en vertical, porque la imagen ocupa los 1080 px. Se lee como luz que sigue más allá del borde, no como un acento cortado. Es común a las cuatro opciones y la imagen ya se eligió, así que no desempata.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "",
+   "veredicto": "sirve",
+   "resumen": "Mi lente no ve diferencia entre las cuatro opciones, así que no elijo ninguna. En las cuatro, la imagen tiene el mismo encaje: fondo completo, 1927×1080 en x=-3,53. Solo se recortan 3,5 px por lado en horizontal y no hay extensión. Medí la zona de imagen a la derecha del velo y es idéntica píxel a píxel (diferencia máxima 0). Ninguna tiene parche rectangular ni escalón de color por extensión, así que no hay veto. Las cruces de registro de las esquinas derechas quedan sobre papel casi blanco, sin manchas del dibujo debajo; las de la izquierda, bajo el velo. El borde vertical en x≈669 es el velo de la división en tercio que eligió David en G02, no una costura, y no lo vuelvo a discutir. Puntúo las cuatro igual."
+  },
+  {
+   "id": "G03-v2-composicion",
+   "galeria": "G03",
+   "version": "v2",
+   "lente": "composicion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 6.5,
+    "2": 5.5,
+    "3": 6,
+    "4": 7.5
+   },
+   "hallazgos": [
+    {
+     "opcion": "1",
+     "donde": "columna de texto, entre el subtítulo y la primera regla de datos (y 894 a 1275 px reales de 2160)",
+     "problema": "El vacío mide 381 px, el 17,6 % del alto. Separa el encabezado de los datos, pero deja un hueco oscuro sin función en medio de la columna. Con la mitad de ese espacio, la separación entre grupos seguiría leyéndose.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "columna de texto, entre el subtítulo y los datos (y 801 a 1239)",
+     "problema": "El vacío central crece a 438 px, el 20,3 % del alto, y es el mayor de la galería. Los datos ganan peso abajo, pero el centro de la columna queda más vacío que en la 1°.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "subtítulo en una línea, extremo derecho (x ≈ 1278 de 3840)",
+     "problema": "La línea llega a unos 59 px del corte con la imagen. Está alineada con el borde de la etiqueta y del llamado, pero queda apretada contra la imagen, mientras el margen izquierdo es de unos 130 px.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "arriba de la columna, entre la etiqueta EJEMPLO y el kicker (y 172 a 523)",
+     "problema": "Quedan 351 px de aire arriba, el 16,3 % del alto. La etiqueta queda huérfana en la esquina, sin relación con el bloque de texto, y a tamaño de feed se ve un rectángulo oscuro vacío.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "separaciones del bloque compacto",
+     "problema": "Del subtítulo a los datos hay 95 px y de los datos al pie hay 96 px. Al ser iguales, no marcan grupos: el encabezado no se separa de los datos más que los datos del pie.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "4",
+     "donde": "columna completa",
+     "problema": "Es la que tiene menos aire: el hueco más grande es de 147 px, entre el subtítulo y los datos. El ritmo es parejo (65, 62, 147, 68 y 96 px) y agrupa bien, pero la columna se ve llena. En la última fila el logo queda solo y deja vacía la mitad derecha del pie.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "márgenes laterales de la columna de texto",
+     "problema": "Defecto común, no desempata: el margen izquierdo es de unos 130 px reales y el derecho, de la etiqueta, las reglas y el llamado hasta el corte con la imagen, de unos 48 px. La columna se ve cargada hacia la imagen.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "números 01, 02 y 03 de los datos",
+     "problema": "Defecto común: los números arrancan hacia x ≈ 160, metidos respecto del margen del texto (unos 130). No caen en la misma vertical que el kicker, el título y el logo.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "4",
+   "veredicto": "sirve",
+   "resumen": "En composición, la diferencia entre las opciones es cómo se reparte el espacio vertical de la columna, ya que la imagen no cambia. La 4° llena la columna sin vacíos muertos, con un ritmo parejo y el llamado unido a los datos, y todo arranca en el mismo margen izquierdo. La 1° y la 2° dejan un hueco central del 18 % y del 20 % del alto. La 3° pasa ese vacío arriba (16 %), deja la etiqueta huérfana y separa por igual todos los bloques. Como defectos comunes, el margen derecho de la columna es más estrecho que el izquierdo y los números de los datos no caen en el margen."
+  },
+  {
+   "id": "G03-v2-lectura",
+   "galeria": "G03",
+   "version": "v2",
+   "lente": "lectura",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 6,
+    "2": 6.5,
+    "3": 6,
+    "4": 8
+   },
+   "hallazgos": [
+    {
+     "opcion": "1",
+     "donde": "pie, llamado «INSCRÍBETE · umbralbim.io»",
+     "problema": "El llamado queda en 14 px CSS, unos 4 px a ancho de feed (≈390 px). Está en la esquina inferior derecha del velo, el punto más claro del panel (luminancia mediana del fondo 0,021 frente a 0,015 en la 4), y pegado a la banda blanca de la imagen. Mide 10,13:1, justo en el objetivo, porque es el texto que obligó a subir el velo. Se lee con esfuerzo: es la línea más débil de la pieza.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "filas de datos (etiquetas FECHA, HORA y LUGAR, y valores)",
+     "problema": "Las etiquetas quedan en 14 px CSS y los valores en 17,8 px CSS (≈5 px en el feed). La fecha y la hora, que son el dato clave, quedan chicas a tamaño de celular.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "pie, llamado",
+     "problema": "Los datos crecen, pero el llamado sigue en 14 px CSS en el mismo rincón claro junto a la banda blanca. Tiene el mismo defecto que la 1.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "filas de datos, etiquetas",
+     "problema": "Las etiquetas siguen en 14 px frente a valores de 23,8 px. Se ven diminutas sobre el valor y en el feed casi desaparecen; el valor sí se lee bien, y es la mejora real de esta opción.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "subtítulo en una línea",
+     "problema": "El subtítulo de una sola línea llega casi al borde del velo, a unos 30 px de la imagen. Se lee, pero queda sin aire contra el corte.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "todo el bloque de texto",
+     "problema": "Usa los mismos tamaños que la 1 y solo cambia la posición vertical. Para esta lente es idéntica a la 1: el llamado y las etiquetas siguen en 14 px CSS y el llamado sigue en el rincón más claro del panel.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4",
+     "donde": "logo «Umbral BIM» al pie",
+     "problema": "Todo el texto chico crece a 18 px, pero el lockup queda en 181 px. La palabra «Umbral BIM» equivale a unos 14 px CSS y pasa a ser el texto más chico de la pieza, sin entrar en la medida texto_minimo_movil. Conviene escalarlo junto con el resto.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "4",
+     "donde": "llamado bajo los datos",
+     "problema": "Ninguno de lectura: el llamado sube a 18 px CSS en línea propia y se aleja del rincón claro. Mide 11,46:1 sobre un fondo más oscuro y parejo (desviación 0,006 frente a 0,008). Las separaciones entre subtítulo, filas, llamado y logo son parejas.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "lockup, «BIM» en turquesa",
+     "problema": "Defecto común a todas. contraste_logo mide solo «Umbral» (10,6:1); «BIM» en turquesa mide unos 8,5:1 sobre el fondo, por debajo de la referencia de 10:1. No es veto: el fondo del logo es oscuro y parejo y es el color oficial del lockup. Pero el «logo a 10:1» de la descripción no se cumple entero.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "4",
+   "veredicto": "sirve",
+   "resumen": "Para lectura en el feed, la diferencia está en el tamaño del texto chico y en dónde cae el llamado. La 4 es la única que sube el mínimo a 18 px CSS. Además saca el llamado del rincón más claro del panel: queda a 11,46:1 sobre un fondo más oscuro y parejo. La 2 agranda los datos clave, pero deja el llamado y las etiquetas en 14 px. Para esta lente, la 1 y la 3 son iguales (mismos tamaños). Ninguna cae en veto. Hay dos ajustes comunes a todas: escalar el logo junto con el texto, porque en la 4 quedó como el texto más chico, y el «BIM» turquesa del lockup, que mide ~8,5:1 y no 10:1."
+  }
+ ]
+}

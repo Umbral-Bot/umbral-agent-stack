@@ -1,0 +1,247 @@
+{
+ "galeria": "G23",
+ "seccion": null,
+ "rubrica": "v2",
+ "retro": true,
+ "criterios_hasta": "G23",
+ "sellado": "2026-11-11T00:33:18",
+ "hash_rubrica": "f69064585452",
+ "hash_criterios": "fd98b8707561",
+ "votos": [
+  {
+   "id": "G23-v2-posicion",
+   "galeria": "G23",
+   "version": "v2",
+   "lente": "posicion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 7.5,
+    "2": 7.5,
+    "3": 7.5
+   },
+   "hallazgos": [
+    {
+     "opcion": "todas",
+     "donde": "mitad derecha, imagen del brazo robótico",
+     "problema": "Desde mi lente, las tres opciones no se diferencian. La comparación píxel a píxel de la mitad derecha (x ≥ 1216) entre las tres opciones da diferencia nula. El brazo, la pinza y los bloques están en el mismo lugar y con el mismo recorte, y solo cambian el botón y el desplazamiento del titular en la columna de texto. No elijo por otra lente.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "borde derecho del lienzo, base del brazo",
+     "problema": "Defecto común a las tres: el brazo entra desde fuera del lienzo por el borde derecho y su base queda cortada. No lo cuento como veto porque el modo es sangrado lateral y el acento (la pinza) se ve entero en la parte libre. Aun así, el acento queda en el centro-derecha del panel y no centrado.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "cruces de registro derechas (≈2335,62 y ≈2335,1190)",
+     "problema": "Defecto común a las tres: la cruz superior derecha cae sobre el teal, justo en el borde con la franja crema, y casi no se ve. La inferior derecha toca el canto del bloque negro. Propongo mover las cruces unos píxeles hacia la franja crema, no quitarlas.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "",
+   "veredicto": "sirve",
+   "resumen": "Mi lente no ve diferencia entre las opciones: la imagen es idéntica píxel a píxel en las tres, porque solo cambia el botón. Por eso las puntúo igual y no elijo ninguna. En las tres, la pinza del brazo está entera y no toca el texto ni las marcas. La base del brazo sale por el borde derecho, lo que es aceptable con sangrado lateral. Hay un detalle común a las tres: las cruces derechas quedan sobre la ilustración (una casi no se ve sobre el teal y la otra toca un bloque negro); conviene moverlas, no quitarlas."
+  },
+  {
+   "id": "G23-v2-jerarquia",
+   "galeria": "G23",
+   "version": "v2",
+   "lente": "jerarquia",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 7,
+    "2": 8.3,
+    "3": 6.2
+   },
+   "hallazgos": [
+    {
+     "opcion": "1",
+     "donde": "botón «LEE EL ARTÍCULO / umbralbim.io», pie de la columna",
+     "problema": "Es el paso más corto hacia lo que pidió David. El bloque turquesa mide 537 × 135 px y su texto tiene 37 px de altura de mayúscula, un 24 % de la del titular. Sigue siendo la segunda masa del panel, y junto al kicker turquesa encierra al titular entre dos acentos de peso parecido. No le disputa el mando al titular, pero se lleva más atención de la que necesita un llamado de tercer nivel.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "relleno interior del botón",
+     "problema": "Al quitar un módulo de relleno, quedan 8 px entre las mayúsculas y el borde arriba y abajo, y 17 y 20 px a los lados. La tilde de la Í queda a 3 px del borde superior. El texto llena la caja y el botón se ve como una etiqueta apretada, no como un llamado. En la hoja se nota a tamaño de feed y resta acabado y holgura de lectura al botón, aunque lo haga más subordinado.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "línea «umbralbim.io» del botón, vista móvil de 390 px",
+     "problema": "El texto más chico baja a 7,1 px CSS, frente a 8,2 px en la opción 1. Se sigue leyendo gracias al contraste de 9,92:1 y a las mayúsculas espaciadas, pero en el celular queda en el límite. En el feed de escritorio sube a unos 10 px. Esto es una señal y no un veto: el criterio de LinkedIn pensado para computador nació en el preset con bajada.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "línea «umbralbim.io» del botón, vista móvil de 390 px",
+     "problema": "Tiene el mismo texto de 7,1 px CSS que la opción 2. Al tener menos relleno, la línea queda más pegada al borde inferior y en el celular se lee peor que en la 2.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "columna de texto (común a las tres, no desempata)",
+     "problema": "En las tres, el titular manda, la imagen va en su propia mitad sin cruzar la zona de lectura, el logo está arriba a la izquierda y el chip EJEMPLO no le quita espacio al texto ni choca con nada. La columna se recentra en vertical y baja 8 px por cada reducción del botón, sin efecto en la jerarquía.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "2",
+   "veredicto": "sirve",
+   "resumen": "La galería solo cambia el botón, y en las tres opciones el titular manda con claridad. La opción 2 logra el mejor equilibrio. Su botón ocupa 473 × 121 px y su texto tiene un 20 % de la altura de mayúscula del titular, así que queda como un tercer nivel claro. Mantiene un relleno holgado de 16 px arriba y abajo y de 25 a 28 px a los lados, y el bloque turquesa ya no le hace contrapeso al kicker. La opción 1 sirve, pero el botón todavía pesa de más. La opción 3 es la más subordinada, pero con 8 px de relleno vertical y la tilde a 3 px del borde se ve apretada; sirve con ajustes. Algo a vigilar en la 2 y la 3: «umbralbim.io» queda en 7,1 px CSS en el celular, legible por el contraste de 9,9:1 pero justo en el límite."
+  },
+  {
+   "id": "G23-v2-composicion",
+   "galeria": "G23",
+   "version": "v2",
+   "lente": "composicion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 7.2,
+    "2": 7.6,
+    "3": 5.8
+   },
+   "hallazgos": [
+    {
+     "opcion": "3",
+     "donde": "Botón al pie de la columna",
+     "problema": "Al quitar un módulo de relleno, el texto queda casi pegado al borde del botón: unos 4 px CSS entre las mayúsculas y los bordes de arriba, abajo y los lados. La tilde de la Í queda a 1,5 px del borde superior. El botón pierde aire interior y parece una etiqueta apretada, no un botón. Se nota a tamaño de feed.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "Botón al pie de la columna",
+     "problema": "El botón mide 268×67 px CSS, alrededor del 54 % del ancho del titular, y sigue siendo una masa turquesa pesada que le disputa peso al kicker. Una reducción del 12 % casi no se nota frente a G22. A favor: su ancho coincide con el de «ARTÍCULO» (~272 px), y esa rima entre el kicker y el botón cierra bien la columna.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "Botón al pie de la columna",
+     "problema": "Con 236 px, el botón queda más angosto que el kicker (~272 px) y se pierde la rima de anchos que tenía la 1°. Es un detalle menor: el relleno sigue intacto (8 px vertical, 13 px lateral) y el botón se lee como elemento secundario que cierra la columna.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "Ilustración a la derecha",
+     "problema": "Defecto común a las tres: la ilustración trae su propio marco crema de ~28 px CSS arriba y abajo. El campo turquesa no llega al borde superior ni al inferior y tampoco se alinea con las líneas del texto. La imagen está a sangre por el costado, pero ese marco interno la deja encajonada en vertical.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "Chip EJEMPLO, arriba a la derecha de la columna",
+     "problema": "Es una marca de laboratorio y no se evalúa. Está alineado con el logo y no le quita espacio al texto, pero termina a unos 16 px CSS de la división con la imagen, muy pegado al corte.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "2",
+   "veredicto": "sirve",
+   "resumen": "Lo único que cambia es el tamaño del botón. El reparto de la columna queda igual: marca arriba, «Artículo» y titular al medio, botón al pie, con márgenes de 64 px arriba y abajo. Como el bloque central se recentra, la distancia del titular al botón sube de 76 a 83 px y queda pareja con la del logo al kicker. La 2° es la mejor: el botón queda más liviano y conserva su aire interior. La 1° casi no se distingue de G22, aunque tiene la ventaja de que el botón mide lo mismo que el kicker. La 3° se pasa: le quita relleno al botón y el texto queda pegado a los bordes."
+  },
+  {
+   "id": "G23-v2-costuras",
+   "galeria": "G23",
+   "version": "v2",
+   "lente": "costuras",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 6.5,
+    "2": 6.5,
+    "3": 6.5
+   },
+   "hallazgos": [
+    {
+     "opcion": "todas",
+     "donde": "mitad de imagen (x 1216–2400 px de 2400×1254)",
+     "problema": "Mi lente no ve diferencia entre las opciones. Comparé las tres piezas píxel a píxel y solo cambian dentro del rectángulo x 127–1120, y 340–1125, que es la columna de texto y el botón. La imagen, sus bordes y las cruces son idénticos en las tres. No elijo por otra lente.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "cruz de registro superior derecha, centro (2335, 63) px",
+     "problema": "La cruz cae justo en el borde entre la franja crema superior (y 0–56) y el campo turquesa de la ilustración (empieza en y 57). El brazo horizontal y el brazo inferior quedan turquesa sobre turquesa y casi desaparecen; solo asoman unos 4 px sobre el crema. Choca con el dibujo. Propongo moverla al centro de la franja crema (y ≈ 28 px) o sacarla de la imagen.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "todas",
+     "donde": "cruz de registro inferior derecha, centro (2335, 1190) px",
+     "problema": "El brazo horizontal coincide exactamente con el borde entre el dibujo y la franja crema inferior, donde hay un escalón fuerte en la fila 1190. El brazo superior pisa la esquina del bloque negro granulado que llega hasta x ≈ 2350. Choca con el dibujo. Propongo bajarla al centro de la franja crema (y ≈ 1222 px) o correrla fuera del bloque.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "todas",
+     "donde": "costura de la división, x 1216–1250 px",
+     "problema": "El recorte (imagen 16:9 de 1456×816 escalada ×1,54 y recortada a 1184×1254) corta el círculo negro y deja una franja negra de unos 34 px (17 px CSS) pegada al panel oscuro. El negro cálido (7,8,2) contra el panel (17,20,24) hace que el borde de la división se lea irregular y que el semicírculo parezca parte del panel. No es un escalón de fondo extendido: es el recorte de la base ya elegida, así que solo lo anoto.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "borde derecho de la imagen, y ≈ 150–480 px",
+     "problema": "El brazo robótico sale por el borde derecho; el codo y la base quedan fuera del recorte. El campo turquesa que sigue hasta el borde es fondo, no un acento turquesa cortado. Lo anoto solo como detalle común a las tres.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "",
+   "veredicto": "sirve con ajustes",
+   "resumen": "Las tres opciones tienen la imagen idéntica: solo cambia el botón de la columna de texto, así que mi lente no ve diferencia y no elige ganadora. La imagen está recortada, no extendida. No hay parche ni escalón de color en las franjas crema, que son uniformes (245,233,205), y no se corta ningún acento turquesa. El defecto común son las dos cruces de la derecha, que chocan con el dibujo: la de arriba se pierde en el campo turquesa y la de abajo pisa el borde del bloque negro. Conviene moverlas al centro de las franjas crema, a y ≈ 28 px y y ≈ 1222 px."
+  },
+  {
+   "id": "G23-v2-lectura",
+   "galeria": "G23",
+   "version": "v2",
+   "lente": "lectura",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 7.5,
+    "2": 6.5,
+    "3": 5
+   },
+   "hallazgos": [
+    {
+     "opcion": "1",
+     "donde": "botón «LEE EL ARTÍCULO / umbralbim.io», esquina inferior izquierda",
+     "problema": "El texto del botón queda en 8,2 px CSS en el celular (altura de mayúscula ≈6 px CSS), bajo la referencia de 11 px. Es solo un aviso: el texto del botón está exceptuado y David pidió achicarlo. De las tres opciones es la que mejor se lee, con un relleno holgado (16 px arriba y abajo, 26 px a los lados, medidos en la imagen al doble).",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1",
+     "donde": "tilde de la Í en «ARTÍCULO», borde superior del botón",
+     "problema": "La tilde queda a 5 px del borde superior (en la imagen al doble), bastante más cerca que el resto del texto. Solo se nota de cerca.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "botón, sobre todo «umbralbim.io» en minúscula",
+     "problema": "Con 7,1 px CSS en el celular (altura de mayúscula ≈5 px y de minúscula ≈4 px CSS), «umbralbim.io» empieza a apretarse a tamaño de feed. El relleno es el mismo que en la 1°, así que el botón no se ve apretado, pero el llamado se lee peor que en la 1° para ganar poco tamaño. No llega a veto, porque el texto del botón está exceptuado.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "relleno interno del botón",
+     "problema": "Al quitar un módulo de relleno quedan 8 px arriba y abajo y entre 17 y 20 px a los lados (en la imagen al doble; ≈1,3 px CSS en el celular). La tilde de la Í queda a 3 px del borde y casi lo toca. El texto pegado a los bordes hace que el llamado se vea apretado y cuesta separarlo del rectángulo a tamaño de feed. Además, el texto es igual de chico que en la 2° (7,1 px CSS).",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "todas",
+     "donde": "contraste del botón y del kicker",
+     "problema": "Ningún problema: el contraste mínimo es de 9,92:1, con texto oscuro sobre el turquesa liso del botón y textos sobre el panel oscuro liso. Nada cae sobre la textura de la imagen. Es igual en las tres, así que no desempata.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "nombre «Umbral BIM» del logo, arriba a la izquierda",
+     "problema": "El nombre del logo mide ≈5,8 px CSS en el celular, más chico que el botón. Es un defecto común a las tres y no sale del cambio de esta galería. Tiene buen contraste sobre el panel liso.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "separación entre el titular y el botón",
+     "problema": "La separación crece a medida que el botón se achica (≈75, 78 y 82 px en la escala de 1200 px), mientras que la de «Artículo» al titular se mantiene en 32 px. No se castiga, porque en la pieza apaisada sin bajada pesa más que el botón cierre la columna al pie. Solo es un aviso: al achicar el botón se aleja un poco más del titular.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "1",
+   "veredicto": "sirve",
+   "resumen": "Las tres opciones solo difieren en el botón y tienen el mismo contraste (9,92:1, sobre fondo liso). La 1° achica el botón como pidió David y es la que mejor se lee: texto de 8,2 px CSS (aviso, no veto, porque el texto del botón está exceptuado) con relleno holgado. La 2° baja a 7,1 px y «umbralbim.io» se aprieta en el celular. La 3° además quita relleno: el texto queda pegado a los bordes y la tilde de la Í casi toca el borde superior. Para la lectura conviene la 1°."
+  }
+ ]
+}

@@ -1,0 +1,9 @@
+id: J2
+nombre: "Sin cruces · se quitan las cruces de las esquinas y de las filas"
+alternativa: paso5
+paso: pie
+hereda: packs/J1-pie-base.yaml
+decision_david: null
+valores:
+  cruces_registro: false
+  filas_cruces: false

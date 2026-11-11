@@ -1,0 +1,34 @@
+id: G22
+fecha: 2026-11-10
+titulo: "Galería 22 · LinkedIn sin bajada con 32 px entre los textos"
+descripcion: >
+  Elecciones de David en G21: «1= 2» y «2= 1», aclaradas como «2° con bajada, 1° sin bajada». El
+  LinkedIn con bajada queda con 36 px entre los textos (G21 2°) y el Preset 02 se completa. Aquí,
+  la separación de la 1° (32 px) en el LinkedIn sin bajada del Preset 03 (G20 4°). En esa pieza el
+  botón va al pie de la columna, lejos del titular; para que los tres textos queden a la misma
+  distancia, el motor 0.3j deja que el botón cierre el bloque de texto (cta_al_pie_columna).
+  Laboratorio: no publicar.
+resumen: >
+  La 4° de G20 con 32 px entre «Artículo» y el titular (1°) y con los tres textos en un bloque a
+  32 px entre sí, al medio (2°) o apoyado abajo (3°).
+como_elegir: >
+  Elige una del 1° al 3°. La hoja 01_detalle.jpg muestra la columna de texto más grande.
+contenido: contenido/articulo-ejemplo.yaml
+detalle:
+  titulo: "DETALLE · COLUMNA DE TEXTO"
+  recorte: [0, 0, 640, 627]
+  secciones: [sin-bajada-linkedin-separacion]
+secciones:
+  - alternativa: sin-bajada-linkedin-separacion
+    titulo: "Sin bajada · LinkedIn (1200×627), la 4° de G20 con 32 px"
+    descripcion: >
+      En la 4° había 16 px entre «Artículo» y el titular, y el botón quedaba al pie, a 77 px del
+      titular. El titular se mantiene en 102 px en las tres.
+    pasos:
+      - "32 px entre «Artículo» y el titular; el botón sigue al pie de la columna"
+      - "«Artículo», titular y botón en un bloque, a 32 px entre sí, al medio bajo el logo"
+      - "El mismo bloque, apoyado abajo; el logo queda solo arriba"
+    piezas:
+      - packs/AA1-noticia-linkedin-sin-bajada-32.yaml
+      - packs/AA2-noticia-linkedin-sin-bajada-bloque.yaml
+      - packs/AA3-noticia-linkedin-sin-bajada-abajo.yaml

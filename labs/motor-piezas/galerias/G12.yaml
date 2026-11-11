@@ -1,0 +1,32 @@
+id: G12
+fecha: 2026-11-09
+titulo: "Galería 12 · Preset 02 (post de noticia), paso 1: división"
+descripcion: >
+  Preset 02: un post de noticia o artículo, sin fecha ni datos de evento (kicker, titular,
+  bajada y llamado), en 4:5 para el feed de LinkedIn e Instagram, visto en el celular. Mantiene
+  la identidad del Preset 01 (fondo oscuro, color de marca, trama en el panel, jerarquía
+  protegida) para que las piezas se vean de una misma serie. La imagen es una favorita de
+  Midjourney (un brazo robótico construyendo), fija. Cuatro maneras de partir el lienzo.
+  Laboratorio: no publicar.
+resumen: >
+  Preset 02, post de noticia en 4:5. Paso 1: cuatro maneras de repartir el lienzo entre el
+  titular y la imagen. Mantiene la identidad del Preset 01.
+como_elegir: >
+  Elige un número (1° a 4°) y dime qué cambiarías. Ese preset queda fijo y pasamos al paso 2
+  (jerarquía).
+contenido: contenido/articulo-ejemplo.yaml
+secciones:
+  - alternativa: p02-paso1
+    titulo: "Paso 1 · División (4:5, 1080×1350)"
+    descripcion: >
+      Cada pieza hereda de la 1° (N1) y cambia solo la división.
+    pasos:
+      - "Banda abajo: imagen arriba a sangre, titular y bajada abajo sobre fondo liso"
+      - "Banda arriba: titular arriba con el pie, imagen abajo a sangre"
+      - "Columna ancha: texto a la izquierda, imagen en franja a la derecha, como la familia del Preset 01"
+      - "A sangre bajo velo: la imagen cubre todo y el texto va abajo sobre un velo plano"
+    piezas:
+      - packs/N1-noticia-banda-abajo.yaml
+      - packs/N2-noticia-banda-arriba.yaml
+      - packs/N3-noticia-columna.yaml
+      - packs/N4-noticia-sangre-velo.yaml

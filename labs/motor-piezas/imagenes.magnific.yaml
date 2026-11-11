@@ -1149,3 +1149,165 @@ imagenes:
       referencia de estilo
     tipo: fondo
     fondo_imagen: '#FBFBFB'
+  mg-ia-obra-m02-1p:
+    archivo: mg-ia-obra-m02-1p.png
+    herramienta: Magnific
+    modelo: magnific-one
+    creacion: jUdzTTaLD0
+    enlace: https://www.magnific.com/app/creation/jUdzTTaLD0
+    kit: hu2CvqLJlt
+    plantilla: post-linkedin
+    semilla: 47581
+    creditos: 180
+    prompt: 'Flat vector line illustration, 16:9, high-angle isometric axonometric projection with no
+      vanishing point. An unfinished concrete building frame fills the right two thirds of the frame:
+      a deep orthogonal grid of square columns, beams and open floor slabs, six floors high and several
+      bays deep, drawn in thin uniform #074E43 and #1F2328 lines with plain white #FFFFFF faces and dashed
+      hidden edges. From the upper left, a murmuration of thousands of tiny flat turquoise #0FA994 starling
+      silhouettes flows in as one loose soft cloud, narrowing into an orderly stream that spreads over
+      the structure, one small bird perched with folded wings on every beam-column joint so the flock
+      traces the whole frame. The birds are the only turquoise; no slab or panel is filled. Solid flat
+      #FAFAF9 background with faint grid lines running to the edges, no crosshairs or ticks. Flat even
+      daylight: no shadows, glow, gradients or highlights. No text, letters, numbers, markers, labels
+      or logo anywhere.'
+    prompt_enviado: 'An unfinished concrete structure seen from a high angle fills the right two thirds
+      of the frame: a deep grid of columns, beams and open slabs, floor after floor. From the upper left,
+      a murmuration of thousands of tiny turquoise starlings flows in as one soft cloud and settles into
+      exact order, one bird perched with folded wings on every beam-column joint, the flock tracing the
+      entire structure. Only the birds are turquoise. No text, no markers, no logo.'
+    proporcion_pedida: '16:9'
+    tamano_px:
+    - 2688
+    - 1520
+    reproducible: true
+    pedido: formula/demo/M02-ideas.json
+    fecha: '2026-11-11'
+    sha256: 1a7620fe22a43ea9
+    nota: M02, idea 1 para «La IA entra a la obra» (buscan enganchar tras M01)
+    tipo: objeto
+    objeto:
+    - 0.474
+    - 0.0533
+    - 1.0
+    - 1.0
+    acento:
+    - 0.0108
+    - 0.0493
+    - 0.9978
+    - 0.9441
+    fondo_imagen: '#FBFBFA'
+  mg-ia-obra-m02-2p:
+    archivo: mg-ia-obra-m02-2p.png
+    herramienta: Magnific
+    modelo: magnific-one
+    creacion: aFZ793EfSh
+    enlace: https://www.magnific.com/app/creation/aFZ793EfSh
+    kit: hu2CvqLJlt
+    plantilla: post-linkedin
+    semilla: 284626
+    creditos: 180
+    prompt: 'Flat vector isometric technical illustration, 16:9, of a seven-storey building under construction
+      filling the frame edge to edge on a solid #FAFAF9 field. Strict isometric projection with parallel
+      lines and no vanishing point. Structure drawn in thin uniform #1F2328 and #074E43 lines with white
+      #FFFFFF faces: open concrete slabs, square columns, beams, and on every floor rectangular ducts,
+      round pipes and ladder cable trays, with dashed hidden edges like the attached wireframe reference.
+      A lattice tower crane rises at the left edge, its jib reaching over the upper floors. Blank #0FA994
+      dimension lines with short oblique tick ends multiply from left to right: three or four near the
+      crane, dozens across the centre, hundreds in the right third, forming a tight web measuring every
+      gap between beam, duct, pipe and wall. Only the dimension lines are turquoise; nothing else is filled.
+      Flat even daylight, no shadows, glow or gradients. No text, numbers, labels, markers or logo anywhere.'
+    prompt_enviado: 'A mid-rise building under construction fills the frame edge to edge: open slabs,
+      columns, ducts, pipes and cable trays on every floor, a tower crane at left. Blank turquoise dimension
+      lines with oblique ticks multiply from left to right: a few near the crane, dozens at the center,
+      hundreds across the right third, a tight web measuring every gap between beam, duct, pipe and wall.
+      Only the dimension lines are turquoise. No text, no markers, no logo.'
+    proporcion_pedida: '16:9'
+    tamano_px:
+    - 2688
+    - 1520
+    reproducible: true
+    pedido: formula/demo/M02-ideas.json
+    fecha: '2026-11-11'
+    sha256: a5d0d6f9e14ce15c
+    nota: M02, idea 2 para «La IA entra a la obra» (buscan enganchar tras M01)
+    tipo: fondo
+    fondo_imagen: '#FCFCFA'
+  mg-ia-obra-m02-3p:
+    archivo: mg-ia-obra-m02-3p.png
+    herramienta: Magnific
+    modelo: magnific-one
+    creacion: eIJ1lJNdqL
+    enlace: https://www.magnific.com/app/creation/eIJ1lJNdqL
+    kit: hu2CvqLJlt
+    plantilla: post-linkedin
+    semilla: 48963
+    creditos: 180
+    prompt: 'Flat vector isometric technical illustration, 16:9, true axonometric projection with no vanishing
+      point: one long office building under construction spans the frame edge to edge in a horizontal
+      band through the middle. At the far left it is a compact dense block where columns, beams, slabs,
+      ductwork, piping and façade panels pack tightly together. Moving right, the same building lifts
+      into five perfectly level strata with gaps widening steadily: structural frame, floor slabs, rectangular
+      ducts, pipe runs, façade panels. Hundreds of thin, taut, perfectly straight vertical threads in
+      flat #0FA994 run between the strata, each linking a point where two systems once touched; they are
+      the only turquoise in the image. All building line work is thin uniform charcoal #1F2328 with white
+      #FFFFFF faces and no coloured fills. Solid flat #FAFAF9 background with a barely visible construction
+      grid, no nodes or ticks. Flat even daylight, no shadows, glow or gradients. No text, numbers, markers,
+      labels or logo.'
+    prompt_enviado: 'One long building under construction spans the whole frame. At the left end it stands
+      compact, every system packed into one dense block. Toward the right, the same building lifts apart
+      into calm, level strata, the gaps widening steadily: structure, slabs, ducts, pipes and façade each
+      on its own level. Hundreds of thin, taut turquoise threads run straight up between the strata, linking
+      every point where two systems touched. Only the threads are turquoise. No text, no markers, no logo.'
+    proporcion_pedida: '16:9'
+    tamano_px:
+    - 2688
+    - 1520
+    reproducible: true
+    pedido: formula/demo/M02-ideas.json
+    fecha: '2026-11-11'
+    sha256: e0d84fdbf35e677f
+    nota: M02, idea 3 para «La IA entra a la obra» (buscan enganchar tras M01)
+    tipo: objeto
+    objeto:
+    - 0.0424
+    - 0.0493
+    - 0.9658
+    - 0.948
+    fondo_imagen: '#FAF9F7'
+  mg-ia-obra-m02-4p:
+    archivo: mg-ia-obra-m02-4p.png
+    herramienta: Magnific
+    modelo: magnific-one
+    creacion: SyI0eaoUb8
+    enlace: https://www.magnific.com/app/creation/SyI0eaoUb8
+    kit: hu2CvqLJlt
+    plantilla: post-linkedin
+    semilla: 456165
+    creditos: 180
+    prompt: 'Flat vector technical line illustration, 16:9, strict isometric axonometric projection from
+      a high angle with no vanishing point. A vast structural grid fills the frame edge to edge: hundreds
+      of square columns and beams repeating in even bays, drawn in thin uniform #1F2328 and #074E43 lines
+      with unfilled white #FFFFFF faces on a solid flat #FAFAF9 background, matching the fine wireframe
+      line work of the attached modular grid drawing. Entering at the lower-left corner, a few thin #0FA994
+      lines cross the bays diagonally, each linking two distant column heads. They multiply toward the
+      upper right into a dense triangulated mesh that gathers into three or four tight knots where many
+      lines converge on single column heads. The turquoise lines share the grid''s thin weight; only the
+      mesh is turquoise, and the column grid runs whole and unbroken beneath it. Even flat daylight with
+      no shadows, glow, bloom, gradients or highlights. No text, letters, numbers, crosshairs, dimension
+      ticks, markers, labels or logo anywhere.'
+    prompt_enviado: A vast structural grid seen from a high angle fills the frame, hundreds of columns
+      and beams repeating in even bays. Entering at the lower left corner, thin turquoise lines cross
+      the bays diagonally, each linking two distant column heads; they multiply toward the upper right,
+      where they weave a dense triangulated mesh gathered into a few tight knots. Only the mesh is turquoise;
+      the column grid runs whole beneath it. No text, no markers, no logo.
+    proporcion_pedida: '16:9'
+    tamano_px:
+    - 2688
+    - 1520
+    reproducible: true
+    pedido: formula/demo/M02-ideas.json
+    fecha: '2026-11-11'
+    sha256: 4bf64df0c514a478
+    nota: M02, idea 4 para «La IA entra a la obra» (buscan enganchar tras M01)
+    tipo: fondo
+    fondo_imagen: '#FEFEFE'

@@ -14,3 +14,4 @@
 {"fecha": "2026-11-11", "galeria": "M01", "tipo": "eleccion", "texto": "suenan bien a simple vista genera las imagenes y ponles numero y la idea prmisa  detras de cada generación, adelante", "elegidas": [1, 2, 3, 4], "valoraciones": {"1": 1, "2": 1, "3": 1, "4": 1}}
 {"fecha": "2026-11-11", "galeria": "M01", "tipo": "eleccion", "texto": "n9o me gistó ninguna", "elegidas": [], "valoraciones": {"1": -1, "2": -1, "3": -1, "4": -1}}
 {"fecha": "2026-11-11", "galeria": "M01", "tipo": "diagnostico", "pregunta": "¿qué falló? (varias)", "texto": "La idea no engancha", "no_marco": ["El dibujo se ve pobre", "No se ve el título", "Mejor un fondo con idea"]}
+{"fecha": "2026-11-11", "galeria": "M02", "tipo": "aprobacion", "texto": "Sí, genéralas", "nota": "aprueba generar las 4 ideas de M02 directo en imagen (720 créditos), sin elegir en texto"}

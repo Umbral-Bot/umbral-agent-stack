@@ -155,5 +155,27 @@
    "prompt_16x9": "A long building under construction stretches across the whole frame. At the left end it stands compact, every system packed into one dense block: columns, slabs, ducts, pipes, façade. Toward the right, the same building gradually lifts apart into calm horizontal strata floating one above another, evenly spaced, each discipline on its own level. Dozens of thin taut turquoise threads run vertically between the strata, linking the exact points where systems touched. No text, no markers, no logo.",
    "riesgo": "El despiece puede salir confuso: capas fundidas entre sí, piezas flotando al azar o un edificio que parece derrumbarse o demolerse, que es justo la lectura contraria. Los hilos turquesa pueden volverse rayos luminosos, flechas o líneas de cota, o perderse en la densidad del dibujo. El tramo compacto puede leerse como otro edificio en vez de como el mismo en su estado anterior. Además, el modelo puede agregar rótulos a cada estrato o caer en la infografía genérica de un «edificio explotado». Para evitarlo, hay que insistir en que es un solo volumen continuo, en la separación progresiva y pareja, y en hilos mate y verticales."
   }
- ]
+ ],
+ "imagenes": {
+  "1": {
+   "principal": "mg-ia-obra-m02-1p"
+  },
+  "2": {
+   "principal": "mg-ia-obra-m02-2p"
+  },
+  "3": {
+   "principal": "mg-ia-obra-m02-3p"
+  },
+  "4": {
+   "principal": "mg-ia-obra-m02-4p"
+  }
+ },
+ "generacion": {
+  "fecha": "2026-11-11",
+  "modelo": "magnific-one",
+  "kit": "hu2CvqLJlt",
+  "resolucion": "2k",
+  "creditos": 720,
+  "nota": "David: «Sí, genéralas»; solo 16:9, la apaisada después de la elegida"
+ }
 }

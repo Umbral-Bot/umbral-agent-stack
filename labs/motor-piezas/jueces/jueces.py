@@ -59,8 +59,11 @@ def opciones(gid: str, seccion: int | None = None):
     sección es una opción (1, 2, 3…) con todas sus piezas."""
     if gid.startswith('M'):
         # una ronda de metáforas en texto (formula/demo/M01-metaforas.json): opciones sin piezas
-        ronda = json.loads((LAB / 'formula' / 'demo' / f'{gid}-metaforas.json').read_text(encoding='utf-8'))
-        return {'titulo': f"Metáforas para «{ronda['titular']}»", 'descripcion': ronda['premisa']},             [{'id': int(n), 'nombre': o['metafora']['sujeto'], 'piezas': []} for n, o in ronda['opciones'].items()]
+        demo = LAB / 'formula' / 'demo'
+        archivo = demo / f'{gid}-metaforas.json' if (demo / f'{gid}-metaforas.json').exists() else demo / f'{gid}-ideas.json'
+        ronda = json.loads(archivo.read_text(encoding='utf-8'))
+        return {'titulo': f"Metáforas para «{ronda['titular']}»", 'descripcion': ronda.get('premisa') or ronda.get('motivo', '')},             [{'id': int(n), 'nombre': o.get('titulo') or o['metafora'].get('sujeto', ''), 'piezas': []}
+             for n, o in ronda['opciones'].items()]
     defin = leer_yaml(LAB / 'galerias' / f'{gid}.yaml')
     dir_g = LAB / 'salida' / gid
     piezas = json.loads((dir_g / 'galeria.json').read_text(encoding='utf-8'))['piezas']

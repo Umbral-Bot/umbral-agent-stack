@@ -1,0 +1,50 @@
+{
+ "galeria": "M02",
+ "seccion": null,
+ "rubrica": "imagenes-lectura-ciega",
+ "retro": false,
+ "criterios_hasta": null,
+ "sellado": "2026-11-11T08:39:53",
+ "hash_rubrica": "-",
+ "hash_criterios": "-",
+ "votos": [
+  {
+   "lente": "lectura_ciega",
+   "puntajes": {
+    "4": 7.2,
+    "1": 7.0,
+    "3": 2.8,
+    "2": 2.2
+   },
+   "hallazgos": [
+    {
+     "opcion": "1",
+     "donde": "lectura a ciegas de la imagen",
+     "problema": "eligió d (la real era d), confianza 0.4: Una bandada dispersa llega a una estructura y se posa un pájaro en cada nudo viga-columna, como si un enjambre revisara cada unión del modelo; no veo a nadie decidiendo nada, y también podría leerse como (a), lo disperso que se ordena en el modelo (aviso: el nombre del archivo incluye «ia», y eso puede sesgar la lectura).",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "lectura a ciegas de la imagen",
+     "problema": "eligió d (la real era c), confianza 0.55: Veo un edificio en obra, con grúa, dibujado como modelo 3D de líneas, con su estructura e instalaciones (ductos, tuberías y bandejas) y cubierto de cotas cian: la obra pasa a coordinarse sobre el modelo en vez del plano. No veo nada que sugiera IA ni un hallazgo destacado.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "lectura a ciegas de la imagen",
+     "problema": "eligió c (la real era b), confianza 0.45: Un edificio completo junto a su versión explotada por sistemas (estructura, losas, conductos, pilares y fachada), unidos por líneas verticales turquesa que alinean cada pieza entre capas: el modelo como herramienta para coordinar disciplinas; no veo un hallazgo marcado ni a nadie decidiendo, por lo que la b es la segunda lectura posible, aunque más débil.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "4",
+     "donde": "lectura a ciegas de la imagen",
+     "problema": "eligió a (la real era a), confianza 0.45: Veo una retícula isométrica y repetitiva de losas y pilares. Unas finas líneas turquesa la recorren desde unos pocos nodos y se detienen en algunas losas más claras, como si una revisión automática marcara puntos dentro del modelo. La parte de «decidir qué hacer» no aparece en la imagen, y el nombre del archivo («ia-obra») puede haber influido en la lectura.",
+     "gravedad": "baja"
+    }
+   ],
+   "veredicto": "",
+   "resumen": "1: acierta; 2: falla; 3: falla; 4: acierta",
+   "mejor": "4"
+  }
+ ]
+}

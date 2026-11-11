@@ -1,0 +1,81 @@
+{
+ "galeria": "M02",
+ "seccion": null,
+ "rubrica": "imagenes-pred-crit-a",
+ "retro": false,
+ "criterios_hasta": null,
+ "sellado": "2026-11-11T08:39:53",
+ "hash_rubrica": "ae799f118a10",
+ "hash_criterios": "05186d14725e",
+ "votos": [
+  {
+   "puntajes": {
+    "1": 6,
+    "2": 3.5,
+    "3": 5.5,
+    "4": 7
+   },
+   "hallazgos": [
+    {
+     "opcion": "4",
+     "donde": "imagen entera",
+     "problema": "Es la que más se acerca a lo que enganchó en M01: un campo gráfico denso, con presencia y losas turquesa, más la idea de red que David elogió en G28 («ese arnés»). Es un campo parejo que se puede recortar en cualquier parte, así que sirve en todas las máscaras.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "4",
+     "donde": "hilos turquesa (cuadrante superior derecho y centro)",
+     "problema": "Los hilos que «tejen» la retícula son finos, rayados e irregulares. En el celular casi no se ven, y la metáfora corre el riesgo de leerse como el fondo de G28 con algunos garabatos. Conviene que sean más claros y más intencionados.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4",
+     "donde": "losas turquesa claro semitransparentes y destellos radiales",
+     "problema": "En el recorte, el turquesa ocupa superficies mucho mayores que un acento. Según el criterio 51 (a prueba) es un ajuste y no un veto. Las losas más claras y los haces que salen de un punto rozan el veto de brillo o resplandor: conviene llevarlas a un tinte plano.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "domde": "",
+     "donde": "composición general",
+     "problema": "La composición es de afiche: la estructura está a la derecha y el abajo a la izquierda queda vacío. En máscaras de columna (LinkedIn, 9:16), el recorte se queda con la estructura y pierde la bandada, y con ella la metáfora.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "1",
+     "donde": "bandada, arriba a la izquierda",
+     "problema": "La metáfora es la más poética y novedosa, y engancha. Pero las aves de la zona densa salen como manchas borrosas. Sin el texto, el vínculo con la IA no se lee, y unas palomas posadas en una obra pueden leerse como plaga.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "losas y piezas despiezadas a la derecha",
+     "problema": "La composición es compleja y propia del oficio (el despiece de disciplinas), pero recuerda las «placas levantadas» que David rechazó en M01. La fila inferior de columnas y ventanas sueltas queda caótica.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "líneas de proyección turquesa",
+     "problema": "El turquesa es casi imperceptible. En el celular, la pieza se ve gris y lavada, con trazo fino y denso. El objeto es largo y horizontal: en una columna o en el 9:16 se pierde la transformación de izquierda a derecha.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "grúa y cotas",
+     "problema": "Es literal: dibuja cotas sobre un edificio y suma una grúa genérica de obra. Es el «mecanismo didáctico» que no engancha. Las cotas turquesa se vuelven ruido de rayas y marcas, y la grúa queda cortada arriba a la izquierda.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "todas",
+     "donde": "contenido de la imagen",
+     "problema": "Ninguna trae texto, letras, números ni logos, y no hay fotorrealismo. Las cuatro siguen la línea isométrica plana y clara.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "4",
+   "veredicto": "sirve con ajustes",
+   "resumen": "Predigo que David elige la 4 (retícula tejida), porque retoma los dos rasgos que sí le engancharon: el campo denso con losas turquesa y la idea de red. Antes de aprobarla hay que reforzar los hilos para que la metáfora se lea en el celular y aplanar las losas claras con aire de resplandor. Le sigue la 1 (bandada): es la más poética, pero su composición de afiche se rompe en los recortes y las aves salen borrosas. La 3 tiene buen oficio, pero queda gris y lavada y repite las placas levantadas. La 2 es literal y no engancha. Hay riesgo de un nuevo «ninguna» si siente que la 4 es solo el fondo de G28 con garabatos.",
+   "lente": "prediccion"
+  }
+ ]
+}

@@ -77,6 +77,21 @@ def medir_objeto(ruta: Path, percentil: float = 0.0) -> list[float]:
     return [round(float(v), 4) for v in (xs.min() / w, ys.min() / h, (xs.max() + 1) / w, (ys.max() + 1) / h)]
 
 
+def medir_acento(ruta: Path) -> list[float] | None:
+    """Caja del turquesa de la imagen (el hallazgo, en el camino B), por percentiles 1–99."""
+    a = np.asarray(Image.open(ruta).convert('RGB'), dtype=float)
+    h, w = a.shape[:2]
+    # cerca del turquesa de relleno (#0FA994) y sin los trazos finos teñidos: solo las superficies
+    t = np.sqrt(((a - np.array([15, 169, 148])) ** 2).sum(axis=2)) < 70
+    t = ndimage.binary_opening(t, iterations=2)
+    if t.sum() < 50:
+        return None
+    ys, xs = np.nonzero(t)
+    x0, x1 = np.percentile(xs, [1, 99])
+    y0, y1 = np.percentile(ys, [1, 99])
+    return [round(float(v), 4) for v in (x0 / w, y0 / h, (x1 + 1) / w, (y1 + 1) / h)]
+
+
 def guardar_catalogo(imagenes: dict):
     cabecera = ('# Imágenes de Magnific One con el kit «Umbral BIM». Las escribe pedido_magnific.py registrar.\n'
                 '# El archivo vive en 07_Motor de piezas/02_magnific; la procedencia, aquí.\n')
@@ -91,6 +106,9 @@ def medir(a):
         raise SystemExit(f'{a.id} no está en imagenes.magnific.yaml')
     ruta = ctx.ruta_imagen(imagenes[a.id])
     imagenes[a.id]['objeto'] = medir_objeto(ruta, a.percentil)
+    acento = medir_acento(ruta)
+    if acento:
+        imagenes[a.id]['acento'] = acento
     if a.percentil:
         imagenes[a.id]['objeto_medido'] = f'percentiles {a.percentil}–{100 - a.percentil} del trazo'
     imagenes[a.id]['fondo_imagen'] = fondo_de_imagen(ruta)
@@ -216,9 +234,14 @@ def registrar(a):
         imagenes[a.id]['nota'] = a.nota
     if a.foco:
         imagenes[a.id]['foco'] = [float(x) for x in a.foco.split(',')]
+    if a.region:
+        imagenes[a.id]['region'] = [float(x) for x in a.region.split(',')]
     imagenes[a.id]['tipo'] = a.tipo
     if a.tipo == 'objeto':
         imagenes[a.id]['objeto'] = medir_objeto(destino)
+        acento = medir_acento(destino)
+        if acento:
+            imagenes[a.id]['acento'] = acento
     imagenes[a.id]['fondo_imagen'] = fondo_de_imagen(destino)
     guardar_catalogo(imagenes)
     print(f'{a.id}: {destino} ({ancho}×{alto}) anotada en {ruta_cat.name}')
@@ -240,6 +263,7 @@ def main():
     r.add_argument('--plantilla', default=PLANTILLA)
     r.add_argument('--proporcion', default=f'{PROPORCION[0]}:{PROPORCION[1]}')
     r.add_argument('--nota')
+    r.add_argument('--region', help='x0,y0,x1,y1 en fracciones: la parte útil de la imagen (p. ej. un rescate)')
     r.add_argument('--tipo', choices=['objeto', 'fondo'], default='objeto',
                    help='objeto: se centra entero en la máscara; fondo: llena la máscara (patrón sin sujeto)')
     r.add_argument('--foco', help='x,y del sujeto en fracciones (p. ej. el centro del turquesa)')

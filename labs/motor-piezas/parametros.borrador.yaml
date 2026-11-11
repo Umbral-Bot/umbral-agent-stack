@@ -30,6 +30,9 @@ fecha: 2026-11-06
 # 0.3m: imagen_ajuste objeto (el objeto entero y centrado en su máscara), imagen_objeto_ocupa e imagen_borde_difuso.
 # 0.3n: el contenido puede traer imagen_ancha (para máscaras desde imagen_ancha_desde, 2:1).
 # 0.3o: una imagen del catálogo con tipo: fondo llena la máscara aunque el pack pida imagen_ajuste objeto, y las cruces de registro no se dibujan sobre ella.
+# 0.3p: imagen_recorte_fondo optimo (camino A) e imagen_objeto_ancla acento (camino B).
+# 0.3q: una imagen del catálogo puede traer `region` (la parte útil); el recorte óptimo evita las zonas vacías.
+# 0.3r: el anclaje por acento corre el objeto solo una fracción (imagen_acento_fraccion), con margen mínimo y nunca hacia el panel de texto.
 
 formatos:
   cuadrado:  {ancho: 1080, alto: 1080, vista_css: 390, uso: "feed 1:1 (Instagram, LinkedIn)"}
@@ -784,6 +787,50 @@ parametros:
     defecto: 2.0
     descripcion: proporción ancho/alto desde la que una máscara usa la imagen apaisada del contenido (`imagen_ancha`), si la trae
     origen: "G25 (2026-11-10): «para el 1:1 queda la imagen muy apaizada [...] seria necesario otra imagen pensada en eso, lo mismo pasa con la 16:9»"
+  imagen_objeto_ancla:
+    capa: imagen
+    nivel: componente
+    tipo: opcion
+    opciones: [caja, acento]
+    defecto: caja
+    descripcion: con imagen_ajuste objeto, caja = el objeto centrado en la máscara; acento = el objeto sigue entero, y en el margen que sobra su acento turquesa (`acento` en el catálogo) se acerca a imagen_acento_destino
+    origen: "G27 (2026-11-11): «tambien falta unmetodo para posicionar dentro de la mascara no?»"
+  imagen_acento_destino:
+    capa: imagen
+    nivel: componente
+    tipo: par
+    defecto: [0.5, 0.5]
+    descripcion: punto de la máscara (fracción de ancho y alto) hacia el que se lleva el acento con imagen_objeto_ancla acento
+  imagen_acento_fraccion:
+    capa: imagen
+    nivel: componente
+    tipo: decimal
+    rango: [0.0, 1.0]
+    defecto: 0.33
+    descripcion: con imagen_objeto_ancla acento, qué fracción del camino recorre el objeto hacia llevar su acento al destino (1 = todo; los jueces de G28 vieron que llevarlo entero descentra el objeto)
+    origen: "G28 (2026-11-11): el anclaje completo descentró el objeto y lo pegó al panel de texto"
+  imagen_acento_margen:
+    capa: imagen
+    nivel: componente
+    tipo: decimal
+    rango: [0.0, 0.2]
+    defecto: 0.07
+    descripcion: con imagen_objeto_ancla acento, margen mínimo entre el objeto y el borde de la máscara (fracción del lado)
+  imagen_recorte_fondo:
+    capa: imagen
+    nivel: componente
+    tipo: opcion
+    opciones: [centro, optimo]
+    defecto: centro
+    descripcion: con una imagen tipo fondo, centro = recorte centrado (o imagen_foco); optimo = el motor prueba 441 recortes y elige el que no corta acentos turquesa en el borde, deja al menos dos a la vista y no pasa de imagen_fondo_turquesa_max
+    origen: "G27 (2026-11-11): «como se deetrmina que parte de la iamgn poner o como seposiciona??»"
+  imagen_fondo_turquesa_max:
+    capa: imagen
+    nivel: componente
+    tipo: decimal
+    rango: [0.005, 0.2]
+    defecto: 0.03
+    descripcion: con recorte óptimo, la fracción de turquesa a partir de la cual el recorte se penaliza (los jueces vieron losas turquesa demasiado pesadas en las bandas)
   imagen_borde_difuso:
     capa: imagen
     nivel: componente

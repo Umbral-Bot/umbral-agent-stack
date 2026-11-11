@@ -69,6 +69,68 @@ def sha16(ruta: Path) -> str:
     return hashlib.sha256(Path(ruta).read_bytes()).hexdigest()[:16]
 
 
+def mascara_tinta(ruta: Path, ancho: int = 640):
+    """Píxeles con dibujo (lejos del color del fondo), reducida a `ancho` px."""
+    im = Image.open(ruta).convert('RGB')
+    im = im.resize((ancho, max(1, round(im.height * ancho / im.width))), Image.Resampling.BILINEAR)
+    a = np.asarray(im, dtype=float)
+    borde = np.concatenate([a[:4].reshape(-1, 3), a[-4:].reshape(-1, 3), a[:, :4].reshape(-1, 3), a[:, -4:].reshape(-1, 3)])
+    return np.sqrt(((a - np.median(borde, axis=0)) ** 2).sum(axis=2)) > 40
+
+
+def mascara_turquesa(ruta: Path, ancho: int = 640):
+    """Píxeles turquesa de una imagen, reducida a `ancho` px (para medir rápido)."""
+    im = Image.open(ruta).convert('RGB')
+    im = im.resize((ancho, max(1, round(im.height * ancho / im.width))), Image.Resampling.BILINEAR)
+    a = np.asarray(im, dtype=float)
+    from scipy import ndimage
+    # superficies cerca del turquesa de relleno (#0FA994); los trazos finos teñidos no cuentan
+    return ndimage.binary_opening(np.sqrt(((a - np.array([15, 169, 148])) ** 2).sum(axis=2)) < 70, iterations=1)
+
+
+def recorte_optimo_fondo(ruta: Path, zona_prop: float, img_prop: float, turquesa_max: float,
+                         region: list | None = None) -> tuple[float, float]:
+    """Foco del recorte de un fondo: no cortar acentos en el borde, dejar al menos dos a la vista,
+    no pasar de `turquesa_max` de turquesa en la ventana y, a igualdad, quedarse cerca del centro."""
+    from scipy import ndimage
+    t = mascara_turquesa(ruta)
+    tinta = mascara_tinta(ruta)
+    if region:
+        # se busca dentro de la parte útil de la imagen
+        H0, W0 = t.shape
+        r0, r1 = round(region[1] * H0), round(region[3] * H0)
+        c0, c1 = round(region[0] * W0), round(region[2] * W0)
+        t, tinta = t[r0:r1, c0:c1], tinta[r0:r1, c0:c1]
+    h, w = t.shape
+    lab, n = ndimage.label(t)
+    tinta_total = float(tinta.mean()) or 1.0
+    if zona_prop >= img_prop:
+        fw, fh = 1.0, img_prop / zona_prop
+    else:
+        fw, fh = zona_prop / img_prop, 1.0
+    mejor, foco = None, (0.5, 0.5)
+    pasos = [i / 20 for i in range(21)]
+    for fx in pasos:
+        for fy in pasos:
+            cx = min(max(fx, fw / 2), 1 - fw / 2)
+            cy = min(max(fy, fh / 2), 1 - fh / 2)
+            x0, x1 = round((cx - fw / 2) * w), round((cx + fw / 2) * w)
+            y0, y1 = round((cy - fh / 2) * h), round((cy + fh / 2) * h)
+            ventana = lab[y0:y1, x0:x1]
+            dentro = set(np.unique(ventana)) - {0}
+            borde = set(np.unique(np.concatenate([ventana[0], ventana[-1], ventana[:, 0], ventana[:, -1]]))) - {0}
+            cortados = len(borde)
+            enteros = len(dentro - borde)
+            area = float((ventana > 0).mean()) if ventana.size else 0.0
+            densidad = float(tinta[y0:y1, x0:x1].mean()) / tinta_total if ventana.size else 0.0
+            costo = (3.0 * cortados + 2.0 * max(0, 2 - enteros) + 40.0 * max(0.0, area - turquesa_max)
+                     + 4.0 * max(0.0, 0.8 - densidad)             # 0.3q: no elegir la parte vacía
+                     + 0.5 * (abs(cx - 0.5) + abs(cy - 0.5)))
+            if mejor is None or costo < mejor - 1e-9:
+                mejor, foco = costo, (cx, cy)
+    return foco
+
+
 def fondo_de_imagen(ruta: Path) -> str:
     """Color del fondo de una imagen: la mediana de sus bordes, para extenderlo sin costura."""
     a = np.asarray(Image.open(ruta).convert('RGB'), dtype=float)
@@ -900,6 +962,31 @@ class Compositor:
             dw, dh = iw * k, ih * k
             x = zona.x + zona.w / 2 - (ox0 + ox1) / 2 * dw
             y = zona.y + zona.h / 2 - (oy0 + oy1) / 2 * dh
+            if v['imagen_objeto_ancla'] == 'acento' and info.get('acento'):
+                # 0.3p/0.3r: el objeto sigue entero; se corre solo una fracción del camino que llevaría su
+                # acento (el hallazgo) al punto pedido, con un margen mínimo, y nunca hacia el panel de texto
+                ax0, ay0, ax1, ay1 = info['acento']
+                tx, ty = v['imagen_acento_destino']
+                f = v['imagen_acento_fraccion']
+                ow, oh = (ox1 - ox0) * dw, (oy1 - oy0) * dh
+                hacia_panel = {'izq': zona.x > 1, 'der': zona.x2 < self.W - 1,
+                               'arr': zona.y > 1, 'aba': zona.y2 < self.H - 1}
+
+                def acomodar(base, inicio, largo, o0, a_centro, escala, destino, ocupado, panel_menor, panel_mayor):
+                    pad = v['imagen_acento_margen'] * largo
+                    meta = inicio + destino * largo - a_centro * escala
+                    nuevo = base + f * (meta - base)
+                    if nuevo < base and panel_menor:      # correrse hacia un panel: no
+                        nuevo = base
+                    if nuevo > base and panel_mayor:
+                        nuevo = base
+                    lo = inicio + pad - o0 * escala
+                    hi = inicio + largo - pad - ocupado - o0 * escala
+                    return min(max(nuevo, lo), hi) if lo <= hi else base
+
+                x = acomodar(x, zona.x, zona.w, ox0, (ax0 + ax1) / 2, dw, tx, ow, hacia_panel['izq'], hacia_panel['der'])
+                y = acomodar(y, zona.y, zona.h, oy0, (ay0 + ay1) / 2, dh, ty, oh, hacia_panel['arr'], hacia_panel['aba'])
+                self.notas.append(f'anclaje por acento: el objeto se corre {round(100 * f)} % hacia llevar el hallazgo a ({tx}, {ty}), sin acercarse al panel')
             # lados de la imagen que caen dentro de la máscara: solo esos se funden en el fondo
             lados = (x > zona.x + 0.5, y > zona.y + 0.5, x + dw < zona.x2 - 0.5, y + dh < zona.y2 - 0.5)
             if any(lados):
@@ -910,15 +997,26 @@ class Compositor:
                               + (f'; el fondo de la imagen ({relleno}) se extiende' if relleno else ''))
         else:
             marco = Rect(0, 0, self.W, self.H) if v['imagen_registro'] == 'lienzo' else zona
-            k = max(marco.w / iw, marco.h / ih)
-            dw, dh = iw * k, ih * k
+            rx0, ry0, rx1, ry1 = info.get('region') or (0.0, 0.0, 1.0, 1.0)
+            ew, eh = iw * (rx1 - rx0), ih * (ry1 - ry0)          # la parte útil, en px de la imagen
+            k = max(marco.w / ew, marco.h / eh)
+            dw, dh = ew * k, eh * k
             fx, fy = v['imagen_foco']
             if info.get('foco') and 'imagen_foco' not in (self.pack.get('valores') or {}):
                 # la imagen trae dónde está su sujeto; un pack que fija su propio foco manda
                 fx, fy = info['foco']
                 self.notas.append(f"foco de la imagen: {fx}, {fy}")
+            if info.get('tipo') == 'fondo' and v['imagen_recorte_fondo'] == 'optimo':
+                fx, fy = recorte_optimo_fondo(ruta, marco.w / marco.h, ew / eh, v['imagen_fondo_turquesa_max'],
+                                              info.get('region'))
+                self.notas.append(f'recorte óptimo del fondo: foco ({fx:.2f}, {fy:.2f})')
             x = min(marco.x, max(marco.x2 - dw, marco.x + marco.w / 2 - fx * dw))
             y = min(marco.y, max(marco.y2 - dh, marco.y + marco.h / 2 - fy * dh))
+            if info.get('region'):
+                # de la parte útil a la imagen entera: misma escala, corrida por el borde de la región
+                self.notas.append(f"región útil de la imagen: {info['region']}")
+                x, y = x - rx0 * iw * k, y - ry0 * ih * k
+                dw, dh = iw * k, ih * k
         self.imagen = {'id': ident, 'ruta': ruta, 'x': x, 'y': y, 'w': dw, 'h': dh, 'zona': zona,
                        'radio': radio, 'info': info, 'escala': k, 'relleno': relleno, 'ajuste': ajuste}
         self.el.append({'tipo': 'imagen'})

@@ -29,6 +29,7 @@ fecha: 2026-11-06
 # 0.3l: la imagen del catálogo puede traer `foco` (dónde está su sujeto); lo usa si el pack no fija imagen_foco.
 # 0.3m: imagen_ajuste objeto (el objeto entero y centrado en su máscara), imagen_objeto_ocupa e imagen_borde_difuso.
 # 0.3n: el contenido puede traer imagen_ancha (para máscaras desde imagen_ancha_desde, 2:1).
+# 0.3o: una imagen del catálogo con tipo: fondo llena la máscara aunque el pack pida imagen_ajuste objeto, y las cruces de registro no se dibujan sobre ella.
 
 formatos:
   cuadrado:  {ancho: 1080, alto: 1080, vista_css: 390, uso: "feed 1:1 (Instagram, LinkedIn)"}

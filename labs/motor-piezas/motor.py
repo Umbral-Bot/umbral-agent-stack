@@ -885,7 +885,10 @@ class Compositor:
         # con imagen_registro 'lienzo' la imagen se encuadra como si cubriera todo el lienzo y la
         # zona solo la recorta: entre presets del paso 3 la imagen no se mueve
         relleno, ajuste = None, 'cubrir'
-        if v['imagen_ajuste'] == 'objeto' and info.get('objeto'):
+        if info.get('tipo') == 'fondo':
+            # 0.3o: un fondo no tiene objeto que centrar: llena la máscara y se recorta
+            self.notas.append('imagen de fondo: llena la máscara')
+        if v['imagen_ajuste'] == 'objeto' and info.get('objeto') and info.get('tipo') != 'fondo':
             # 0.3m: el objeto de la imagen (su caja medida) va entero y centrado en la máscara, con
             # el tamaño pedido; si la imagen no alcanza a cubrir la máscara, su fondo se extiende
             ajuste = 'objeto'
@@ -1691,6 +1694,11 @@ class Compositor:
                               + ''.join(puntos) + '</g>')
             elif t == 'cruz':
                 c, cx, cy = e['tam'], e['cx'], e['cy']
+                im = self.imagen
+                if (e.get('registro') and im and im['info'].get('tipo') == 'fondo'
+                        and im['zona'].x <= cx <= im['zona'].x2 and im['zona'].y <= cy <= im['zona'].y2):
+                    # 0.3o: sobre un fondo con su propia retícula, la cruz de registro se lee como error de montaje
+                    continue
                 partes.append(f'  <g stroke="{marca.hex_de(self.rgba(e["color"]))}" stroke-width="{self.ctx.reglas["filete_px"]}" '
                               f'stroke-linecap="square"><line x1="{f2(cx - c)}" y1="{f2(cy)}" x2="{f2(cx + c)}" y2="{f2(cy)}"/>'
                               f'<line x1="{f2(cx)}" y1="{f2(cy - c)}" x2="{f2(cx)}" y2="{f2(cy + c)}"/></g>')

@@ -123,3 +123,310 @@ imagenes:
     - 0.8564
     - 0.7326
     fondo_imagen: '#FCFBFA'
+  mg-articulo-ia-obra-fondo-p1:
+    archivo: mg-articulo-ia-obra-fondo-p1.png
+    herramienta: Magnific
+    modelo: magnific-one
+    creacion: s7B6F39l8e
+    enlace: https://www.magnific.com/app/creation/s7B6F39l8e
+    kit: hu2CvqLJlt
+    plantilla: null
+    semilla: 500935
+    creditos: 180
+    prompt: 'Flat vector all-over background pattern in strict isometric projection, 16:9, no vanishing
+      point. Small building components — square floor slabs, short square columns, hollow rectangular
+      beams and short straight pipe segments — are scattered evenly across the entire frame with uniform
+      spacing and no focal point or cluster. Each element is drawn in thin uniform line work in #074E43
+      dark teal and #1F2328 charcoal, with plain white #FFFFFF faces, oriented along the three isometric
+      axes in varied directions. Five or six elements spread evenly across the frame carry one small flat
+      #0FA994 teal plane each, such as a slab top or a beam face; teal never fills large areas. The background
+      is a solid flat #FAFAF9 off-white field. A faint isometric construction grid runs to all four edges
+      behind the elements. Even, flat daylight: no shadows, no glow, no gradients, no highlights. The
+      image contains no text, letters, numbers, labels, logos or frames.'
+    prompt_enviado: 'Abstract isometric background pattern of building elements: slabs, short columns,
+      beams and pipe segments in thin lines, scattered evenly across the whole frame with no main subject,
+      and a few small flat teal planes as accents. Calm and airy. No text, no logo.'
+    proporcion_pedida: '16:9'
+    tamano_px:
+    - 2688
+    - 1520
+    reproducible: true
+    pedido: null
+    fecha: '2026-11-11'
+    sha256: ca3bedb11d598c52
+    nota: 'G27 versión A (fondo abstracto): patrón sin sujeto, llena la máscara; ronda aprobada por David
+      («haz 2 versiones de cada una»)'
+    tipo: fondo
+    fondo_imagen: '#FAFAF9'
+  mg-articulo-ia-obra-fondo-p2:
+    archivo: mg-articulo-ia-obra-fondo-p2.png
+    herramienta: Magnific
+    modelo: magnific-one
+    creacion: UPtZ5A0wny
+    enlace: https://www.magnific.com/app/creation/UPtZ5A0wny
+    kit: hu2CvqLJlt
+    plantilla: null
+    semilla: 795649
+    creditos: 180
+    prompt: 'Sparse, airy flat vector isometric background pattern, 16:9, strict isometric projection
+      with no vanishing point. Fewer and smaller building elements float on a solid flat #FAFAF9 off-white
+      field with wide breathing space between them: mostly thin square slabs and short pipe segments,
+      with an occasional short square column or hollow beam. Elements sit on a loose staggered isometric
+      grid so the spacing feels even across the whole frame, with no main subject and no grouping. Line
+      work is thin and uniform in #074E43 and #1F2328, faces left white #FFFFFF. Only three or four tiny
+      slab tops are filled with flat #0FA994 teal, spread far apart across left, centre and right as quiet
+      accents. Tiny crosshair nodes mark some faint grid intersections running to the edges. Lighting
+      is flat, even daylight with no shadows, glow, highlights or gradients. No text, letters, numbers,
+      labels or logo anywhere in the image.'
+    prompt_enviado: 'Abstract isometric background pattern of building elements: slabs, short columns,
+      beams and pipe segments in thin lines, scattered evenly across the whole frame with no main subject,
+      and a few small flat teal planes as accents. Calm and airy. No text, no logo.'
+    proporcion_pedida: '16:9'
+    tamano_px:
+    - 2688
+    - 1520
+    reproducible: true
+    pedido: null
+    fecha: '2026-11-11'
+    sha256: b2fcfc405ad84cdf
+    nota: 'G27 versión A (fondo abstracto): patrón sin sujeto, llena la máscara; ronda aprobada por David
+      («haz 2 versiones de cada una»)'
+    tipo: fondo
+    fondo_imagen: '#F9F9F7'
+  mg-articulo-ia-obra-fondo-a1:
+    archivo: mg-articulo-ia-obra-fondo-a1.png
+    herramienta: Magnific
+    modelo: magnific-one
+    creacion: yifnxcpPW9
+    enlace: https://www.magnific.com/app/creation/yifnxcpPW9
+    kit: hu2CvqLJlt
+    plantilla: null
+    semilla: 588539
+    creditos: 180
+    prompt: 'Flat vector isometric background pattern filling a wide 21:9 frame, with no main subject.
+      Small building elements in equal measure, square floor slabs, short square columns, hollow rectangular
+      beams and short straight pipe segments, are scattered evenly in a long horizontal rhythm across
+      the full width, all similar in size, with generous calm off-white space between pieces. Every element
+      is drawn in thin uniform #074E43 and #1F2328 lines in strict isometric projection with no vanishing
+      point, faces left white #FFFFFF. About one element in eight, spread across the width, has a single
+      small flat #0FA994 plane such as a slab top, the only accent colour. The background is a solid flat
+      #FAFAF9 field crossed by faint isometric grid lines, tiny crosshair nodes and dimension ticks running
+      to every edge. Flat even daylight, no shadows, glow, gradients or highlights. No text, letters,
+      numbers, labels or logo anywhere.'
+    prompt_enviado: 'Abstract isometric background pattern of building elements: slabs, short columns,
+      beams and pipe segments in thin lines, scattered evenly in a long horizontal rhythm across the whole
+      frame with no main subject, and a few small flat teal planes as accents. Calm and airy. No text,
+      no logo.'
+    proporcion_pedida: '21:9'
+    tamano_px:
+    - 2688
+    - 1152
+    reproducible: true
+    pedido: null
+    fecha: '2026-11-11'
+    sha256: e53d8c188d7ea992
+    nota: 'G27 versión A (fondo abstracto): patrón sin sujeto, llena la máscara; ronda aprobada por David
+      («haz 2 versiones de cada una»)'
+    tipo: fondo
+    fondo_imagen: '#FBFAF9'
+  mg-articulo-ia-obra-fondo-a2:
+    archivo: mg-articulo-ia-obra-fondo-a2.png
+    herramienta: Magnific
+    modelo: magnific-one
+    creacion: lJoiHZdgv9
+    enlace: https://www.magnific.com/app/creation/lJoiHZdgv9
+    kit: hu2CvqLJlt
+    plantilla: null
+    semilla: 252456
+    creditos: 180
+    prompt: 'Wide 21:9 flat vector isometric pattern reading as a quiet drafting grid of a structural
+      system, no focal subject. Short square columns and hollow rectangular beams dominate, with a few
+      square slabs, arranged in staggered horizontal rows that sit exactly on the nodes of a visible isometric
+      grid, sparse density and wide even gutters between elements. Lines are thin and uniform in #074E43
+      and #1F2328, strict isometric projection without vanishing point, faces white #FFFFFF, with occasional
+      dashed hidden edges. A handful of beam side faces, spread evenly across the width, are filled flat
+      #0FA994 as the sole accent; no other saturated colour. Background is solid flat #FAFAF9 with fine
+      construction lines, small crosshair nodes and dimension ticks extending to every edge. Flat even
+      daylight, no cast shadows, glow, bloom, gradients or shiny highlights. Contains no text, letters,
+      numbers, labels, signage or logo.'
+    prompt_enviado: 'Abstract isometric background pattern of building elements: slabs, short columns,
+      beams and pipe segments in thin lines, scattered evenly in a long horizontal rhythm across the whole
+      frame with no main subject, and a few small flat teal planes as accents. Calm and airy. No text,
+      no logo.'
+    proporcion_pedida: '21:9'
+    tamano_px:
+    - 2688
+    - 1152
+    reproducible: true
+    pedido: null
+    fecha: '2026-11-11'
+    sha256: 64c43c904d477c8d
+    nota: 'G27 versión A (fondo abstracto): patrón sin sujeto, llena la máscara; ronda aprobada por David
+      («haz 2 versiones de cada una»)'
+    tipo: fondo
+    fondo_imagen: '#F8F8F7'
+  mg-articulo-ia-obra-formula-p1:
+    archivo: mg-articulo-ia-obra-formula-p1.png
+    herramienta: Magnific
+    modelo: magnific-one
+    creacion: s7B6qkYl8e
+    enlace: https://www.magnific.com/app/creation/s7B6qkYl8e
+    kit: hu2CvqLJlt
+    plantilla: null
+    semilla: 85538
+    creditos: 180
+    prompt: 'Flat vector isometric technical illustration in a 16:9 frame of a compact two-storey building
+      frame, whole and centred, occupying about 45 percent of the width and half the height, with wide
+      calm off-white space on every side. Four corner columns, perimeter beams and two floor slabs are
+      drawn in thin uniform #074E43 and #1F2328 line work with plain white #FFFFFF faces. A straight horizontal
+      pipe runs through the first-floor zone; only one segment of it and the short beam section it pierces
+      are filled flat #0FA994, the single point of colour in the calm model. Two faint thin dashed unfilled
+      lines of equal weight trace alternative pipe routes, one dipping under the beam and one rising over
+      it, neither emphasised. Solid #FAFAF9 background with faint pale construction grid lines running
+      to the edges. Strict isometric projection, no vanishing point. Even flat daylight: no shadows, glow,
+      gradients or highlights. Contains no text, letters, numbers, labels, markers, symbols, logo or watermark.'
+    prompt_enviado: 'Isometric line illustration of a compact two-storey building frame, whole and centred
+      with wide empty space around it. Only two parts are flat teal, the clash an automated review found:
+      a pipe segment and the beam section it passes through. Two faint dashed, unfilled alternative pipe
+      routes bypass it, neither chosen. No text, no markers, no logo.'
+    proporcion_pedida: '16:9'
+    tamano_px:
+    - 2560
+    - 1440
+    reproducible: true
+    pedido: null
+    fecha: '2026-11-11'
+    sha256: 8ab17b0350b78c4f
+    nota: 'G27 versión B (fórmula de gráfico relacionado, del visual brief v2 del repo): el choque marcado
+      y dos recorridos abiertos; referencia de estilo = la imagen principal (lJo6GJSgv9)'
+    tipo: objeto
+    objeto:
+    - 0.3434
+    - 0.1382
+    - 0.6617
+    - 0.8688
+    fondo_imagen: '#F8F9F8'
+  mg-articulo-ia-obra-formula-p2:
+    archivo: mg-articulo-ia-obra-formula-p2.png
+    herramienta: Magnific
+    modelo: magnific-one
+    creacion: jUd9F58LD0
+    enlace: https://www.magnific.com/app/creation/jUd9F58LD0
+    kit: hu2CvqLJlt
+    plantilla: null
+    semilla: 619246
+    creditos: 180
+    prompt: 'Flat vector isometric illustration in a 16:9 frame of a compact two-storey building frame
+      seen from the opposite isometric corner, so the long side faces left. The frame sits centred and
+      slightly smaller, about 40 percent of the width, surrounded by even, empty #FAFAF9 space. Columns,
+      beams and slab edges are thin uniform #074E43 and #1F2328 lines with plain white #FFFFFF faces.
+      One straight pipe segment and the beam section it passes through are the only flat #0FA994 fills.
+      Two faint dashed unfilled routes carry equal visual weight, presenting an open decision: one arcs
+      over the beam along the ceiling plane, the other jogs sideways around the nearest column. Faint
+      pale grid lines extend past the frame to the image edges. Strict isometric projection with no vanishing
+      point. Flat even daylight, no cast shadows, no glow, no gradients, no shiny highlights. The image
+      contains no text, numbers, labels, markers, arrows, logo or watermark.'
+    prompt_enviado: 'Isometric line illustration of a compact two-storey building frame, whole and centred
+      with wide empty space around it. Only two parts are flat teal, the clash an automated review found:
+      a pipe segment and the beam section it passes through. Two faint dashed, unfilled alternative pipe
+      routes bypass it, neither chosen. No text, no markers, no logo.'
+    proporcion_pedida: '16:9'
+    tamano_px:
+    - 2560
+    - 1440
+    reproducible: true
+    pedido: null
+    fecha: '2026-11-11'
+    sha256: 7b697803b1795e8d
+    nota: 'G27 versión B (fórmula de gráfico relacionado, del visual brief v2 del repo): el choque marcado
+      y dos recorridos abiertos; referencia de estilo = la imagen principal (lJo6GJSgv9)'
+    tipo: objeto
+    objeto:
+    - 0.3078
+    - 0.134
+    - 0.6902
+    - 0.8882
+    fondo_imagen: '#FAFAF9'
+  mg-articulo-ia-obra-formula-a1:
+    archivo: mg-articulo-ia-obra-formula-a1.png
+    herramienta: Magnific
+    modelo: magnific-one
+    creacion: rgpPuk5xtc
+    enlace: https://www.magnific.com/app/creation/rgpPuk5xtc
+    kit: hu2CvqLJlt
+    plantilla: null
+    semilla: 726777
+    creditos: 180
+    prompt: 'Flat vector isometric line illustration in a wide 21:9 frame: a long, low four-bay structural
+      building frame centred horizontally, with generous empty #FAFAF9 margins at both the left and right
+      ends. Five columns, the beams and the slab edges are drawn in thin, uniform #074E43 and #1F2328
+      lines with unfilled white #FFFFFF faces. A single thin outlined pipe runs the full length of the
+      frame just under the beam line. Exactly two elements are filled flat #0FA994: one short pipe segment
+      and the beam section it passes through in the second bay, the single clash. Two faint, thin dashed,
+      unfilled alternative pipe routes bypass it, one arching above the beam and one dipping below it,
+      equally light, neither chosen. Very faint isometric construction grid lines run to the edges. Strict
+      isometric projection, no vanishing point. Flat even daylight, no shadows, glow, highlights or gradients.
+      No text, letters, numbers, markers, labels or logo.'
+    prompt_enviado: 'Isometric line illustration: a long, low four-bay building frame, centred, empty
+      margins at both ends, a pipe running its length. Only two parts are flat teal, the single clash
+      an automated review found: a pipe segment and the beam section it crosses. Two faint dashed, unfilled
+      alternative routes bypass it, neither chosen. No text, no markers, no logo.'
+    proporcion_pedida: '21:9'
+    tamano_px:
+    - 3024
+    - 1296
+    reproducible: true
+    pedido: null
+    fecha: '2026-11-11'
+    sha256: 92f54531f42b6026
+    nota: 'G27 versión B (fórmula de gráfico relacionado, del visual brief v2 del repo): el choque marcado
+      y dos recorridos abiertos; referencia de estilo = la imagen principal (lJo6GJSgv9)'
+    tipo: objeto
+    objeto:
+    - 0.2206
+    - 0.2176
+    - 0.7725
+    - 0.8009
+    fondo_imagen: '#F9F8F7'
+    objeto_medido: percentiles 1.0–99.0 del trazo
+  mg-articulo-ia-obra-formula-a2:
+    archivo: mg-articulo-ia-obra-formula-a2.png
+    herramienta: Magnific
+    modelo: magnific-one
+    creacion: xSe4QrgjfW
+    enlace: https://www.magnific.com/app/creation/xSe4QrgjfW
+    kit: hu2CvqLJlt
+    plantilla: null
+    semilla: 633171
+    creditos: 180
+    prompt: 'Flat vector isometric line illustration, wide 21:9, viewed from the opposite isometric side
+      so the long four-bay frame recedes from lower left to upper right. The frame sits centred and slightly
+      low, leaving larger calm #FAFAF9 space above and empty margins at both ends. Columns, beams and
+      slab edges are thin uniform #074E43 and #1F2328 lines with white #FFFFFF unfilled faces. One thin
+      outlined pipe runs the entire length, clearly continuous from first bay to fourth. Only two parts
+      are flat #0FA994: a short pipe segment and the beam section it crosses near the third bay. Two faint
+      dashed, unfilled bypass routes swing sideways around the column line, one on each side, equally
+      faint and undecided. Faint isometric grid lines extend to the frame edges. Strict isometric projection
+      with no vanishing point. Flat even daylight, no shadows, glow, highlights or gradients. No text,
+      letters, numbers, markers, labels, icons or logo anywhere.'
+    prompt_enviado: 'Isometric line illustration: a long, low four-bay building frame, centred, empty
+      margins at both ends, a pipe running its length. Only two parts are flat teal, the single clash
+      an automated review found: a pipe segment and the beam section it crosses. Two faint dashed, unfilled
+      alternative routes bypass it, neither chosen. No text, no markers, no logo.'
+    proporcion_pedida: '21:9'
+    tamano_px:
+    - 3024
+    - 1296
+    reproducible: true
+    pedido: null
+    fecha: '2026-11-11'
+    sha256: 263dec3624862668
+    nota: 'G27 versión B (fórmula de gráfico relacionado, del visual brief v2 del repo): el choque marcado
+      y dos recorridos abiertos; referencia de estilo = la imagen principal (lJo6GJSgv9)'
+    tipo: objeto
+    objeto:
+    - 0.3072
+    - 0.1566
+    - 0.703
+    - 0.8534
+    fondo_imagen: '#F9FBF9'

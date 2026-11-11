@@ -57,7 +57,7 @@ def ventana(comp, maestra: tuple[int, int]) -> tuple[float, ...]:
     return (zx - x) / dw, (zy - y) / dh, (zx + zw - x) / dw, (zy + zh - y) / dh
 
 
-def medir_objeto(ruta: Path) -> list[float]:
+def medir_objeto(ruta: Path, percentil: float = 0.0) -> list[float]:
     """Caja del objeto principal (fracciones x0, y0, x1, y1): la mayor mancha de trazo firme.
     El umbral deja fuera la retícula tenue del fondo, que si no se une al objeto y llega al borde."""
     a = np.asarray(Image.open(ruta).convert('RGB'), dtype=float)
@@ -69,6 +69,11 @@ def medir_objeto(ruta: Path) -> list[float]:
         raise SystemExit(f'no se encontró un objeto en {ruta}')
     mayor = int(np.argmax(ndimage.sum(np.ones_like(lab), lab, range(1, n + 1)))) + 1
     ys, xs = np.nonzero((lab == mayor) & tinta)
+    if percentil:
+        # una línea de construcción larga y fina pesa pocos píxeles: los percentiles la dejan fuera
+        x0, x1 = np.percentile(xs, [percentil, 100 - percentil])
+        y0, y1 = np.percentile(ys, [percentil, 100 - percentil])
+        return [round(float(v), 4) for v in (x0 / w, y0 / h, (x1 + 1) / w, (y1 + 1) / h)]
     return [round(float(v), 4) for v in (xs.min() / w, ys.min() / h, (xs.max() + 1) / w, (ys.max() + 1) / h)]
 
 
@@ -85,7 +90,9 @@ def medir(a):
     if a.id not in imagenes:
         raise SystemExit(f'{a.id} no está en imagenes.magnific.yaml')
     ruta = ctx.ruta_imagen(imagenes[a.id])
-    imagenes[a.id]['objeto'] = medir_objeto(ruta)
+    imagenes[a.id]['objeto'] = medir_objeto(ruta, a.percentil)
+    if a.percentil:
+        imagenes[a.id]['objeto_medido'] = f'percentiles {a.percentil}–{100 - a.percentil} del trazo'
     imagenes[a.id]['fondo_imagen'] = fondo_de_imagen(ruta)
     guardar_catalogo(imagenes)
     print(f"{a.id}: objeto {imagenes[a.id]['objeto']}, fondo {imagenes[a.id]['fondo_imagen']}")
@@ -209,7 +216,9 @@ def registrar(a):
         imagenes[a.id]['nota'] = a.nota
     if a.foco:
         imagenes[a.id]['foco'] = [float(x) for x in a.foco.split(',')]
-    imagenes[a.id]['objeto'] = medir_objeto(destino)
+    imagenes[a.id]['tipo'] = a.tipo
+    if a.tipo == 'objeto':
+        imagenes[a.id]['objeto'] = medir_objeto(destino)
     imagenes[a.id]['fondo_imagen'] = fondo_de_imagen(destino)
     guardar_catalogo(imagenes)
     print(f'{a.id}: {destino} ({ancho}×{alto}) anotada en {ruta_cat.name}')
@@ -231,9 +240,13 @@ def main():
     r.add_argument('--plantilla', default=PLANTILLA)
     r.add_argument('--proporcion', default=f'{PROPORCION[0]}:{PROPORCION[1]}')
     r.add_argument('--nota')
+    r.add_argument('--tipo', choices=['objeto', 'fondo'], default='objeto',
+                   help='objeto: se centra entero en la máscara; fondo: llena la máscara (patrón sin sujeto)')
     r.add_argument('--foco', help='x,y del sujeto en fracciones (p. ej. el centro del turquesa)')
     d = sub.add_parser('medir', help='vuelve a medir el objeto y el fondo de una imagen registrada')
     d.add_argument('--id', required=True)
+    d.add_argument('--percentil', type=float, default=0.0,
+                   help='caja por percentiles del trazo (p. ej. 1) cuando una línea suelta alarga la caja')
     a = ap.parse_args()
     {'pedido': pedido, 'registrar': registrar, 'medir': medir}[a.orden](a)
 

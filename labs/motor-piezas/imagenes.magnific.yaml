@@ -123,6 +123,11 @@ imagenes:
     - 0.8564
     - 0.7326
     fondo_imagen: '#FCFBFA'
+    acento:
+    - 0.3214
+    - 0.3663
+    - 0.6019
+    - 0.6667
   mg-articulo-ia-obra-fondo-p1:
     archivo: mg-articulo-ia-obra-fondo-p1.png
     herramienta: Magnific
@@ -306,6 +311,11 @@ imagenes:
     - 0.6617
     - 0.8688
     fondo_imagen: '#F8F9F8'
+    acento:
+    - 0.418
+    - 0.4903
+    - 0.4891
+    - 0.5701
   mg-articulo-ia-obra-formula-p2:
     archivo: mg-articulo-ia-obra-formula-p2.png
     herramienta: Magnific
@@ -347,6 +357,11 @@ imagenes:
     - 0.6902
     - 0.8882
     fondo_imagen: '#FAFAF9'
+    acento:
+    - 0.4816
+    - 0.4292
+    - 0.5738
+    - 0.5257
   mg-articulo-ia-obra-formula-a1:
     archivo: mg-articulo-ia-obra-formula-a1.png
     herramienta: Magnific
@@ -389,6 +404,11 @@ imagenes:
     - 0.8009
     fondo_imagen: '#F9F8F7'
     objeto_medido: percentiles 1.0–99.0 del trazo
+    acento:
+    - 0.4054
+    - 0.4753
+    - 0.4573
+    - 0.5316
   mg-articulo-ia-obra-formula-a2:
     archivo: mg-articulo-ia-obra-formula-a2.png
     herramienta: Magnific
@@ -430,3 +450,347 @@ imagenes:
     - 0.703
     - 0.8534
     fondo_imagen: '#F9FBF9'
+    acento:
+    - 0.4914
+    - 0.4136
+    - 0.581
+    - 0.5664
+  mg-articulo-ia-obra-nb-p1:
+    archivo: mg-articulo-ia-obra-nb-p1.png
+    herramienta: Magnific
+    modelo: imagen-nano-banana-2-1
+    creacion: 79hGRAqJAL
+    enlace: https://www.magnific.com/app/creation/79hGRAqJAL
+    kit: null
+    plantilla: null
+    semilla: 997982
+    creditos: 65
+    prompt: 'Flat vector isometric technical illustration in a 16:9 frame of a compact two-storey building
+      frame, whole and centred, occupying about 45 percent of the width and half the height, with wide
+      calm off-white space on every side. Four corner columns, perimeter beams and two floor slabs are
+      drawn in thin uniform #074E43 and #1F2328 line work with plain white #FFFFFF faces. A straight horizontal
+      pipe runs through the first-floor zone; only one segment of it and the short beam section it pierces
+      are filled flat #0FA994, the single point of colour in the calm model. Two faint thin dashed unfilled
+      lines of equal weight trace alternative pipe routes, one dipping under the beam and one rising over
+      it, neither emphasised. Solid #FAFAF9 background with faint pale construction grid lines running
+      to the edges. Strict isometric projection, no vanishing point. Even flat daylight: no shadows, glow,
+      gradients or highlights. Contains no text, letters, numbers, labels, markers, symbols, logo or watermark.'
+    prompt_enviado: 'Flat vector isometric technical illustration in a 16:9 frame of a compact two-storey
+      building frame, whole and centred, occupying about 45 percent of the width and half the height,
+      with wide calm off-white space on every side. Four corner columns, perimeter beams and two floor
+      slabs are drawn in thin uniform #074E43 and #1F2328 line work with plain white #FFFFFF faces. A
+      straight horizontal pipe runs through the first-floor zone; only one segment of it and the short
+      beam section it pierces are filled flat #0FA994, the single point of colour in the calm model. Two
+      faint thin dashed unfilled lines of equal weight trace alternative pipe routes, one dipping under
+      the beam and one rising over it, neither emphasised. Solid #FAFAF9 background with faint pale construction
+      grid lines running to the edges. Strict isometric projection, no vanishing point. Even flat daylight:
+      no shadows, glow, gradients or highlights. Contains no text, letters, numbers, labels, markers,
+      symbols, logo or watermark.'
+    proporcion_pedida: '16:9'
+    tamano_px:
+    - 2752
+    - 1536
+    reproducible: true
+    pedido: null
+    fecha: '2026-11-11'
+    sha256: f64e601530ca9aad
+    nota: 'Comparación de modelo pedida por David («prueba b1 tamiben en nano banana 2.1»): el mismo texto
+      que Magnific One compuso para B1, sin kit, con la imagen principal aprobada como referencia de estilo'
+    tipo: objeto
+    objeto:
+    - 0.3169
+    - 0.0944
+    - 0.6835
+    - 0.8659
+    fondo_imagen: '#F8F8F6'
+    acento:
+    - 0.4469
+    - 0.5365
+    - 0.4909
+    - 0.6576
+  mg-articulo-ia-obra-nb-p2:
+    archivo: mg-articulo-ia-obra-nb-p2.png
+    herramienta: Magnific
+    modelo: imagen-nano-banana-2-1
+    creacion: CqAL1jtEEy
+    enlace: https://www.magnific.com/app/creation/CqAL1jtEEy
+    kit: null
+    plantilla: null
+    semilla: 129947
+    creditos: 65
+    prompt: 'Flat vector isometric technical illustration in a 16:9 frame of a compact two-storey building
+      frame, whole and centred, occupying about 45 percent of the width and half the height, with wide
+      calm off-white space on every side. Four corner columns, perimeter beams and two floor slabs are
+      drawn in thin uniform #074E43 and #1F2328 line work with plain white #FFFFFF faces. A straight horizontal
+      pipe runs through the first-floor zone; only one segment of it and the short beam section it pierces
+      are filled flat #0FA994, the single point of colour in the calm model. Two faint thin dashed unfilled
+      lines of equal weight trace alternative pipe routes, one dipping under the beam and one rising over
+      it, neither emphasised. Solid #FAFAF9 background with faint pale construction grid lines running
+      to the edges. Strict isometric projection, no vanishing point. Even flat daylight: no shadows, glow,
+      gradients or highlights. Contains no text, letters, numbers, labels, markers, symbols, logo or watermark.'
+    prompt_enviado: 'Flat vector isometric technical illustration in a 16:9 frame of a compact two-storey
+      building frame, whole and centred, occupying about 45 percent of the width and half the height,
+      with wide calm off-white space on every side. Four corner columns, perimeter beams and two floor
+      slabs are drawn in thin uniform #074E43 and #1F2328 line work with plain white #FFFFFF faces. A
+      straight horizontal pipe runs through the first-floor zone; only one segment of it and the short
+      beam section it pierces are filled flat #0FA994, the single point of colour in the calm model. Two
+      faint thin dashed unfilled lines of equal weight trace alternative pipe routes, one dipping under
+      the beam and one rising over it, neither emphasised. Solid #FAFAF9 background with faint pale construction
+      grid lines running to the edges. Strict isometric projection, no vanishing point. Even flat daylight:
+      no shadows, glow, gradients or highlights. Contains no text, letters, numbers, labels, markers,
+      symbols, logo or watermark.'
+    proporcion_pedida: '16:9'
+    tamano_px:
+    - 2752
+    - 1536
+    reproducible: true
+    pedido: null
+    fecha: '2026-11-11'
+    sha256: 37c4784ee7d02072
+    nota: 'Comparación de modelo pedida por David («prueba b1 tamiben en nano banana 2.1»): el mismo texto
+      que Magnific One compuso para B1, sin kit, con la imagen principal aprobada como referencia de estilo'
+    tipo: objeto
+    objeto:
+    - 0.2885
+    - 0.0788
+    - 0.7504
+    - 0.9036
+    fondo_imagen: '#F7F7F3'
+    acento:
+    - 0.5109
+    - 0.4909
+    - 0.6915
+    - 0.6862
+  mg-articulo-ia-obra-nb-a1:
+    archivo: mg-articulo-ia-obra-nb-a1.png
+    herramienta: Magnific
+    modelo: imagen-nano-banana-2-1
+    creacion: XmyFCHgBfo
+    enlace: https://www.magnific.com/app/creation/XmyFCHgBfo
+    kit: null
+    plantilla: null
+    semilla: 129008
+    creditos: 65
+    prompt: 'Flat vector isometric line illustration in a wide 21:9 frame: a long, low four-bay structural
+      building frame centred horizontally, with generous empty #FAFAF9 margins at both the left and right
+      ends. Five columns, the beams and the slab edges are drawn in thin, uniform #074E43 and #1F2328
+      lines with unfilled white #FFFFFF faces. A single thin outlined pipe runs the full length of the
+      frame just under the beam line. Exactly two elements are filled flat #0FA994: one short pipe segment
+      and the beam section it passes through in the second bay, the single clash. Two faint, thin dashed,
+      unfilled alternative pipe routes bypass it, one arching above the beam and one dipping below it,
+      equally light, neither chosen. Very faint isometric construction grid lines run to the edges. Strict
+      isometric projection, no vanishing point. Flat even daylight, no shadows, glow, highlights or gradients.
+      No text, letters, numbers, markers, labels or logo.'
+    prompt_enviado: 'Flat vector isometric line illustration in a wide 21:9 frame: a long, low four-bay
+      structural building frame centred horizontally, with generous empty #FAFAF9 margins at both the
+      left and right ends. Five columns, the beams and the slab edges are drawn in thin, uniform #074E43
+      and #1F2328 lines with unfilled white #FFFFFF faces. A single thin outlined pipe runs the full length
+      of the frame just under the beam line. Exactly two elements are filled flat #0FA994: one short pipe
+      segment and the beam section it passes through in the second bay, the single clash. Two faint, thin
+      dashed, unfilled alternative pipe routes bypass it, one arching above the beam and one dipping below
+      it, equally light, neither chosen. Very faint isometric construction grid lines run to the edges.
+      Strict isometric projection, no vanishing point. Flat even daylight, no shadows, glow, highlights
+      or gradients. No text, letters, numbers, markers, labels or logo.'
+    proporcion_pedida: '21:9'
+    tamano_px:
+    - 3168
+    - 1344
+    reproducible: true
+    pedido: null
+    fecha: '2026-11-11'
+    sha256: 6db07758eab20805
+    nota: 'Comparación de modelo pedida por David («prueba b1 tamiben en nano banana 2.1»): el mismo texto
+      que Magnific One compuso para B1, sin kit, con la imagen principal aprobada como referencia de estilo'
+    tipo: objeto
+    objeto:
+    - 0.1496
+    - 0.3326
+    - 0.8504
+    - 0.7202
+    fondo_imagen: '#FAFAF9'
+    acento:
+    - 0.3741
+    - 0.375
+    - 0.4653
+    - 0.4494
+  mg-articulo-ia-obra-nb-a2:
+    archivo: mg-articulo-ia-obra-nb-a2.png
+    herramienta: Magnific
+    modelo: imagen-nano-banana-2-1
+    creacion: rgp4J9pxtc
+    enlace: https://www.magnific.com/app/creation/rgp4J9pxtc
+    kit: null
+    plantilla: null
+    semilla: 596022
+    creditos: 65
+    prompt: 'Flat vector isometric line illustration in a wide 21:9 frame: a long, low four-bay structural
+      building frame centred horizontally, with generous empty #FAFAF9 margins at both the left and right
+      ends. Five columns, the beams and the slab edges are drawn in thin, uniform #074E43 and #1F2328
+      lines with unfilled white #FFFFFF faces. A single thin outlined pipe runs the full length of the
+      frame just under the beam line. Exactly two elements are filled flat #0FA994: one short pipe segment
+      and the beam section it passes through in the second bay, the single clash. Two faint, thin dashed,
+      unfilled alternative pipe routes bypass it, one arching above the beam and one dipping below it,
+      equally light, neither chosen. Very faint isometric construction grid lines run to the edges. Strict
+      isometric projection, no vanishing point. Flat even daylight, no shadows, glow, highlights or gradients.
+      No text, letters, numbers, markers, labels or logo.'
+    prompt_enviado: 'Flat vector isometric line illustration in a wide 21:9 frame: a long, low four-bay
+      structural building frame centred horizontally, with generous empty #FAFAF9 margins at both the
+      left and right ends. Five columns, the beams and the slab edges are drawn in thin, uniform #074E43
+      and #1F2328 lines with unfilled white #FFFFFF faces. A single thin outlined pipe runs the full length
+      of the frame just under the beam line. Exactly two elements are filled flat #0FA994: one short pipe
+      segment and the beam section it passes through in the second bay, the single clash. Two faint, thin
+      dashed, unfilled alternative pipe routes bypass it, one arching above the beam and one dipping below
+      it, equally light, neither chosen. Very faint isometric construction grid lines run to the edges.
+      Strict isometric projection, no vanishing point. Flat even daylight, no shadows, glow, highlights
+      or gradients. No text, letters, numbers, markers, labels or logo.'
+    proporcion_pedida: '21:9'
+    tamano_px:
+    - 3168
+    - 1344
+    reproducible: true
+    pedido: null
+    fecha: '2026-11-11'
+    sha256: c67859bbf465b349
+    nota: 'Comparación de modelo pedida por David («prueba b1 tamiben en nano banana 2.1»): el mismo texto
+      que Magnific One compuso para B1, sin kit, con la imagen principal aprobada como referencia de estilo'
+    tipo: objeto
+    objeto:
+    - 0.06
+    - 0.2158
+    - 0.8971
+    - 0.7619
+    fondo_imagen: '#FAFAF9'
+    acento:
+    - 0.3188
+    - 0.3891
+    - 0.4018
+    - 0.4903
+  mg-rescate-h021:
+    archivo: mg-rescate-h021.png
+    herramienta: Magnific
+    modelo: magnific-one
+    creacion: Eb2JteFuuO
+    enlace: https://www.magnific.com/app/creation/Eb2JteFuuO
+    kit: null
+    plantilla: null
+    semilla: 953607
+    creditos: 180
+    prompt: 'LinkedIn personal profile banner for an architect who teaches BIM and applied AI: panoramic
+      isometric city blocks turning into data and connected nodes, right side calm for overlay. No text,
+      no logos, no people.'
+    prompt_enviado: 'LinkedIn personal profile banner for an architect who teaches BIM and applied AI:
+      panoramic isometric city blocks turning into data and connected nodes, right side calm for overlay.
+      No text, no logos, no people.'
+    proporcion_pedida: '21:9'
+    tamano_px:
+    - 2688
+    - 1152
+    reproducible: true
+    pedido: null
+    fecha: '2026-11-05'
+    sha256: bd4dde9136cd1f5e
+    nota: 'Rescate G28 de la biblioteca (H021): único fondo directo de 363 revisadas; ciudad isométrica
+      que se disuelve en red de nodos'
+    tipo: fondo
+    fondo_imagen: '#F9F9F8'
+  mg-rescate-h063:
+    archivo: mg-rescate-h063.png
+    herramienta: Magnific
+    modelo: magnific-one
+    creacion: xSD2kTljfW
+    enlace: https://www.magnific.com/app/creation/xSD2kTljfW
+    kit: null
+    plantilla: null
+    semilla: 212225
+    creditos: 180
+    prompt: 'Isometric illustration: from plan to model, tiny figures on a huge 2D floor plan whose lines
+      rise into a teal translucent BIM building. No text, no logos.'
+    prompt_enviado: 'Isometric illustration: from plan to model, tiny figures on a huge 2D floor plan
+      whose lines rise into a teal translucent BIM building. No text, no logos.'
+    proporcion_pedida: '1:1'
+    tamano_px:
+    - 2048
+    - 2048
+    reproducible: true
+    pedido: null
+    fecha: '2026-11-05'
+    sha256: 04b2d9bab34931b6
+    nota: 'Rescate G28 de la biblioteca (H063): solo la planta isométrica del cuadrante inferior izquierdo
+      (2,84:1); arriba hay personas'
+    region:
+    - 0.0
+    - 0.719
+    - 0.8
+    - 1.0
+    tipo: fondo
+    fondo_imagen: '#FAF9F8'
+  mg-rescate-h023:
+    archivo: mg-rescate-h023.png
+    herramienta: Magnific
+    modelo: magnific-one
+    creacion: SyoWrH2Ub8
+    enlace: https://www.magnific.com/app/creation/SyoWrH2Ub8
+    kit: null
+    plantilla: null
+    semilla: 936818
+    creditos: 180
+    prompt: 'LinkedIn personal profile banner for an architect who teaches BIM and applied AI: panoramic
+      isometric city blocks turning into data and connected nodes, right side calm for overlay. No text,
+      no logos, no people.'
+    prompt_enviado: 'LinkedIn personal profile banner for an architect who teaches BIM and applied AI:
+      panoramic isometric city blocks turning into data and connected nodes, right side calm for overlay.
+      No text, no logos, no people.'
+    proporcion_pedida: '21:9'
+    tamano_px:
+    - 2688
+    - 1152
+    reproducible: true
+    pedido: null
+    fecha: '2026-11-05'
+    sha256: c8d02c03c5b69f44
+    nota: 'Rescate G28 de la biblioteca (H023): la retícula de vigas y pilares con malla de puntos, sin
+      el grupo de edificios'
+    region:
+    - 0.0
+    - 0.42
+    - 0.62
+    - 0.96
+    tipo: fondo
+    fondo_imagen: '#FBFAFA'
+  mg-rescate-gafi04:
+    archivo: mg-rescate-gafi04.png
+    herramienta: Magnific
+    modelo: magnific-one
+    creacion: O6hR57tynm
+    enlace: https://www.magnific.com/app/creation/O6hR57tynm
+    kit: null
+    plantilla: null
+    semilla: 51259
+    creditos: 180
+    prompt: Create a reusable blank poster background for a BIM webinar, inspired by the reference's technical
+      isometric geometry and generous editorial space. Leave the left two thirds completely blank for
+      a large headline and three information rows to be added later. Restrict the geometric motif to the
+      right third. Text-free artwork only; no letters, numbers, logos, emblems, watermarks, labels, UI
+      icons or fake text. Leave the lower left blank for an official logo to be inserted later.
+    prompt_enviado: Create a reusable blank poster background for a BIM webinar, inspired by the reference's
+      technical isometric geometry and generous editorial space. Leave the left two thirds completely
+      blank for a large headline and three information rows to be added later. Restrict the geometric
+      motif to the right third. Text-free artwork only; no letters, numbers, logos, emblems, watermarks,
+      labels, UI icons or fake text. Leave the lower left blank for an official logo to be inserted later.
+    proporcion_pedida: '1:1'
+    tamano_px:
+    - 2048
+    - 2048
+    reproducible: true
+    pedido: null
+    fecha: '2026-11-04'
+    sha256: a7db42808828edae
+    nota: 'Rescate G28 de la biblioteca (G-AFI-04, dirección aprobada por David): solo el tercio derecho
+      a toda la altura (retícula estructural con losas turquesa)'
+    region:
+    - 0.42
+    - 0.0
+    - 1.0
+    - 1.0
+    tipo: fondo
+    fondo_imagen: '#F9F9F8'

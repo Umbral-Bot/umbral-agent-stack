@@ -1,0 +1,201 @@
+id: G28
+fecha: 2026-11-11
+titulo: "Galería 28 · modelos, posición en la máscara y recorte de fondos"
+descripcion: >
+  David sobre G27: «respecto del camino A [...] como se deetrmina que parte de la iamgn poner o como
+  seposiciona?? respecto del camino B [...] tambien falta unmetodo para posicionar dentro de la mascara
+  no?» y «prueba b1 tamiben en nano banana 2.1 para comparar». Camino B: B1 de Magnific One y dos
+  variantes de Nano Banana 2.1 (260 créditos), todas con anclaje por acento (motor 0.3p). Camino A:
+  A1 y A3 con recorte óptimo. Laboratorio: no publicar.
+resumen: >
+  Ocho campañas de siete formatos: tres del camino B (Magnific One y Nano Banana 2.1, anclaje por
+  acento), dos del camino A con recorte óptimo y tres del camino A con imágenes rescatadas de la
+  biblioteca de noviembre.
+como_elegir: >
+  Dime qué modelo prefieres para el camino B y si el anclaje y el recorte óptimo mejoran.
+contenido: contenido/articulo-formula-v1.yaml
+secciones:
+  - alternativa: b-mo
+    titulo: "B · Magnific One (B1 de G27) con anclaje por acento"
+    descripcion: >
+      La misma campaña B1, ahora con el choque turquesa llevado al centro de la máscara; el objeto sigue entero.
+    contenido: contenido/articulo-formula-v1.yaml
+    sufijo: mo
+    valores: {imagen_objeto_ancla: acento}
+    pasos:
+      - "Preset 02 · 4:5"
+      - "Preset 02 · 1:1"
+      - "Preset 02 · 9:16"
+      - "Preset 02 · 16:9"
+      - "Preset 02 · LinkedIn"
+      - "Preset 03 · 1:1"
+      - "Preset 03 · LinkedIn"
+    piezas:
+      - packs/P02-noticia-4x5.yaml
+      - packs/T1-noticia-1x1-banda.yaml
+      - packs/T3-noticia-historia.yaml
+      - packs/T6-noticia-slide.yaml
+      - packs/U2-noticia-linkedin-separacion-36.yaml
+      - packs/T2-noticia-1x1-sin-bajada.yaml
+      - packs/AB2-noticia-linkedin-sin-bajada-boton-65.yaml
+  - alternativa: b-nb1
+    titulo: "B · Nano Banana 2.1, variante 1, con anclaje por acento"
+    descripcion: >
+      El mismo texto que Magnific One compuso para B1, sin kit y con la imagen principal como referencia de estilo.
+    contenido: contenido/articulo-nb-v1.yaml
+    sufijo: nb1
+    valores: {imagen_objeto_ancla: acento}
+    pasos:
+      - "Preset 02 · 4:5"
+      - "Preset 02 · 1:1"
+      - "Preset 02 · 9:16"
+      - "Preset 02 · 16:9"
+      - "Preset 02 · LinkedIn"
+      - "Preset 03 · 1:1"
+      - "Preset 03 · LinkedIn"
+    piezas:
+      - packs/P02-noticia-4x5.yaml
+      - packs/T1-noticia-1x1-banda.yaml
+      - packs/T3-noticia-historia.yaml
+      - packs/T6-noticia-slide.yaml
+      - packs/U2-noticia-linkedin-separacion-36.yaml
+      - packs/T2-noticia-1x1-sin-bajada.yaml
+      - packs/AB2-noticia-linkedin-sin-bajada-boton-65.yaml
+  - alternativa: b-nb2
+    titulo: "B · Nano Banana 2.1, variante 2, con anclaje por acento"
+    descripcion: >
+      Segunda variante del mismo pedido.
+    contenido: contenido/articulo-nb-v2.yaml
+    sufijo: nb2
+    valores: {imagen_objeto_ancla: acento}
+    pasos:
+      - "Preset 02 · 4:5"
+      - "Preset 02 · 1:1"
+      - "Preset 02 · 9:16"
+      - "Preset 02 · 16:9"
+      - "Preset 02 · LinkedIn"
+      - "Preset 03 · 1:1"
+      - "Preset 03 · LinkedIn"
+    piezas:
+      - packs/P02-noticia-4x5.yaml
+      - packs/T1-noticia-1x1-banda.yaml
+      - packs/T3-noticia-historia.yaml
+      - packs/T6-noticia-slide.yaml
+      - packs/U2-noticia-linkedin-separacion-36.yaml
+      - packs/T2-noticia-1x1-sin-bajada.yaml
+      - packs/AB2-noticia-linkedin-sin-bajada-boton-65.yaml
+  - alternativa: a1-opt
+    titulo: "A · A1 con recorte óptimo"
+    descripcion: >
+      El motor prueba 441 recortes por máscara y elige el que no corta acentos turquesa en el borde y no carga turquesa de más.
+    contenido: contenido/articulo-fondo-v1.yaml
+    sufijo: a1o
+    valores: {imagen_recorte_fondo: optimo}
+    pasos:
+      - "Preset 02 · 4:5"
+      - "Preset 02 · 1:1"
+      - "Preset 02 · 9:16"
+      - "Preset 02 · 16:9"
+      - "Preset 02 · LinkedIn"
+      - "Preset 03 · 1:1"
+      - "Preset 03 · LinkedIn"
+    piezas:
+      - packs/P02-noticia-4x5.yaml
+      - packs/T1-noticia-1x1-banda.yaml
+      - packs/T3-noticia-historia.yaml
+      - packs/T6-noticia-slide.yaml
+      - packs/U2-noticia-linkedin-separacion-36.yaml
+      - packs/T2-noticia-1x1-sin-bajada.yaml
+      - packs/AB2-noticia-linkedin-sin-bajada-boton-65.yaml
+  - alternativa: a3-opt
+    titulo: "A · A3 (cruzada) con recorte óptimo"
+    descripcion: >
+      La principal de A1 con la apaisada de A2, con el mismo recorte óptimo.
+    contenido: contenido/articulo-fondo-cruce.yaml
+    sufijo: a3o
+    valores: {imagen_recorte_fondo: optimo}
+    pasos:
+      - "Preset 02 · 4:5"
+      - "Preset 02 · 1:1"
+      - "Preset 02 · 9:16"
+      - "Preset 02 · 16:9"
+      - "Preset 02 · LinkedIn"
+      - "Preset 03 · 1:1"
+      - "Preset 03 · LinkedIn"
+    piezas:
+      - packs/P02-noticia-4x5.yaml
+      - packs/T1-noticia-1x1-banda.yaml
+      - packs/T3-noticia-historia.yaml
+      - packs/T6-noticia-slide.yaml
+      - packs/U2-noticia-linkedin-separacion-36.yaml
+      - packs/T2-noticia-1x1-sin-bajada.yaml
+      - packs/AB2-noticia-linkedin-sin-bajada-boton-65.yaml
+  - alternativa: r1
+    titulo: "A · rescate R1: G-AFI-04 y la planta de H063"
+    descripcion: >
+      Imágenes de la biblioteca de noviembre, sin créditos nuevos: el tercio derecho de G-AFI-04 en las máscaras normales y la planta isométrica de H063 en las bandas.
+    contenido: contenido/articulo-rescate-r1.yaml
+    sufijo: r1
+    valores: {imagen_recorte_fondo: optimo}
+    pasos:
+      - "Preset 02 · 4:5"
+      - "Preset 02 · 1:1"
+      - "Preset 02 · 9:16"
+      - "Preset 02 · 16:9"
+      - "Preset 02 · LinkedIn"
+      - "Preset 03 · 1:1"
+      - "Preset 03 · LinkedIn"
+    piezas:
+      - packs/P02-noticia-4x5.yaml
+      - packs/T1-noticia-1x1-banda.yaml
+      - packs/T3-noticia-historia.yaml
+      - packs/T6-noticia-slide.yaml
+      - packs/U2-noticia-linkedin-separacion-36.yaml
+      - packs/T2-noticia-1x1-sin-bajada.yaml
+      - packs/AB2-noticia-linkedin-sin-bajada-boton-65.yaml
+  - alternativa: r2
+    titulo: "A · rescate R2: H021 en las dos máscaras"
+    descripcion: >
+      El único fondo directo de las 363 imágenes revisadas: una ciudad isométrica que se disuelve en una red de nodos.
+    contenido: contenido/articulo-rescate-r2.yaml
+    sufijo: r2
+    valores: {imagen_recorte_fondo: optimo}
+    pasos:
+      - "Preset 02 · 4:5"
+      - "Preset 02 · 1:1"
+      - "Preset 02 · 9:16"
+      - "Preset 02 · 16:9"
+      - "Preset 02 · LinkedIn"
+      - "Preset 03 · 1:1"
+      - "Preset 03 · LinkedIn"
+    piezas:
+      - packs/P02-noticia-4x5.yaml
+      - packs/T1-noticia-1x1-banda.yaml
+      - packs/T3-noticia-historia.yaml
+      - packs/T6-noticia-slide.yaml
+      - packs/U2-noticia-linkedin-separacion-36.yaml
+      - packs/T2-noticia-1x1-sin-bajada.yaml
+      - packs/AB2-noticia-linkedin-sin-bajada-boton-65.yaml
+  - alternativa: r3
+    titulo: "A · rescate R3: G-AFI-04 y la retícula de H023"
+    descripcion: >
+      El tercio derecho de G-AFI-04 y la retícula de vigas y pilares de H023.
+    contenido: contenido/articulo-rescate-r3.yaml
+    sufijo: r3
+    valores: {imagen_recorte_fondo: optimo}
+    pasos:
+      - "Preset 02 · 4:5"
+      - "Preset 02 · 1:1"
+      - "Preset 02 · 9:16"
+      - "Preset 02 · 16:9"
+      - "Preset 02 · LinkedIn"
+      - "Preset 03 · 1:1"
+      - "Preset 03 · LinkedIn"
+    piezas:
+      - packs/P02-noticia-4x5.yaml
+      - packs/T1-noticia-1x1-banda.yaml
+      - packs/T3-noticia-historia.yaml
+      - packs/T6-noticia-slide.yaml
+      - packs/U2-noticia-linkedin-separacion-36.yaml
+      - packs/T2-noticia-1x1-sin-bajada.yaml
+      - packs/AB2-noticia-linkedin-sin-bajada-boton-65.yaml

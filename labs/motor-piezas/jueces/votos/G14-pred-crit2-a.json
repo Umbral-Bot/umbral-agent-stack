@@ -1,0 +1,83 @@
+{
+ "galeria": "G14",
+ "seccion": null,
+ "rubrica": "pred-crit2-a",
+ "retro": true,
+ "criterios_hasta": "G14",
+ "sellado": "2026-11-11T00:51:29",
+ "hash_rubrica": "b71ce177d875",
+ "hash_criterios": "11070cf84d18",
+ "votos": [
+  {
+   "id": "G14-raa-prediccion",
+   "galeria": "G14",
+   "version": "pred-crit2-a",
+   "lente": "prediccion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 7.3,
+    "2": 8,
+    "3": 4.2
+   },
+   "hallazgos": [
+    {
+     "opcion": "2",
+     "donde": "borde inferior de la caja de imagen y kicker ARTÍCULO",
+     "problema": "El aire entre la caja y el kicker (unos 38 px en la vista) es bastante menor que el margen superior y los laterales (unos 103 px). El ritmo de márgenes queda algo apretado justo donde empieza la banda de texto.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "relleno crema dentro de la caja",
+     "problema": "La franja crema propia de la imagen aparece solo arriba y abajo, no en los costados. El marco interior se ve asimétrico.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1",
+     "donde": "franjas crema arriba y abajo de la imagen a sangre",
+     "problema": "Al llegar a los bordes, el margen crema que trae la imagen se lee como una tira suelta en el borde superior y otra justo encima de la banda oscura, en vez de verse como sangrado limpio. La unión imagen-banda queda menos resuelta que en la caja.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "cruces de registro en las esquinas superiores",
+     "problema": "Las cruces de las esquinas superiores caen sobre crema y turquesa y pierden su función de marco; las inferiores sí quedan sobre fondo oscuro.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1",
+     "donde": "imagen completa",
+     "problema": "Con la imagen a sangre, los grandes campos turquesa llegan al borde del lienzo y se leen como fondo de la pieza. Eso roza el veto de turquesa como fondo; en la caja queda contenido.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "mitad superior, ilustración isométrica de alambre",
+     "problema": "La isometría flota al centro, sin relación con la grilla del texto, y deja grandes vacíos oscuros a los lados. Es justo el defecto que ya se criticó («la isometría flota… deja vacíos grandes»).",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "3",
+     "donde": "trazo de la ilustración",
+     "problema": "En un celular de 390 px el trazo fino queda bajo 1 px CSS: la ilustración se ve tenue y casi desaparece en el feed. La pieza pierde carácter y complejidad y se vuelve genérica (un edificio, sin relación con la IA del titular).",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "1, 2 (común)",
+     "donde": "imagen de collage con robot",
+     "problema": "Defecto común a las opciones 1 y 2, no sirve para desempatar: la imagen tiene grano y textura de impresión retro y campos turquesa planos como fondo. Se aleja de la línea isométrica plana de Magnific One aprobada y conviene corregirla aparte, en la generación de la imagen.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1, 2, 3 (común)",
+     "donde": "banda de texto inferior",
+     "problema": "Sin diferencia entre opciones: el texto es idéntico y cumple contraste (7,24:1 sobre fondo sólido) y tamaño mínimo (11 px CSS). No se usa para elegir.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "2",
+   "veredicto": "sirve",
+   "resumen": "Predigo que David elige la 2 (en caja). Los bordes de la imagen calzan con la columna de texto y los cuatro lados comparten el mismo marco oscuro, así que la pieza se ve unida, sobria y editorial. Además contiene el turquesa de la imagen, que en la opción a sangre se lee como fondo. La 1 sigue siendo buena y tiene más impacto en el feed, pero el margen crema propio de la imagen queda como tira suelta arriba y sobre la banda, y las cruces superiores pierden su función. La 3 repite el defecto ya criticado: la isometría flota con grandes vacíos, su trazo se pierde en el celular y la pieza se vuelve genérica. Defecto común a la 1 y la 2: grano y turquesa de fondo en la imagen, que se corrigen aparte."
+  }
+ ]
+}

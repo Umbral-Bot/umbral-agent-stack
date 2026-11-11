@@ -1,0 +1,164 @@
+{
+ "galeria": "G22",
+ "seccion": null,
+ "rubrica": "v1",
+ "retro": true,
+ "criterios_hasta": null,
+ "sellado": "2026-11-11T00:00:26",
+ "hash_rubrica": "de3f9cdef0fe",
+ "hash_criterios": "-",
+ "votos": [
+  {
+   "id": "G22-v1-jerarquia",
+   "galeria": "G22",
+   "version": "v1",
+   "lente": "jerarquia",
+   "puntajes": {
+    "1": 7.5,
+    "2": 6.5,
+    "3": 8
+   },
+   "hallazgos": [
+    {
+     "opcion": "2",
+     "donde": "pie de la columna izquierda, bajo el botón",
+     "problema": "El bloque queda flotando: bajo el botón quedan unos 105 px vacíos (1043→1254 a 2x) contra 64 px de margen superior, y entre el logo y «Artículo» solo hay 59 px. La columna no se apoya en ningún borde y el pie se ve vacío a tamaño de feed.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "entre el titular y el botón",
+     "problema": "Hay dos ritmos: 32 px entre «Artículo» y el titular, y unos 68 px entre el titular y el botón. El botón se separa bien como acción, pero los tres textos no van a la misma distancia, que es lo que se busca aquí.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "mitad superior de la columna, entre el logo y «Artículo»",
+     "problema": "Entre el logo y «Artículo» quedan unos 100 px vacíos, y el centro del titular baja al 59 % del alto. Como las masas negras de la imagen también están abajo, la pieza pesa hacia el pie; arriba a la izquierda queda un hueco oscuro.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "logo, arriba a la izquierda",
+     "problema": "El nombre «Umbral BIM» es el texto más chico de la pieza: 9,3 px CSS en una vista de 390 px. El símbolo se reconoce, pero el nombre queda al límite de lectura en el feed móvil.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "todas",
+     "donde": "borde entre el panel y la imagen, a la altura de «entra»",
+     "problema": "El semicírculo y los bloques negros de la imagen tocan el borde, a unos 48 px del final de «entra». Ese negro se acerca al tono del panel y vuelve difuso el borde. El brazo robótico, que es el foco, sí queda lejos del titular, así que la imagen acompaña.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "fila superior, sello EJEMPLO",
+     "problema": "El sello EJEMPLO es más grande y más claro que el nombre del logo y le compite en la fila superior. Si es solo una marca del laboratorio y sale al publicar, deja de importar.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "3",
+   "veredicto": "sirve",
+   "resumen": "En las tres opciones el titular manda y la imagen acompaña: su foco, el brazo robótico, queda lejos del texto. El botón se lee igual en todas. Elijo la 3. «Artículo», el titular y el botón van a 32 px entre sí, y el bloque se apoya abajo con el mismo margen que arriba (unos 64 px). El logo queda solo y con aire, y se lee de arriba abajo: logo, etiqueta, titular, botón. La 1 también sirve, aunque mezcla 32 y 68 px. La 2 flota y deja el pie vacío. En todas, el nombre del logo, a 9,3 px CSS, queda al límite en móvil."
+  },
+  {
+   "id": "G22-v1-posicion",
+   "galeria": "G22",
+   "version": "v1",
+   "lente": "posicion",
+   "puntajes": {
+    "1": 7,
+    "2": 6.5,
+    "3": 8
+   },
+   "hallazgos": [
+    {
+     "donde": "Imagen, borde derecho (x 2165–2400, y 130–330), igual en las 3",
+     "problema": "El hombro del brazo robótico sale por el borde derecho. La pinza, que es el acento, y los bloques quedan enteros y la pinza cae cerca del centro de la parte libre (x≈1950, y≈640), así que no lo cuento como veto: se lee como un brazo que entra desde fuera del cuadro.",
+     "gravedad": "media"
+    },
+    {
+     "donde": "Imagen, marco crema de la ilustración, igual en las 3",
+     "problema": "El papel crema se ve arriba (≈55 px), abajo (≈64 px) y a la izquierda, pero a la derecha el sangrado lateral lo corta a 0. Los márgenes de la ilustración quedan disparejos.",
+     "gravedad": "media"
+    },
+    {
+     "donde": "Marcas de esquina derechas (2335,62) y (2335,1190), igual en las 3",
+     "problema": "La marca superior cae sobre el borde crema/turquesa y se pierde turquesa sobre turquesa. La inferior pisa la esquina del escalón negro de los bloques (que llega a x≈2356, y 1174–1189), así que el objeto toca la marca.",
+     "gravedad": "baja"
+    },
+    {
+     "donde": "Imagen, borde izquierdo (x=1216)",
+     "problema": "El medio círculo negro del fondo queda cortado justo en la división. Es un elemento de fondo, no el objeto.",
+     "gravedad": "baja"
+    },
+    {
+     "donde": "Columna de texto, opción 1",
+     "opcion": "1",
+     "problema": "Los márgenes exteriores quedan parejos (logo a 128 px arriba, botón a 129 px abajo), pero el ritmo interno no: «Artículo»→titular mide 64 px (32 CSS) y titular→botón 136 px (68 CSS). El botón queda despegado del bloque.",
+     "gravedad": "media"
+    },
+    {
+     "donde": "Columna de texto, opción 2",
+     "opcion": "2",
+     "problema": "El bloque queda con huecos iguales (64/62 px), pero el panel ya no tiene márgenes parejos: hay 137 px entre el logo y «Artículo» contra 211 px de vacío bajo el botón (128 px arriba). El pie del panel queda hueco y el bloque flota.",
+     "gravedad": "media"
+    },
+    {
+     "donde": "Columna de texto, opción 3",
+     "opcion": "3",
+     "problema": "Sin problema de posición: el botón termina a 129 px del borde, igual que el margen superior y el izquierdo (128 px), y los tres textos quedan a 65/61 px. Lo único que se nota es el aire grande entre el logo y el bloque (≈219 px), que es intencional.",
+     "gravedad": "baja"
+    },
+    {
+     "donde": "Etiqueta EJEMPLO, igual en las 3",
+     "problema": "La etiqueta termina a 33 px de la división (16 CSS), mientras el logo tiene 128 px a la izquierda. El margen derecho de la cabecera queda más apretado que el izquierdo, aunque no toca la imagen.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "3",
+   "veredicto": "sirve",
+   "resumen": "Las tres usan la misma imagen, así que lo que compara la lente de posición es la columna de texto. La pinza, el acento, queda entera y centrada en la parte libre. El brazo sale por el borde derecho y el marco crema no aparece en ese lado; es un detalle común a las tres y no lo cuento como veto. La 3 es la única con márgenes parejos (128/129 px) y los tres textos a la misma distancia (≈32 CSS). La 1 deja el botón despegado (68 CSS) y la 2 deja 211 px de vacío al pie. Elijo la 3."
+  },
+  {
+   "id": "G22-v1-costuras",
+   "galeria": "G22",
+   "version": "v1",
+   "lente": "costuras",
+   "puntajes": {
+    "1": 8,
+    "2": 8,
+    "3": 8
+   },
+   "hallazgos": [
+    {
+     "opcion": "1, 2 y 3",
+     "donde": "Cruz de registro inferior derecha (centro ≈2336,1190), sobre la imagen",
+     "problema": "Choca con el dibujo: queda encima de la esquina del bloque negro escalonado y su brazo vertical (y 1179–1200) cruza el borde inferior del dibujo (y=1191) hasta el margen crema. Esto se debe a que el margen crema mide 55–63 px y la cruz va a 64 px del borde, justo sobre el filo. Arreglo: meter las cruces del lado de la imagen dentro del margen (centro ≈28 px y ≈1222 px) u omitirlas allí.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1, 2 y 3",
+     "donde": "Cruz de registro superior derecha (centro ≈2336,64), sobre la imagen",
+     "problema": "Está pintada en turquesa sobre el cielo turquesa (45,212,191 sobre ≈110,203,194), así que casi no se ve. Además, su brazo superior cruza el filo crema/turquesa del dibujo, que está en y=56.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1, 2 y 3",
+     "donde": "Borde de la división, x 1216–1250, y ≈805–870",
+     "problema": "La división corta a ras un taco turquesa del dibujo de unos 34×60 px (≈8×14 px en el feed). Ahí aparece una muesca turquesa pegada al panel oscuro.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1, 2 y 3",
+     "donde": "Semicírculo negro a ras de la división, y ≈65–470",
+     "problema": "El negro cálido del círculo (≈8,10,4) casi se funde con el panel (17,20,24). En ese tramo no se ve la línea de la división y el panel parece abombado. No es un escalón ni un parche.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "",
+   "veredicto": "sirve",
+   "resumen": "Las tres opciones sirven y, desde la lente de costuras, empatan. La mitad de imagen es igual píxel a píxel en las tres (diferencia 0) y solo cambia la columna de texto, que no tiene costuras. El panel es plano y no hay vetos.\n\n- **Fondo:** los márgenes crema de arriba (y 0–55) y de abajo (y 1191–1254) son del mismo crema que el interior del dibujo (246,233,206), con variación menor a 1. No hay escalón de color ni parche rectangular.\n- **Cruces:** las del lado oscuro no tocan el texto ni el botón.\n- **Fallos menores:** las dos cruces del lado de la imagen caen sobre el filo del dibujo, porque van a 64 px del borde y el margen mide 55–63 px. La de abajo se monta sobre el bloque negro. Además, la división corta a ras un taco turquesa (y ≈805–870).\n\nTodo esto se ve solo de cerca. Mi lente no distingue entre las tres, así que no elijo una.",
+   "no_aplica": false
+  }
+ ]
+}

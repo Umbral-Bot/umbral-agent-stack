@@ -1,0 +1,144 @@
+{
+ "galeria": "G15",
+ "seccion": null,
+ "rubrica": "v1",
+ "retro": true,
+ "criterios_hasta": null,
+ "sellado": "2026-11-11T00:00:25",
+ "hash_rubrica": "de3f9cdef0fe",
+ "hash_criterios": "-",
+ "votos": [
+  {
+   "id": "G15-v1-jerarquia",
+   "galeria": "G15",
+   "version": "v1",
+   "lente": "jerarquia",
+   "puntajes": {
+    "1": 8,
+    "2": 7,
+    "3": 6
+   },
+   "hallazgos": [
+    {
+     "donde": "pieza 2°, bajada",
+     "problema": "La bajada blanca (15,8:1) queda en el mismo color que el título y solo se diferencia por el tamaño. El escalón entre título y bajada se aplana, y la bajada de 3 líneas le resta protagonismo al titular.",
+     "gravedad": "media",
+     "opcion": "2"
+    },
+    {
+     "donde": "pieza 3°, borde entre la imagen y la banda",
+     "problema": "El borde crema de la imagen (franja inferior de unos 55 px) se junta con el panel casi blanco y el corte entre imagen y texto pierde fuerza. Las masas negras de la ilustración (círculo, bloques, brazo) pasan a ser lo más pesado de la pieza y compiten con el titular.",
+     "gravedad": "media",
+     "opcion": "3"
+    },
+    {
+     "donde": "pieza 3°, logo «Umbral BIM»",
+     "problema": "«BIM» en turquesa sobre el panel claro tiene poco contraste. Con el texto más chico en 11 px CSS, el logotipo se debilita más que en las versiones oscuras.",
+     "gravedad": "media",
+     "opcion": "3"
+    },
+    {
+     "donde": "pieza 3°, bajada",
+     "problema": "La bajada gris queda en 4,6:1, la más baja de las tres. La jerarquía se lee, pero a tamaño de feed la bajada se apaga.",
+     "gravedad": "baja",
+     "opcion": "3"
+    },
+    {
+     "donde": "piezas 1°, 2° y 3°, logo abajo a la izquierda",
+     "problema": "En la hoja a tamaño de feed (~336 px), el texto «Umbral BIM» junto al isotipo casi no se lee: es el texto más chico (11 px CSS). El isotipo sí se reconoce, y el llamado «LEE EL ARTÍCULO · umbralbim.io» se lee bien.",
+     "gravedad": "baja",
+     "opcion": "1"
+    },
+    {
+     "donde": "piezas 1°, 2° y 3°, imagen",
+     "problema": "La ilustración tiene mucho contraste interno (negro sobre turquesa y crema) y franjas crema arriba y abajo, así que no llega del todo a sangre. Hoy no compite con el titular porque la banda la separa, pero es la mitad superior de la pieza y la más cargada.",
+     "gravedad": "baja",
+     "opcion": "1"
+    }
+   ],
+   "mejor": "1",
+   "veredicto": "sirve",
+   "resumen": "La 1° tiene la jerarquía más limpia. La banda oscura separa la imagen del texto, el título blanco manda, la bajada gris queda un escalón abajo y el turquesa marca «Artículo» y el llamado. El llamado se lee bien y el logo es legible, salvo el texto «Umbral BIM», muy chico a tamaño de feed. La 2° sirve, pero la bajada blanca aplana el escalón con el título. La 3° sirve con ajustes: el corte entre imagen y banda se debilita, la ilustración gana peso frente al titular y «BIM» en turquesa sobre el panel claro pierde contraste."
+  },
+  {
+   "id": "G15-v1-posicion",
+   "galeria": "G15",
+   "version": "v1",
+   "lente": "posicion",
+   "puntajes": {
+    "1": 7,
+    "2": 7,
+    "3": 6.5
+   },
+   "hallazgos": [
+    {
+     "opcion": "1, 2, 3",
+     "donde": "borde derecho de la imagen, pedestal del brazo robótico (x 2100–2160, y ≈1150–1250 px originales)",
+     "problema": "El bloque oscuro sobre el que se apoya la columna del robot llega hasta el borde derecho y queda cortado por el sangrado lateral. El brazo, la pinza y el anillo están completos, así que no aplica el veto, pero la base del sujeto queda recortada.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1, 2, 3",
+     "donde": "anillo del codo del robot, lado derecho",
+     "problema": "El anillo termina cerca de x≈2100 de 2160: queda un margen de unos 60 px (2,8 %), mientras que el círculo de la izquierda queda a unos 160 px del borde. Los márgenes laterales del motivo no quedan parejos y el robot se siente apretado contra el borde.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1, 2, 3",
+     "donde": "marca de esquina superior derecha (≈2090, 62 px)",
+     "problema": "La marca cae justo en el límite entre el crema y el turquesa del fondo de la ilustración y se pierde. La izquierda, en cambio, queda sobre crema y se lee bien.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1, 2, 3",
+     "donde": "panel de texto, arriba de «ARTÍCULO»",
+     "problema": "Entre el borde superior del panel (y=1326) y el antetítulo hay unos 45 px, frente a unos 129 px de margen lateral. El encabezado queda pegado a la imagen.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "unión entre la imagen y la banda clara (y≈1256–1326)",
+     "problema": "La franja crema inferior de la ilustración (246,233,206) casi no se distingue del panel claro (250,250,249). La imagen pierde su marco inferior y el margen de arriba y el de abajo dejan de leerse simétricos. En las opciones 1 y 2, el panel oscuro corta limpio y el encuadre queda parejo (unos 60 px crema arriba y unos 70 px abajo).",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "1",
+   "veredicto": "sirve",
+   "resumen": "Desde la posición, las tres piezas son iguales: misma imagen, mismo recorte y misma caja de texto. El robot entra completo, sin veto, y no toca el panel ni las marcas. Tiene dos detalles: el pedestal queda cortado por el borde derecho y el anillo del codo deja poco margen de ese lado. La opción 1 empata con la 2. La 3 baja un poco porque la franja crema inferior de la imagen se funde con el panel claro y pierde el marco."
+  },
+  {
+   "id": "G15-v1-costuras",
+   "galeria": "G15",
+   "version": "v1",
+   "lente": "costuras",
+   "puntajes": {
+    "1": 8,
+    "2": 8,
+    "3": 6.5
+   },
+   "hallazgos": [
+    {
+     "opcion": "3",
+     "donde": "Unión imagen–banda, y≈1260–1326 px (ancho completo)",
+     "problema": "El margen crema propio de la imagen de Midjourney (#F6E9CE) queda pegado al panel claro (#FAFAF9): son dos fondos claros casi iguales pero distintos (ΔE≈15). Se ve un escalón tibio contra frío, como una costura y no como un corte deliberado. Se resuelve igualando el panel al crema, o recortando el margen de la imagen para que el dibujo toque directamente la banda.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1, 2, 3",
+     "donde": "Cruz de registro superior derecha (centro 2096,64; brazos de y 46 a 82)",
+     "problema": "La cruz cae justo sobre el borde del dibujo: el campo turquesa de la ilustración empieza en y≈59. La mitad inferior y el brazo horizontal quedan turquesa sobre turquesa (ΔE≈16), se pierden y tocan la ilustración. La cruz superior izquierda, en cambio, queda limpia sobre crema.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1, 2",
+     "donde": "Franjas crema de la imagen: arriba y 0–70 px y abajo y 1260–1326 px",
+     "problema": "La imagen trae su propio marco crema plano arriba y abajo. El encaje a cubrir quitó los márgenes laterales, así que el marco queda incompleto, y la franja inferior se lee como un filete claro entre el dibujo y la banda oscura. No hay escalón de color (el crema del marco y el del dibujo difieren en 1–2 niveles), solo un cambio de textura de grano a plano que se nota de cerca.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "1",
+   "veredicto": "sirve",
+   "resumen": "Las tres usan la misma imagen, puesta a cubrir y sin extensión de fondo; el crema de arriba y de abajo ya viene en el original de Midjourney. No hay parches rectangulares ni acentos turquesa cortados en el borde. Para costuras, la 1 y la 2 son idénticas, porque solo cambia el color de la bajada. Elijo la 1 por ser la base, empatada con la 2: la banda oscura corta limpio. La 3 pierde puntos porque el panel claro casi iguala al crema de la imagen, y ese escalón (ΔE≈15) se lee como costura a tamaño de feed. En las tres, la cruz superior derecha cae sobre el borde turquesa del dibujo y se pierde; conviene bajar las cruces de arriba o ajustar su separación del borde."
+  }
+ ]
+}

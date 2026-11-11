@@ -1,0 +1,66 @@
+{
+ "galeria": "G16",
+ "seccion": null,
+ "rubrica": "pred-crit-a",
+ "retro": true,
+ "criterios_hasta": "G16",
+ "sellado": "2026-11-11T00:43:05",
+ "hash_rubrica": "2afef7084991",
+ "hash_criterios": "fd98b8707561",
+ "votos": [
+  {
+   "id": "G16-pca-prediccion",
+   "galeria": "G16",
+   "version": "pred-crit-a",
+   "lente": "prediccion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 7.5,
+    "2": 7,
+    "3": 6.3,
+    "4": 7
+   },
+   "hallazgos": [
+    {
+     "opcion": "todas",
+     "donde": "logo, abajo a la izquierda (palabra «Umbral BIM»)",
+     "problema": "Las mayúsculas del logotipo miden unos 30 px de alto en el lienzo de 2160 px, lo que da unos 7,5 px CSS en una vista de 390 px. Queda bajo la referencia de 11 px. El código informa 11 px como texto mínimo, pero no mide el logotipo. Es un defecto que comparten las cuatro opciones y no sirve para desempatar.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1, 3 y 4",
+     "donde": "esquinas superiores, sobre la ilustración",
+     "problema": "Las cruces de arriba quedan sobre el borde crema de la imagen y no sobre el panel. Son marcas del motor puestas encima de la ilustración. En el celular apenas se ven.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "pie, llamado como bloque turquesa",
+     "problema": "El bloque turquesa ocupa cerca del 60 % del ancho del panel y pasa a ser la segunda masa más fuerte después del titular. El turquesa deja de ser un acento y se vuelve superficie, lo que choca con la sobriedad de marca que David pidió en el panel oscuro (G05). Además le resta fuerza al isotipo turquesa que tiene al lado y aleja la pieza de la familia del Preset 01. El titular sigue mandando, así que no hay defecto de jerarquía.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "pie",
+     "problema": "En un post estático, el botón imita una interfaz que no se puede pulsar. Además, el llamado ya medía 9,9:1 sobre el fondo liso, así que el botón no corrige ningún problema de lectura.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "cuatro esquinas",
+     "problema": "La diferencia no se ve a tamaño de feed: las cruces son trazos de 1 a 2 px. Quitarlas limpia las esquinas de la imagen, pero se pierde el sello técnico que comparte con el Preset 01 y la pieza queda algo más simple.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "4",
+     "donde": "fondo de la banda de texto",
+     "problema": "La trama de puntos de la 1° ya apenas se ve en el celular, así que quitarla casi no cambia nada. Se pierde una textura sutil de la familia del Preset 01 sin ganar lectura.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "1",
+   "veredicto": "sirve",
+   "resumen": "Vistas en el celular, la 1°, la 2° y la 4° son casi iguales: las cruces y la trama son detalles que no se notan a tamaño de feed. La única diferencia visible es el botón turquesa de la 3°. Predigo que David elige la 1° (base): mantiene la familia del Preset 01 y conserva los detalles que hacen la composición más compleja. Además, el llamado ya se lee con holgura (9,9:1 sobre fondo liso). El botón de la 3° vuelve el turquesa una superficie en vez de un acento, contra su criterio de sobriedad en el panel oscuro, y le quita fuerza al logo. Defecto común a las cuatro, que no desempata: el logotipo «Umbral BIM» queda en unos 7,5 px CSS en el celular, bajo la referencia de 11 px."
+  }
+ ]
+}

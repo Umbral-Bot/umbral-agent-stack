@@ -1,0 +1,71 @@
+{
+ "galeria": "G25",
+ "seccion": null,
+ "rubrica": "pred-sin-b",
+ "retro": true,
+ "criterios_hasta": null,
+ "sellado": "2026-11-11T00:45:39",
+ "hash_rubrica": "2afef7084991",
+ "hash_criterios": "fd98b8707561",
+ "votos": [
+  {
+   "id": "G25-qb-prediccion",
+   "galeria": "G25",
+   "version": "pred-sin-b",
+   "lente": "prediccion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 6.8,
+    "2": 8,
+    "3": 7.6
+   },
+   "hallazgos": [
+    {
+     "opcion": "1",
+     "donde": "pieza 4° (T6 16:9)",
+     "problema": "Al 75 % el edificio queda chico en el centro de una máscara muy ancha, con dos franjas vacías a los lados. En el feed pierde presencia frente al bloque de texto.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "piezas 1°, 2° y 6° (P02, T1, T2)",
+     "problema": "El objeto va entero y centrado, pero al 75 % sobra aire arriba y abajo en las bandas. Corrige el corte de G24, aunque la imagen se ve más tímida que al 85 %.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "pieza 19° (U2, columna LinkedIn)",
+     "problema": "Al 85 % en la columna angosta el edificio queda a unos 95 px del borde superior e inferior y a unos 120 px de los laterales, con las cruces de registro casi encima. Se ve apretado comparado con el 75 %.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "pieza 21° (AB2, columna LinkedIn)",
+     "problema": "Al 85 % el objeto casi toca el borde superior y el inferior de la máscara: queda entero, pero sin respiro.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "pieza 10° (T3 9:16)",
+     "problema": "La historia se trata como «máscara en columna» y va al 75 %, aunque es una banda. Al 85 % (pieza 17°) el edificio llena mejor la máscara alta y gana impacto. Es una regla de clasificación discutible, no un error visible.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1",
+     "donde": "piezas 7°, 14° y 21° (AB2) y 5°, 12° y 19° (U2)",
+     "problema": "El texto más chico medido es 7,1 px CSS en AB2 y 9,3 px en U2: la marca «Umbral BIM» y la URL del CTA quedan al límite de lectura en el celular. Ocurre igual en las 3 opciones, así que no cambia la elección.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "pieza 1° (P02)",
+     "problema": "En la franja inferior de la máscara, justo antes de la banda, se nota que la cuadrícula se desvanece por la extensión del fondo. Solo se ve de cerca.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "2",
+   "veredicto": "sirve",
+   "resumen": "Las tres opciones resuelven lo que David criticó en G24: en todos los formatos el edificio va entero y centrado en la máscara, sin cortes ni desplazamientos. La diferencia está en el tamaño. Al 75 % en todo (opción 1), el 16:9 y las bandas se ven tímidos en el feed. Al 85 % en todo (opción 3), las bandas ganan presencia, pero las columnas LinkedIn quedan apretadas contra los bordes. La opción 2 junta lo mejor de las dos: edificio grande en las bandas y con aire en las columnas. Es la que predigo que elegiría David. Detalle común a las tres: el texto mínimo de AB2 y U2 (7,1 y 9,3 px CSS) queda al límite de lectura."
+  }
+ ]
+}

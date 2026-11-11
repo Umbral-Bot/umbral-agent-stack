@@ -1,0 +1,246 @@
+{
+ "galeria": "G16",
+ "seccion": null,
+ "rubrica": "v2",
+ "retro": true,
+ "criterios_hasta": "G16",
+ "sellado": "2026-11-11T00:33:18",
+ "hash_rubrica": "f69064585452",
+ "hash_criterios": "fd98b8707561",
+ "votos": [
+  {
+   "id": "G16-v2-composicion",
+   "galeria": "G16",
+   "version": "v2",
+   "lente": "composicion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 7.5,
+    "2": 7.5,
+    "3": 8,
+    "4": 7
+   },
+   "hallazgos": [
+    {
+     "opcion": "3",
+     "donde": "pie de la banda, botón turquesa (≈x 762–2028, y 2459–2568 px reales)",
+     "problema": "Es la única variante que cambia el reparto de masas. El botón ocupa la misma altura que el logo y su borde derecho cae en el margen del texto y en el de la etiqueta EJEMPLO, así que el pie queda anclado y el turquesa conecta la banda con la imagen. Su borde izquierdo, en cambio, no coincide con ninguna columna del texto y queda suelto en la grilla.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1",
+     "donde": "cruces de las esquinas superiores (≈62 px y 2091 px de x, 62 px de y, sobre la imagen)",
+     "problema": "La cruz superior derecha cae sobre el turquesa de la ilustración y casi no se ve; la superior izquierda queda sobre el crema. El marco de cuatro cruces se lee incompleto: en la práctica solo se ven bien las dos de la banda. Lo mismo ocurre en las opciones 3 y 4.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "esquinas del lienzo",
+     "problema": "Quitar las cruces limpia el marco incompleto de arriba, pero la división, las alineaciones y el aire quedan iguales a la 1°. Para composición la diferencia es casi nula.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "4",
+     "donde": "fondo de la banda de texto",
+     "problema": "Sin la trama se pierde la retícula visible que coincide con el margen izquierdo del texto (x≈129 px) y que liga los bloques con la grilla. La banda queda más plana y simple, sin ganar orden.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "común",
+     "donde": "borde superior de la banda frente al pie",
+     "problema": "Común a las cuatro: el antetítulo ARTÍCULO queda a ≈49 px del borde de la imagen, mientras que bajo el pie hay ≈134 px. El aire vertical de la banda es desigual y el antetítulo parece pegado a la imagen; se nota en la hoja a tamaño de feed. No decide entre opciones.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "común",
+     "donde": "unión de la imagen con la banda (y≈1256–1322 px)",
+     "problema": "Común a las cuatro: una franja crema de ≈66 px, propia de la ilustración, separa el dibujo de la banda oscura. La imagen no apoya directamente sobre el texto. No decide entre opciones.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "3",
+   "veredicto": "sirve",
+   "resumen": "En composición las cuatro variantes son muy parecidas, porque solo cambian detalles del pie. Elijo la 3: el botón turquesa le da peso al pie, coincide en altura con el logo y en el margen derecho con la etiqueta EJEMPLO, y repite el turquesa de la imagen. Lo flojo es que su borde izquierdo no cae en ninguna columna del texto. La 2 limpia las cruces de arriba, que casi no se ven sobre el turquesa, y no cambia nada más. La 4 pierde la trama que hacía visible la grilla y queda más simple. Hay dos defectos comunes, aparte de la elección: el antetítulo pegado al borde de la imagen (≈49 px frente a ≈134 px bajo el pie) y la franja crema bajo la ilustración."
+  },
+  {
+   "id": "G16-v2-posicion",
+   "galeria": "G16",
+   "version": "v2",
+   "lente": "posicion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 7,
+    "2": 7,
+    "3": 7,
+    "4": 7
+   },
+   "hallazgos": [
+    {
+     "opcion": "todas",
+     "donde": "imagen, codo derecho del brazo robótico",
+     "problema": "Defecto común, no desempata. El aro del codo llega a x≈2104 de 2160, a unos 56 px (2,6 %) del borde derecho, y queda casi tangente. El robot ocupa x 1147–2104, con el centro en ≈1625 frente a 1080 del lienzo. La composición pone el sujeto a la derecha y choca en parte con el criterio de David de traer el sujeto al centro. No está cortado ni toca las marcas, y la pinza queda cerca del centro, que es el acento. Lo fijó G15, así que no se vuelve a discutir.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1, 3 y 4",
+     "donde": "cruz superior derecha (x≈2077–2114, y≈45–82)",
+     "problema": "La cruz cae justo sobre el borde crema/turquesa de la ilustración (y≈59): media cruz va sobre crema y media sobre turquesa. No toca al robot, así que no afecta el puntaje del objeto. La opción 2 no tiene esa tangencia porque quita las cruces.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "",
+   "veredicto": "sirve",
+   "resumen": "Mi lente no ve diferencia entre las opciones. La zona de imagen es idéntica en las cuatro piezas: entre S1, S3 y S4 la diferencia máxima es de 1 nivel de color, y S2 solo cambia en las cruces superiores. El robot está entero, sin cortes de la máscara, y no toca marcas ni el panel de texto. Las franjas crema miden 59 px arriba y 62 px abajo, o sea parejas. Hay un defecto común: el sujeto está desplazado a la derecha, con el codo a unos 56 px del borde. Va anotado aparte y no desempata. No elijo por otra lente."
+  },
+  {
+   "id": "G16-v2-jerarquia",
+   "galeria": "G16",
+   "version": "v2",
+   "lente": "jerarquia",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 8,
+    "2": 8,
+    "3": 6.5,
+    "4": 8.5
+   },
+   "hallazgos": [
+    {
+     "opcion": "3",
+     "donde": "pie, bloque del llamado (≈1266×110 px de 2160, dos tercios del ancho útil de la banda)",
+     "problema": "El botón turquesa macizo pasa a ser la segunda masa más fuerte de la banda. A tamaño de feed el ojo va del titular al botón y después a la bajada, así que el llamado le gana el segundo lugar a la bajada. El titular sigue mandando, pero el orden de lectura de un post de noticia (titular, bajada, llamado) se invierte en su parte baja.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "pie, relleno del botón",
+     "problema": "Usar el #2DD4BF como relleno de un bloque ancho excede el uso sobrio del turquesa que pide David (solo como acento). Sumado al kicker turquesa y al turquesa de la imagen, la banda pierde la sobriedad del panel oscuro. Si se conserva el botón, debería ser más corto (solo «LEE EL ARTÍCULO», con la URL en texto) o de contorno.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "pie, logo a la izquierda",
+     "problema": "Al lado del bloque macizo, el logo y la palabra «Umbral BIM» quedan más débiles y el pie se descompensa hacia la derecha.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1",
+     "donde": "fondo de la banda, detrás del titular y la bajada (también en la 2 y la 3)",
+     "problema": "La trama de puntos pasa detrás de las letras del titular y de la bajada. A tamaño de feed no se ve, pero de cerca le agrega ruido al fondo del texto. La 4 la quita y deja la figura y el fondo más limpios; es la única diferencia de jerarquía entre la 1, la 2 y la 4.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "esquinas",
+     "problema": "Quitar las cruces no cambia la jerarquía: están fuera de las zonas de texto y no tocan el logo ni el llamado (la superior derecha apenas se ve sobre el turquesa de la imagen). Para esta lente, la 1 y la 2 son equivalentes.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "común a todas",
+     "donde": "logo, palabra «Umbral BIM»",
+     "problema": "Es el texto más chico de la pieza (≈11 px CSS en una vista de 390 px). Sobre la banda lisa el contraste es alto, pero a tamaño de feed se lee justo, sin holgura. No decide entre opciones.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "4",
+   "veredicto": "sirve",
+   "resumen": "En las cuatro opciones manda el titular (el kicker y la bajada miden cerca del 26 % de su altura de mayúscula) y la imagen no invade la banda. La única diferencia fuerte para esta lente es la 3: su botón turquesa macizo, que ocupa dos tercios del ancho útil, le quita el segundo lugar a la bajada y gasta el turquesa como relleno, así que sirve solo con ajustes. La 1, la 2 y la 4 casi no se distinguen: las cruces no afectan la jerarquía y la trama de puntos solo agrega ruido detrás del texto de cerca. Me quedo con la 4 por poco, porque deja limpio el fondo del texto y conserva el llamado en texto, legible y en su lugar."
+  },
+  {
+   "id": "G16-v2-lectura",
+   "galeria": "G16",
+   "version": "v2",
+   "lente": "lectura",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 8,
+    "2": 8,
+    "3": 8.7,
+    "4": 8.2
+   },
+   "hallazgos": [
+    {
+     "opcion": "3",
+     "donde": "pie, llamado como botón (634×55 px de 1080; unos 20 px CSS de alto en una vista de 390 px)",
+     "problema": "Es la única diferencia que pesa para la lectura. El llamado pasa a ser un bloque turqueso con texto oscuro de 11 px CSS (9,9:1). A tamaño de feed se encuentra y se lee al primer vistazo; en las otras opciones queda como la línea más chica, espaciada y sin peso propio. El relleno lateral es justo, unos 24 px (8,7 px CSS), pero no estorba.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "pie, logo junto al botón",
+     "problema": "El bloque turquesa lleno queda al lado del lockup y lo hace ver más chico y más débil, aunque su contraste no cambia (15,76:1). Conviene vigilar que el logo no se pierda.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "4",
+     "donde": "banda de texto, fondo bajo el llamado y el logo",
+     "problema": "Sin la trama, el texto chico queda sobre un fondo liso, que es lo que prefiere David. La ganancia es mínima: la trama de 1 y 2 son puntos #323841 sobre #111418 (unos 1,4:1), de 1,05 px cada 32 px, y en el celular apenas se ven, aunque algunos caen entre las letras del llamado.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "esquinas de la pieza",
+     "problema": "Quitar las cruces no cambia la lectura. Las cruces quedan unos 30 px fuera del logo y no tocan ningún texto, así que mi lente no distingue 2 de 1.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "pie, abajo a la izquierda: palabra «Umbral BIM» del lockup",
+     "problema": "Es un defecto común a las cuatro. El texto del logo mide unos 15 px de altura de mayúscula en 1080, lo que da unos 7,7 px CSS en una vista de 390 px. Queda muy por debajo de la referencia de 11 px y David cuenta el logo como texto chico. El contraste está bien (15,76:1). El lockup cumple el ancho mínimo de marca (181 px frente a 120), pero en el feed la palabra apenas se distingue.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "todas",
+     "donde": "pie, llamado «LEE EL ARTÍCULO · umbralbim.io»",
+     "problema": "Es un defecto común a las cuatro. El llamado está justo en el piso de 11 px CSS, sin holgura, aunque el contraste (9,92:1) y el fondo liso lo dejan legible.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "chip «EJEMPLO», arriba a la derecha",
+     "problema": "Es un defecto común a las cuatro. El chip mide 9,9 px CSS, por debajo de 11. Es una marca de laboratorio, así que solo importaría si se publicara.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "3",
+   "veredicto": "sirve",
+   "resumen": "Las cuatro se leen bien a tamaño de feed: el texto está sobre una banda lisa con un contraste mínimo de 9,92:1, el texto de lectura no baja de 11 px CSS y las separaciones son parejas (unos 33, 41 y 48 px). La 3 es la única que cambia algo visible para la lectura: el llamado como botón gana presencia y se lee mejor sin perder contraste (9,9:1). Le sigue la 4, que deja liso el fondo bajo el texto chico, aunque la ganancia es mínima porque la trama casi no se ve. En la 2, quitar las cruces no cambia la lectura, así que queda igual que la 1. Las cuatro comparten un defecto: «Umbral BIM» en el logo mide unos 7,7 px CSS, demasiado chico para el feed, y conviene revisarlo aparte."
+  },
+  {
+   "id": "G16-v2-costuras",
+   "galeria": "G16",
+   "version": "v2",
+   "lente": "costuras",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 6.5,
+    "2": 9,
+    "3": 6.5,
+    "4": 6.5
+   },
+   "hallazgos": [
+    {
+     "opcion": "1, 3, 4",
+     "donde": "Cruz de registro superior derecha, x 2077–2114, y 45–82 (PNG 2160×2700)",
+     "problema": "La cruz cae justo sobre el borde crema/turquesa del dibujo, que empieza en y≈58. La mitad superior del brazo vertical queda sobre crema (1,55:1). El brazo horizontal y la mitad inferior quedan sobre el turquesa de la ilustración (1,03–1,07:1) y casi desaparecen. Se lee como un trazo turquesa cortado: es un choque con el dibujo. Hay que bajarla a la franja crema o sacar las cruces de la zona de imagen.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1, 3, 4",
+     "donde": "Cruz de registro superior izquierda, x 45–82, y 45–82",
+     "problema": "Queda entera sobre la franja crema y no choca con el dibujo, pero el turquesa sobre crema mide 1,55:1 y casi no se ve. Es una cruz débil, no un choque.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas (común)",
+     "donde": "Turquesa del dibujo, línea vertical en x≈1085, y 58–500",
+     "problema": "Escalón de color en el fondo: G≈189 a la izquierda y ≈201 a la derecha. Viene de la imagen fuente (x≈731 de 1456, que es la unión de dos paneles del original) y no lo genera el recorte. Es común a las 4 opciones, así que no desempata.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "2",
+   "veredicto": "sirve",
+   "resumen": "La imagen está recortada a los lados, no extendida: la fuente de 1456×816 se escala ×1,625 y se recortan unos 103 px por lado. Las costuras se ven limpias: no hay parche ni rectángulo, el corte con la banda en y=1326 es neto, no hay esquinas redondeadas sobrantes y no queda cortado ningún acento de marca. Las cuatro opciones tienen la zona de imagen idéntica salvo las dos cruces superiores (296 px de diferencia), así que mi lente solo ve esa diferencia. En 1, 3 y 4, la cruz superior derecha cae sobre el borde crema/turquesa del dibujo y queda a medias. La 2 la elimina, así que no queda nada que choque. El escalón de color en x≈1085 viene de la imagen original y es común a las cuatro. Elijo la 2. Las 1, 3 y 4 sirven con ajustes: mover o quitar las cruces de la zona de imagen."
+  }
+ ]
+}

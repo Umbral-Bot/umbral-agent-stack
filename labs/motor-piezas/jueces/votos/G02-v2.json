@@ -1,0 +1,378 @@
+{
+ "galeria": "G02",
+ "seccion": null,
+ "rubrica": "v2",
+ "retro": true,
+ "criterios_hasta": "G02",
+ "sellado": "2026-11-11T00:33:15",
+ "hash_rubrica": "f69064585452",
+ "hash_criterios": "fd98b8707561",
+ "votos": [
+  {
+   "id": "G02-v2-jerarquia",
+   "galeria": "G02",
+   "version": "v2",
+   "lente": "jerarquia",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 7,
+    "2": 4.5,
+    "3": 6,
+    "4": 8
+   },
+   "hallazgos": [
+    {
+     "opcion": "4",
+     "donde": "pie, columna izquierda",
+     "problema": "El CTA «INSCRÍBETE · umbralbim.io» queda pegado al logo, dentro de la columna de datos. El final del recorrido de lectura (abajo a la derecha) lo ocupa el blanco de la imagen y no la acción.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "4",
+     "donde": "esquina inferior derecha de la imagen",
+     "problema": "La zona blanca y cian de la imagen es la más luminosa del lienzo y atrae algo la mirada al final del recorrido. Como el título tiene el tamaño completo y va primero, no lo desplaza.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1",
+     "donde": "borde entre texto e imagen, junto al título",
+     "problema": "La franja cian brillante del borde de la imagen queda pegada a «WORKSHOP» y la mitad derecha es muy clara. La imagen compite con el título en el primer golpe de vista, aunque el título (149 px) sigue mandando.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "entre la bajada y el bloque de datos",
+     "problema": "Queda un vacío grande (unos 300 px reales) entre la bajada y los datos. El bloque de datos parece suelto respecto del grupo del título.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "título",
+     "problema": "El título baja de 176 a 98 px (−44 %) en una columna de 4/12. La imagen, con su foco cian central, pasa a ser la protagonista y el titular deja de mandar. Esto choca con el criterio de la lente.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "2",
+     "donde": "bajada y pie",
+     "problema": "La bajada, partida en 2 líneas y con mucho espaciado entre letras, pesa casi como el título. Además, el CTA queda apretado contra el logo, con unos 80 px de separación.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "mitad superior",
+     "problema": "La imagen ocupa la parte de arriba, donde empieza la lectura, así que se lee antes que el título. El titular queda en segundo lugar aunque sea el texto más grande.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "kicker «SAVE THE DATE»",
+     "problema": "El kicker queda casi pegado al borde superior de la banda, a unos 45 px reales de la imagen, y no tiene aire.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "CTA y rótulos de datos",
+     "problema": "Este defecto es común a todas y no sirve para desempatar. El CTA es solo texto chico con espaciado, sin peso de botón, y se lee como un rótulo más. Los rótulos FECHA, HORA y LUGAR son muy chicos frente al valor que acompañan.",
+     "gravedad": "media"
+    }
+   ],
+   "mejor": "4",
+   "veredicto": "sirve",
+   "resumen": "Por jerarquía elijo la 4 (Ele). Es la única donde el título conserva su tamaño completo, va primero en la lectura y la imagen queda abajo a la derecha, acompañando sin competir. La 1 sirve: el título manda, pero la franja cian y la mitad clara de la imagen le disputan la atención. La 3 pone la imagen en la entrada de la lectura y deja el título en segundo lugar. La 2 no sirve: el título baja a 98 px y la imagen se vuelve la protagonista. Defecto común a todas, que no uso para desempatar: el CTA tiene poco peso visual."
+  },
+  {
+   "id": "G02-v2-lectura",
+   "galeria": "G02",
+   "version": "v2",
+   "lente": "lectura",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 7.5,
+    "2": 5.5,
+    "3": 8.5,
+    "4": 7
+   },
+   "hallazgos": [
+    {
+     "opcion": "2",
+     "donde": "subtítulo «TALLER PRÁCTICO / UMBRAL BIM» sobre la columna con textura",
+     "problema": "Tiene el contraste más bajo de la galería: 5.02:1 y 4.81:1 (p10). Queda casi en el mínimo de 4.5:1 sobre una imagen con textura, que pide bastante más margen. Las otras opciones dan 6.04:1 (1), 7.08:1 (3) y 5.89:1 (4).",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "pie: logo y «INSCRÍBETE · umbralbim.io» en 581 px de ancho",
+     "problema": "El llamado queda pegado al logo y al borde de la imagen. A tamaño de feed se lee como una sola tira junto al logo y pierde su lugar propio.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "título",
+     "problema": "El motor lo reduce de 176 a 98 px para que quepa en 4 columnas. Sigue leyéndose, pero es el título más chico de las cuatro y el subtítulo se parte en 2 líneas.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "4",
+     "donde": "columna de datos (filas 01–03) junto a la imagen",
+     "problema": "Los valores terminan a unos 24 px del parche cian más brillante de la imagen. El contraste medido está bien (filas de 8.7:1 o más), pero a tamaño de feed ese brillo pegado a «Jueves 19 nov 2026» se lleva la vista y opaca los datos.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4",
+     "donde": "pie: logo y llamado en 581 px de ancho",
+     "problema": "Igual que en la 2, el llamado comparte una franja angosta con el logo y queda poco separado de él.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "4",
+     "donde": "antetítulo, subtítulo y chip sobre la banda superior",
+     "problema": "Antetítulo 5.9:1, subtítulo 5.89:1 y chip 5.83:1. Pasan, pero con menos margen que la 3 sobre la textura.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1",
+     "donde": "antetítulo y subtítulo en turquesa sobre la textura",
+     "problema": "6.17:1 y 6.04:1: se leen bien, aunque con menos margen que la 3 (7.41:1 y 7.08:1).",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "«SAVE THE DATE» al borde superior de la banda",
+     "problema": "El antetítulo queda a unos 24 px del corte entre la imagen clara y la banda oscura. Se lee (7.41:1), pero el borde brillante justo encima lo aprieta un poco.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "etiquetas FECHA/HORA/LUGAR y llamado «INSCRÍBETE · umbralbim.io»",
+     "problema": "Defecto común a las cuatro: el llamado y las etiquetas miden 14 px CSS (vista 1280), el mínimo del motor, y no hay botón. El llamado es el texto más chico de la pieza. No desempata porque los tamaños son iguales en todas y se afinan en el paso 2.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "todas",
+     "donde": "reparto vertical",
+     "problema": "Defecto común con distinta magnitud: en la 1 y en la 2 hay un hueco grande entre el subtítulo y los datos, y en la 4 entre los datos y el pie. La 3 queda más pareja. Es materia del paso 2.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "3",
+   "veredicto": "sirve",
+   "resumen": "Para la lectura gana la 3, la banda. Todos sus textos quedan sobre una sola franja oscura con velo de 0.77, y el contraste mínimo es el mejor de la galería: 7.05:1, con antetítulo 7.41:1 y subtítulo 7.08:1. Las filas de datos llegan a 13–15:1, el llamado y el logo quedan bien separados en los extremos del pie, y los espacios entre textos son los más parejos. La 1 también sirve: título de 149 px, 6.04:1 de mínimo y un pie holgado. La 4 tiene el título más grande, 176 px, pero los datos quedan pegados al cian más brillante de la imagen y el pie es angosto. La 2 es la más débil: el subtítulo queda en 4.81:1 sobre textura, el título baja a 98 px y el llamado se aprieta contra el logo. Hay un defecto común que no desempata: el llamado y las etiquetas miden 14 px CSS y no hay botón; se ve en el paso 2."
+  },
+  {
+   "id": "G02-v2-posicion",
+   "galeria": "G02",
+   "version": "v2",
+   "lente": "posicion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 5,
+    "2": 7,
+    "3": 2,
+    "4": 4
+   },
+   "hallazgos": [
+    {
+     "opcion": "3",
+     "donde": "banda de texto (y≥1055 px de 2160); masa oscura en y≈860–1973",
+     "problema": "VETO: el objeto (la silueta oscura del bloque con chimeneas) queda cortado por la máscara. Solo se ven unos 195 px de su parte alta, cerca del 18 %; el resto, con el foco cian (centro en y≈1100), queda bajo el velo del texto. En la franja de imagen solo asoman las chimeneas.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "4",
+     "donde": "esquina de la Ele en (1338, 1103) px; borde superior de la zona de imagen",
+     "problema": "VETO: la banda del título tapa la cubierta y las chimeneas de la silueta (y≈700–1103). El centro del foco cian (1752, 1100) cae justo en la esquina de la máscara y queda partido. En la zona de imagen se ve una mancha negra sin remate.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "1",
+     "donde": "borde de la máscara en x=1943 px",
+     "problema": "El foco cian (centro en x≈1752) queda bajo el velo; en la imagen solo asoma una tira en el borde. La parte baja de la masa oscura toca el borde y el velo la corta. El bloque principal con sus chimeneas sí queda entero.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "zona de imagen x 1944–3840",
+     "problema": "Márgenes muy desiguales: la masa está pegada al borde izquierdo (margen 0) y deja unos 890 px de gris vacío a la derecha, el 47 % del ancho. Su centro (≈2450) queda unos 440 px a la izquierda del centro de la zona (2892).",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "borde de la máscara en x≈1338 px, a la altura y≈930–1150",
+     "problema": "La franja baja de siluetas pequeñas sigue bajo el velo y el borde la corta. Es una parte secundaria: el foco cian y el bloque con chimeneas quedan enteros dentro de la imagen.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "zona de imagen x 1338–3840",
+     "problema": "El conjunto foco y masa (x 1345–2950, centro ≈2150) queda unos 440 px a la izquierda del centro de la zona (2589), el 17 % de su ancho. Deja a la derecha unos 890 px de gris claro y apenas 150 px de suelo blanco abajo. Los márgenes son aceptables pero no parejos.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "motor: encuadre de la imagen por máscara",
+     "problema": "Defecto común: el motor no recorta la imagen para cada división. Fuera del velo los píxeles son idénticos en las cuatro opciones (diferencia media de 0,0 entre D1 y D2 y entre D1 y D3), así que la masa queda en x≈1345–2950, y≈860–1973 sea cual sea la máscara. Por eso las opciones 3 y 4 caen en el veto. Con un recorte por máscara, centrando el sujeto en la zona libre, podrían recuperarse.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "todas",
+     "donde": "imagen de origen (base ya elegida en G01)",
+     "problema": "Defecto común que no reabro: en la imagen de origen el sujeto está a la derecha del centro (≈2150 frente a 1920) y la parte derecha es gris claro sin función. Se acerca a la composición de afiche que pide evitar el requisito del motor.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "2",
+   "veredicto": "sirve",
+   "resumen": "La imagen es un fondo abstracto con un acento claro: un bloque oscuro con chimeneas y un foco cian. El motor no la reencuadra por división: fuera del velo los píxeles son idénticos en las cuatro opciones. Por eso la división decide qué parte del acento queda tapada. Gana la opción 2 (tercio), la única que deja enteros el foco y la silueta en la zona de imagen, aunque queda algo a la izquierda. La 1 se puede usar con ajustes: deja el foco bajo el velo y la masa pegada al borde. La 3 (banda) y la 4 (Ele) caen en el veto, porque la máscara corta la silueta: en la 3 queda el 82 % bajo el texto y en la 4 se pierden la cubierta y las chimeneas."
+  },
+  {
+   "id": "G02-v2-composicion",
+   "galeria": "G02",
+   "version": "v2",
+   "lente": "composicion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 7,
+    "2": 5.5,
+    "3": 7.5,
+    "4": 6
+   },
+   "hallazgos": [
+    {
+     "opcion": "3",
+     "donde": "borde superior de la banda de texto (y≈708 de 1449 en vista; 'SAVE THE DATE' en y≈740)",
+     "problema": "La división deja la banda muy justa en vertical. La etiqueta queda a unos 24 px base del borde de la imagen, cuando el margen lateral es de unos 65 px base. El título baja de 175 a 143 px para caber en 362 px de alto y el subtítulo queda pegado al pie. El aire es desigual: generoso a lo ancho y apretado a lo alto.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "línea de corte entre la imagen y la banda, tramo x≈1460–1900",
+     "problema": "El borde de la banda cruza la masa oscura de la imagen. La silueta queda cortada y su base sigue bajo el velo, así que el corte no coincide con ningún límite de la imagen.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1",
+     "donde": "columna de texto, entre el subtítulo (y≈660) y la primera regla de datos (y≈855)",
+     "problema": "Queda un hueco de unos 145 px base entre el bloque del título y el de los datos. Separa los grupos, pero el reparto vertical se ve cargado arriba y abajo. Se puede afinar en el paso 2.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1",
+     "donde": "línea de unión entre el texto y la imagen (x≈1305–1340)",
+     "problema": "El corte a la mitad deja una franja cian delgada pegada a la línea de división. Queda una tangente visual en vez de un borde limpio, y el foco cian de la imagen queda casi fuera.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "columna de 4 de 12: título y subtítulo",
+     "problema": "La columna obliga a reducir el título de 176 a 98 px (9 % del alto) y a partir el subtítulo en 2 líneas. El texto pasa a leerse como una barra lateral y la pieza, como una imagen con leyenda. A tamaño de feed, el título pierde peso frente al lienzo.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "columna de texto, entre el subtítulo (y≈600) y los datos (y≈855)",
+     "problema": "El vacío vertical es más grande que en la 1 (unos 190 px base) dentro de una columna angosta. Deja un tramo muerto en medio del bloque de texto.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "pie, logo y CTA (x≈330 → 412)",
+     "problema": "En 4 columnas, el logo y el CTA quedan casi pegados: unos 80 px de separación en vista, frente a unos 490 en la 1. A tamaño de feed se leen como una sola línea apretada.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4",
+     "donde": "cuadrante superior derecho (x≈1450–2576, y≈0–740)",
+     "problema": "El título ocupa la franja «a todo el ancho» solo hasta un 55 % del ancho. Queda un bloque oscuro velado de cerca del 22 % del lienzo sin función, con solo la etiqueta EJEMPLO. La división promete un ancho que este título no llena.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4",
+     "donde": "columna de datos, bajo la última regla (y≈1110) y hasta el pie (y≈1290)",
+     "problema": "Queda un vacío de unos 135 px base bajo los datos, junto a la imagen. Es el tipo de hueco bajo los datos que la hipótesis del laboratorio pide evitar.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "4",
+     "donde": "ventana de imagen abajo a la derecha",
+     "problema": "La imagen continúa velada bajo la ele. El rectángulo se lee como una zona menos velada y no como un bloque de imagen propio. A favor: su borde superior coincide con la primera regla de datos y su borde izquierdo con la columna 4.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "filas de datos",
+     "problema": "Defecto común a todas, que no cuenta para elegir: las reglas de los datos llegan al borde de la columna, mientras que los valores ocupan menos de la mitad de ese ancho. Queda un tramo vacío a la derecha de cada fila.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "3",
+   "veredicto": "sirve",
+   "resumen": "Para la lente de composición, gana la 3 (banda) por poco sobre la 1 (mitad). La 3 usa el ancho completo: título a la izquierda, datos a la derecha, y la línea superior de los datos coincide con la parte alta del título. Además, ancla la imagen a tres bordes del lienzo y deja una base oscura estable bajo una imagen clara, sin vacíos bajo los datos. Su punto débil es que la banda queda apretada a lo alto, con poco aire sobre la etiqueta. La 1 está limpia y bien alineada, con más aire, pero reparte el lienzo en dos mitades iguales y la línea de división deja una franja cian pegada al corte. La 2 encoge el título a 98 px y aprieta el pie, así que el texto queda como barra lateral. La 4 conserva el título grande y alinea bien la imagen, pero deja un cuadrante superior derecho grande sin función."
+  },
+  {
+   "id": "G02-v2-costuras",
+   "galeria": "G02",
+   "version": "v2",
+   "lente": "costuras",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 6.5,
+    "2": 7.5,
+    "3": 6,
+    "4": 5.5
+   },
+   "hallazgos": [
+    {
+     "opcion": "1",
+     "donde": "borde del velo, x=972 (todo el alto hasta y≈720)",
+     "problema": "El velo tapa el núcleo turquesa más brillante de la imagen (x 800–953, y 597–806). Fuera queda solo su flanco derecho, cortado a lo largo justo en la costura (turquesa 65–137 fuera frente a 24–52 dentro). A tamaño de feed se ve como una tira cian pegada al corte, no como un acento entero.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "borde superior de la banda, y=528, entre x≈640 y x≈960",
+     "problema": "La banda deja el núcleo turquesa bajo el velo y corta el resplandor en horizontal justo donde más brilla (turquesa 108–142, L 0,41–0,63 en el lado de la imagen frente a 0,02–0,05 bajo el velo). El acento queda truncado por una recta.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "cruz de registro arriba a la izquierda (32,32) y marca de la fila 02 a la derecha (1856,698)",
+     "problema": "La cruz de la esquina cae sobre pintura gris con textura (fondo L 0,15–0,43, desviación 0,052, la más movida de la galería) y compite con las salpicaduras. La marca de la fila 02 queda pegada a una mancha de tinta negra (mínimo L 0,005 en un radio de 15 px).",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "4",
+     "donde": "borde superior de la ventana de imagen, y=552, x 669–990",
+     "problema": "El borde superior de la ventana corta el turquesa en su punto más brillante de toda la galería (turquesa 159, L 0,67 en la imagen frente a 46 y 0,065 bajo el velo). El núcleo se ve, pero la columna turquesa se corta seca en la esquina interior de la ele.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4",
+     "donde": "velo en ele sobre la zona clara de arriba a la derecha (x>669, y<552)",
+     "problema": "Sobre el gris claro de la imagen, el velo queda como una losa gris casi plana (L≈0,075), y la ventana de abajo pasa a blanco (L≈0,8). A tamaño de feed la ventana se lee como un rectángulo claro encajado en la misma imagen oscurecida; de las cuatro, es la que más se acerca a un parche. No llega a veto porque la mancha oscura sigue de forma continua bajo el borde.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "borde del velo, x=669, y≈480–720",
+     "problema": "La costura solo roza el lavado turquesa del flanco izquierdo (turquesa 98–126 junto al borde). El núcleo brillante (x 800–953) queda entero en la zona de imagen y lejos del corte.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "imagen de fondo (x=-3,53, ancho 1927,06)",
+     "problema": "Común a las cuatro: la imagen solo está recortada 3,5 px por lado y no está extendida. No hay costuras de extensión, escalones de color ni parches. Los bordes rectos que se ven son los del velo de la división, no costuras.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "cruz de registro abajo a la derecha (1888,1048)",
+     "problema": "En las opciones 1, 2 y 4, la cruz #2DD4BF cae sobre el suelo blanco quemado de la imagen (L=1,0), queda a unos 1,8:1 y casi no se ve. No choca con el dibujo; es un detalle de visibilidad. En la 3 queda bajo la banda.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "2",
+   "veredicto": "sirve",
+   "resumen": "La imagen es idéntica en las cuatro opciones: solo está recortada 3,5 px por lado, sin extensión ni parches. La diferencia para esta lente es dónde cae el borde del velo respecto del turquesa. La 2 (tercio) es la única que deja el núcleo turquesa entero y lejos del corte. La 1 y la 3 lo tapan con el velo y dejan una tira o un resplandor truncado contra la costura. La 4 corta la columna turquesa en su punto más brillante, y su ventana en ele es la que más se lee como rectángulo encajado. Ninguna llega al veto. Elige la 2."
+  }
+ ]
+}

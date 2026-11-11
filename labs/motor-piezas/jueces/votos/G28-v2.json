@@ -1,0 +1,1007 @@
+{
+ "galeria": "G28",
+ "seccion": null,
+ "rubrica": "v2",
+ "retro": false,
+ "criterios_hasta": null,
+ "sellado": "2026-11-11T00:31:07",
+ "hash_rubrica": "f69064585452",
+ "hash_criterios": "fd98b8707561",
+ "votos": [
+  {
+   "id": "G28-v2-lectura",
+   "galeria": "G28",
+   "version": "v2",
+   "lente": "lectura",
+   "no_aplica": true,
+   "puntajes": {},
+   "hallazgos": [
+    {
+     "opcion": "todas",
+     "donde": "AB2, LinkedIn sin bajada (piezas 7, 14, 21, 28, 35, 42, 49 y 56): texto del botón",
+     "problema": "El texto del botón mide 7,1 px CSS a 390 px, por debajo de la referencia de 11 px. Queda solo como aviso: es el preset donde David aceptó achicar el texto del botón manteniendo el relleno (G23), y se sigue leyendo como botón. Es igual en las 8 opciones.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "U2, LinkedIn con bajada (piezas 5, 12, 19, 26, 33, 40, 47 y 54): texto más chico",
+     "problema": "El texto más chico mide 9,3 px CSS a 555 px. Es la imagen de LinkedIn pensada para computador, que David aceptó con el texto más chico y más aire (G09), así que no se castiga. Es igual en las 8 opciones.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "Todas las piezas: bloque de texto, llamado y logo",
+     "problema": "Todo el texto, el llamado y el logo van sobre un panel o una banda lisa oscura, separados de la imagen (cumple G01 y G04). El contraste mínimo es 9,92:1 en todas las piezas, un poco bajo la referencia de 10:1 del laboratorio, que no es veto. Ningún texto cae sobre la textura, así que el modelo o el encuadre de la imagen no cambian la lectura.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "AB2: chip EJEMPLO en la fila del logo",
+     "problema": "El chip de laboratorio es grande y comparte fila con el logo, pero no le quita espacio a ningún texto ni choca con otras marcas. Desaparece en la pieza real.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "",
+   "veredicto": "sirve",
+   "resumen": "Mi lente no ve diferencias entre las 8 opciones. G28 solo cambia la imagen: el modelo, el anclaje en la máscara y el recorte del fondo. El bloque de texto es idéntico en todas y va siempre sobre un panel liso oscuro: mismos tamaños, mismas separaciones y un contraste mínimo de 9,92:1. Por eso no puntúo ni elijo, y no desempato con otra lente. Formato por formato, el texto se lee en las 8 opciones: vertical, cuadrado T1 y T2, historia y slide (14 px CSS en vista de notebook) sin defectos. El LinkedIn U2 (9,3 px) y el AB2 (botón de 7,1 px) quedan solo como avisos, porque son presets que David ya aceptó así."
+  },
+  {
+   "id": "G28-v2-jerarquia",
+   "galeria": "G28",
+   "version": "v2",
+   "lente": "jerarquia",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 7.5,
+    "2": 7.5,
+    "3": 7.5,
+    "4": 7.5,
+    "5": 7.5,
+    "6": 7.5,
+    "7": 7.5,
+    "8": 7.5
+   },
+   "hallazgos": [
+    {
+     "opcion": "todas",
+     "donde": "Slide 16:9 (T6: piezas 4, 11, 18, 25, 32, 39, 46 y 53)",
+     "problema": "El titular baja de 176 a 146 px para caber en 362 px de alto y queda en dos líneas que ocupan cerca del 40 % del ancho. El 55-60 % derecho de la banda, a la altura del titular, queda vacío. Es el caso de titular mediano con aire de sobra en la banda que David rechazó en G13. Pasa igual en las 8 opciones, así que no desempata.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "todas",
+     "donde": "LinkedIn sin bajada (AB2: piezas 7, 14, 21, 28, 35, 42, 49 y 56)",
+     "problema": "El kicker «ARTÍCULO» mide unos 67 px de altura de mayúscula frente a unos 152 px del titular: alrededor del 44 %, en el borde del tope de cerca del 45 % (G10). Además va espaciado, lo que le da más peso. Conviene bajarlo un punto para que el titular mande con más margen. Es común a las 8 opciones.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "AB2, franja superior junto al logo",
+     "problema": "El chip EJEMPLO (marca de laboratorio, no se evalúa como diseño) es más grande que el texto «Umbral BIM» y queda en la misma fila del logo, así que compite visualmente con él. Es solo un aviso: no le quita espacio al texto.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "AB2, botón",
+     "problema": "El texto del botón mide 7,1 px CSS, bajo el mínimo de 11 px. Va como aviso y no como veto (G23): se sigue leyendo como botón, es claramente secundario frente al titular y conserva su relleno.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "6",
+     "donde": "Historia T3-r1 (38) y LinkedIn U2-r1/AB2-r1 (40 y 42)",
+     "problema": "Las losas turquesa saturadas de G-AFI-04 son la masa de color más fuerte de la pieza y llegan cortadas al borde del panel. Según G14 eso no baja el puntaje: no cruzan ni tapan la zona del titular, que manda dentro de su panel liso. Se anota solo como observación.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "8",
+     "donde": "Historia T3-r3 (52) y LinkedIn U2-r3/AB2-r3 (54 y 56)",
+     "problema": "Es la misma imagen principal que la opción 6, con losas turquesa grandes junto al panel. No invade la zona de lectura del titular, así que no baja el puntaje (G14).",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "",
+   "veredicto": "sirve",
+   "resumen": "Mi lente (jerarquía) no ve diferencias entre las 8 opciones, así que no elijo ninguna. La galería solo cambia la imagen y cómo se encuadra en la máscara. El bloque de texto es idéntico formato por formato: mismo kicker, titular, bajada, botón y logo, con las mismas medidas. En ninguna pieza la imagen tapa, cruza ni disputa la zona del titular, porque el texto va siempre en su panel oscuro liso. Por eso la fuerza o el tamaño de la imagen no restan, según G14. Esto incluye las losas turquesa de R1/R3 y la trama densa de A1/A3. Por formato, sirven el vertical 4:5, los dos cuadrados, la historia, LinkedIn con bajada y LinkedIn sin bajada. El slide 16:9 sirve con ajustes, porque el titular queda mediano y deja aire de sobra en la banda. Esos defectos son comunes a todas las opciones y van aparte. El orden entre opciones lo deben decidir otras lentes, como posición en la máscara y calidad de imagen."
+  },
+  {
+   "id": "G28-v2-marca",
+   "galeria": "G28",
+   "version": "v2",
+   "lente": "marca",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 8,
+    "2": 6,
+    "3": 5,
+    "4": 7.5,
+    "5": 6.5,
+    "6": 3.5,
+    "7": 5.5,
+    "8": 6
+   },
+   "hallazgos": [
+    {
+     "opcion": "6",
+     "donde": "Imagen apaisada h063, región de la planta, en las piezas 37° (T1), 39° (T6) y 41° (T2)",
+     "problema": "Las cotas de la planta traen seudonúmeros que se pueden leer (algo como «25», «E9», «2Ɔ»). Cae en el veto de números o glifos legibles. Además, la imagen fuente tiene degradados, sombras proyectadas, personas y vidrio turquesa: el recorte las deja fuera, pero el rescate depende de que la región no se mueva.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "6",
+     "donde": "Imagen principal G-AFI-04 recortada en las piezas 36°, 38°, 40° y 42°",
+     "problema": "Al recortar, las losas turquesa ocupan cerca de un cuarto de la máscara y aparece un filete turquesa vertical que corta la imagen. El turquesa deja de ser acento. La línea de G-AFI-04 está aprobada, pero esta proporción la crea el recorte.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "8",
+     "donde": "Imagen apaisada h023, ampliada unas 3 veces, en las piezas 51° (T1), 53° (T6) y 55° (T2)",
+     "problema": "Las líneas y la trama de puntos muestran halos y se ven borrosas. El trazo pierde lo fino y lo parejo, y se nota en el slide. Lo que dibuja la h023 (isométrica plana, turquesa solo en los nodos) es lo más cercano a la marca entre los rescates.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "8",
+     "donde": "Imagen principal G-AFI-04 en las piezas 50°, 52°, 54° y 56°",
+     "problema": "Tiene el mismo exceso de turquesa en losas grandes y el mismo filete vertical que la opción 6. Además, el acento se trata distinto en cada imagen: losas grandes en la principal y nodos chicos en la apaisada. Esto se anota como ajuste, no es veto.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "7",
+     "donde": "Imagen h021, en todos los formatos (43° a 49°)",
+     "problema": "Los edificios tienen un sombreado gris suave (degradados de tono) y un detalle de ilustración de stock (ventanas, árboles). Se aleja de la línea isométrica plana de Magnific One, y la ciudad que se disuelve en una red es un tópico gastado. El turquesa queda reducido a puntos chicos: a tamaño de feed la pieza se lee casi en un solo color.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "Imagen apaisada nb-a2 en las piezas 16° (T1), 18° (T6) y 20° (T2)",
+     "problema": "Las caras de los extremos de la losa están rellenas casi de negro y se leen como sombra o masa oscura. Hay aristas abiertas que terminan en el aire y un tubo que sale de la nada a la izquierda. La vista es frontal, mientras que la principal es isométrica.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "Imágenes principal y apaisada de Nano Banana, variante 2",
+     "problema": "El trazo es más grueso que el de la línea aprobada de Magnific One y se acerca al ícono de diagrama de trazo grueso. Según el criterio de David, estos íconos no se mezclan con esta línea.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "Imágenes principal y apaisada de Nano Banana, variante 1",
+     "problema": "El trazo es grueso y oscuro, más cercano al ícono de diagrama que a la línea fina aprobada. En la principal, el acento turquesa es una franja plana bajo el tubo y no se entiende a qué elemento pertenece.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "Imagen apaisada nb-a1 en las piezas 9°, 11° y 13°",
+     "problema": "La vista es casi frontal y la perspectiva no es coherente: la losa se ve desde arriba y los pilares, en oblicuo. La principal es isométrica. Se anota como ajuste, no es veto.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "5",
+     "donde": "Imagen apaisada fondo-a2 en las piezas 30° (T1), 32° (T6) y 34° (T2)",
+     "problema": "Es una estructura de alambre transparente, con aristas ocultas en punteado y una retícula del mismo peso que los objetos. Tiene más ruido que la principal y la trata distinto: la principal usa contornos con caras llenas.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4",
+     "donde": "Imagen apaisada fondo-a1 en las piezas 23°, 25° y 27°",
+     "problema": "Las losas turquesa son más grandes y aparecen más seguido que en la principal. En las máscaras anchas, el turquesa queda en el límite de lo que sigue siendo acento.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1",
+     "donde": "Imagen apaisada mg-a1 en las piezas 2° (T1), 4° (T6) y 6° (T2)",
+     "problema": "El trazo parece a mano, doble y algo tembloroso, con líneas de construcción, y la vista es oblicua. La principal es limpia e isométrica. Se anota como ajuste, no es veto: David ya aprobó una apaisada así.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1",
+     "donde": "Tubo turquesa de la imagen principal mg-p1",
+     "problema": "Tiene una franja clara de volumen cilíndrico, un brillo leve. Solo se ve de cerca.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "1",
+   "veredicto": "sirve",
+   "resumen": "Por marca, gana la opción 1 (Magnific One): la principal es la más fiel a la línea aprobada, isométrica, plana, de trazo fino y con un solo acento turquesa. Sirve en los 7 formatos. En T1, T6 y T2 se anota un ajuste: la apaisada tiene trazo de boceto y vista oblicua. Nano Banana engruesa el trazo hacia el ícono de diagrama. La apaisada de la variante 2 tiene geometría rota y caras casi negras: sirve con ajustes en los formatos verticales (P02, T3, U2 y AB2) y queda en el límite en T1, T6 y T2. En el camino A, A1 es más coherente que A3. A3 mezcla un fondo de alambre con ruido. Rescates: R1 no sirve en T1, T6 ni T2 por los seudonúmeros de las cotas de h063. En P02, T3, U2 y AB2 sirve con ajustes, porque el recorte de G-AFI-04 llena la máscara de turquesa. R3 tiene la apaisada más de marca (h023), pero la ampliación le deja halos. Conviene pedirla otra vez en alta resolución, no aceptarla así. R2 tiene sombreado tonal y aire de stock. No hay defectos de imagen comunes a todas las opciones."
+  },
+  {
+   "id": "G28-v2-serie",
+   "galeria": "G28",
+   "version": "v2",
+   "lente": "serie",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 7,
+    "2": 5,
+    "3": 6,
+    "4": 4,
+    "5": 3.5,
+    "6": 3,
+    "7": 2,
+    "8": 3.5
+   },
+   "hallazgos": [
+    {
+     "opcion": "1",
+     "donde": "piezas 2°, 4° y 6° (cuadrado T1, slide T6, cuadrado T2: imagen apaisada formula-a1)",
+     "problema": "La apaisada de Magnific One parece dibujada por otra mano: es un boceto con líneas dobladas y trazos de construcción, mientras la vertical (p1) es limpia. Lo que cuenta sí se mantiene (tubería que atraviesa la estructura, turquesa en el cruce, halo punteado), pero en una serie cada artículo podría cambiar de estilo según la tirada. Conviene pedir otra apaisada con 2 o 3 variantes en la misma mano que la p1, en vez de aceptar esta para ahorrar.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "piezas 9°, 11° y 13° (apaisada nb-a1)",
+     "problema": "La vista pasa de isométrica (p1) a un alzado casi frontal que parece una estantería. La tubería corre en paralelo bajo la viga y el choque no se ve: hay un tramo turquesa y un bloque turquesa sin cruce visible. El gráfico pierde el hallazgo y la serie pierde un punto de vista constante.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "pieza 8° y 12° (vertical y LinkedIn, nb-p1)",
+     "problema": "El turquesa cae en la viga junto a la tubería y no en el punto de cruce, así que el hallazgo se lee solo a medias.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "piezas 16°, 18° y 20° (apaisada nb-a2)",
+     "problema": "La losa superior está mal construida: se abre en dos «alas» con caras negras y líneas que se van hacia las esquinas, y se nota a tamaño de feed. También cambia a alzado frente a la isométrica de la p2. El choque, en cambio, sí se lee bien (tubería que entra en la viga marcada).",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "piezas 15°, 17° y 19° (nb-p2)",
+     "problema": "Hay dos marcas turquesa (una viga completa y un tramo de tubería) y la tubería pasa junto a la viga sin cruzarla. El hallazgo único se diluye.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "4",
+     "donde": "todas las piezas (22° a 28°)",
+     "problema": "Es un patrón genérico de elementos sueltos (pilares, losas, vigas, tubos) que serviría igual para cualquier artículo. En una serie, todas las imágenes se verían iguales y ninguna mostraría su hallazgo.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "5",
+     "donde": "todas las piezas (29° a 35°), en especial 30°, 32° y 34° (apaisada fondo-a2)",
+     "problema": "Tiene el mismo patrón genérico que A1. Además, la apaisada a2 (cajas traslúcidas con aristas ocultas y trazo fino) no es de la misma mano que la p1 (íconos sólidos con zapatas), así que la campaña mezcla dos estilos.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "4, 5, 6, 7, 8",
+     "donde": "esquinas superiores de todas las piezas con «imagen de fondo: llena la máscara» (por ejemplo 22°, 32°, 36°, 39°, 43°)",
+     "problema": "Faltan las cruces de registro sobre la imagen; solo quedan las de abajo, sobre la banda. Las cruces son identidad de la serie: hay que dibujarlas también sobre el fondo y, si chocan con el dibujo, moverlas en vez de quitarlas.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "6",
+     "donde": "verticales (36°, 38°, 40°, 42°) frente a apaisadas (37°, 39°, 41°)",
+     "problema": "Mezcla dos familias en una misma campaña: losas turquesa vectoriales (gafi04) y una planta en boceto rasterizada con cotas de texto ilegible (h063). Es un rescate de biblioteca y no una fórmula: el siguiente artículo dependería de encontrar otra imagen que encaje.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "6",
+     "donde": "pieza 36° (vertical)",
+     "problema": "La línea vertical turquesa del original queda como un filete suelto a la izquierda, sin función.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "7",
+     "donde": "todas las piezas (43° a 49°)",
+     "problema": "Una ciudad que se disuelve en red es la imagen genérica de «IA»: serviría a cualquier artículo sobre IA y cuenta otra historia (ciudad y datos, no la revisión de un modelo ni un choque). Además es casi gris y se aparta de la familia gráfica.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "8",
+     "donde": "todas; en especial 51°, 53° y 55° (apaisada h023)",
+     "problema": "Es un rescate no repetible. La estructura con la red de nodos no muestra el hallazgo, y en el slide el recorte corta la estructura por arriba y deja la red como protagonista.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "1, 2, 3",
+     "donde": "común al camino B",
+     "problema": "Las tres usan el mismo motivo (marco estructural con tubería). Con un solo artículo no se puede comprobar que la fórmula cambie de objeto en cada artículo; habría que probarla con un segundo artículo antes de cerrarla.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "1",
+   "veredicto": "sirve con ajustes",
+   "resumen": "Para una serie solo funciona el camino B: cada artículo tendría su propio gráfico con el hallazgo en turquesa. La opción 1 (Magnific One) es la que mejor cuenta el choque en las dos imágenes y mantiene la isométrica en todos los formatos. Por formato, sirve tal cual en vertical (1°), historia (3°) y LinkedIn (5° y 7°), y sirve con ajustes en los formatos que usan la apaisada (2°, 4° y 6°), que sale en boceto con otra mano. Para esos, conviene pedir otra apaisada con 2 o 3 variantes en el estilo de la p1. Nano Banana 2.1 da un estilo más parejo, pero pierde el hallazgo (opción 2) o rompe la geometría (opción 3) y cambia a alzado en las apaisadas. El camino A (opciones 4 y 5) es un patrón genérico que haría que todos los artículos se vieran iguales. Los rescates (6 a 8) no son repetibles, y R2 es el lugar común de la IA. Las piezas con fondo a sangre del camino A pierden las cruces de registro de arriba: hay que reponerlas."
+  },
+  {
+   "id": "G28-v2-composicion",
+   "galeria": "G28",
+   "version": "v2",
+   "lente": "composicion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 6,
+    "2": 7.5,
+    "3": 6.5,
+    "4": 6,
+    "5": 5.5,
+    "6": 6,
+    "7": 5,
+    "8": 5.5
+   },
+   "hallazgos": [
+    {
+     "opcion": "2",
+     "donde": "pieza 13° (T2, cuadrado, máscara 2.05:1)",
+     "problema": "El estante apaisado (~4,3:1) ocupa el 85 % del ancho, pero solo el 40 % del alto de la máscara (de y≈280 a 663 de 945 px en pantalla). Quedan bandas vacías de ~280 px arriba y abajo. Pasa lo contrario que en el 16:9: la máscara de 2:1 es poco apaisada para este objeto. Es un defecto de la imagen o del umbral `imagen_ancha_desde`, no de la maquetación.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "piezas 9° y 11° frente a 8°, 10°, 12° y 14°",
+     "problema": "La campaña cambia de proyección según el formato: cubo isométrico en vertical y columna, estante en alzado frontal en las bandas. Cada pieza funciona sola, pero la grilla no continúa entre formatos. Es una señal, no un veto.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1",
+     "donde": "pieza 4° (T6, slide, máscara 3.64:1)",
+     "problema": "El objeto apaisado de MO (~2,1:1) ocupa solo el ~52 % del ancho de la banda, con vacíos laterales del 26 % y del 22 %. Además casi toca el borde superior (35 px de 708 en pantalla). Está lejos del 81–85 % que aprobó David: falta otra imagen más baja y ancha (criterio G25).",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "1",
+     "donde": "pieza 2° (T1, máscara 2.66:1)",
+     "problema": "El mismo objeto llena el 71 % del ancho, con 335 px vacíos a la izquierda y 230 a la derecha. El borde superior queda a 35 px: el objeto está apretado arriba y suelto a los lados.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "piezas 15° (vertical) y 17° (historia)",
+     "problema": "El anclaje por acento corre el cubo hacia la izquierda: en la historia, el centro del cuerpo queda en x≈615 de 1449 (≈110 px de 724 fuera del eje). El hueco a la derecha no se alinea con nada del texto y se ve como un descentrado accidental.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "piezas 16°, 18° y 20° (bandas)",
+     "problema": "El banco apaisado abre dos diagonales hacia las esquinas superiores (en el 16:9 llegan a y≈58 de 708) y suma un tubo suelto a la izquierda. La silueta queda abierta y saca la mirada del lienzo. En el 2.05:1 (20°) deja el mismo vacío vertical que la opción 2.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4",
+     "donde": "todas; detalle en 26° (U2) y 25° (T6)",
+     "problema": "El fondo de patrón llena la máscara a sangre y sin vacíos, pero no tiene foco: la pieza se reduce a una textura junto al texto, sin un reparto deliberado. Hay restos de objetos cortados en el borde de la máscara: un trozo junto al panel en el U2 (x≈1397, y≈300) y fragmentos sobre el panel en el 16:9.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "5",
+     "donde": "piezas 30°, 32° y 34° frente a 29°, 31° y 33°",
+     "problema": "Igual que A1 en vertical, historia y LinkedIn. En las bandas, el patrón a2 tiene trazo más fino y objetos más chicos: la escala salta entre formatos de la misma campaña y la banda pesa menos.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "6",
+     "donde": "piezas 36°, 38°, 40° y 42° (G-AFI-04; también 50°, 52°, 54° y 56° de la opción 8)",
+     "problema": "La estructura queda pegada y cortada contra el borde derecho y deja una franja vacía del ~35 % a la izquierda. Esa franja la cruza una línea turquesa vertical (x≈613/1725 en el vertical, x≈515/1449 en la historia, x≈1755 en el U2) que no se alinea con el margen del texto (x≈103 y x≈87). En LinkedIn, el vacío queda pegado al panel y la masa se va al borde exterior.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "6",
+     "donde": "piezas 37°, 39° y 41° (planta H063)",
+     "problema": "No es un defecto: es la mejor composición de banda de la galería. La planta llena la máscara a sangre y su vértice en V apunta al panel de texto. Conviene guardarla como recurso para las máscaras anchas.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "7",
+     "donde": "piezas 43°, 44°, 46° y 48°",
+     "problema": "La ciudad que se disuelve en red deja la masa a la izquierda y el 25–45 % derecho de la máscara vacío. Ese vacío cae sobre la mitad derecha del panel, que también está vacía porque el texto va a la izquierda. La pieza entera se carga a la izquierda; en el 16:9 la mitad derecha queda vacía de arriba a abajo. Solo funciona en el U2 (47°), donde la ciudad nace junto al panel.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "8",
+     "donde": "piezas 51°, 53° y 55° (retícula H023)",
+     "problema": "En el 16:9, la retícula queda cortada por el borde superior (los pilares salen del lienzo) y deja vacías la esquina superior derecha y el tercio derecho, con puntos sueltos. En el cuadrado llena más, pero la esquina superior derecha sigue vacía.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "todas",
+     "donde": "LinkedIn sin bajada (7°, 14°, 21°, 28°, 35°, 42°, 49° y 56°)",
+     "problema": "El chip EJEMPLO va arriba, junto al logo, con un tamaño parecido, y compite con la marca en la línea superior. No se evalúa como diseño, pero se avisa porque choca con otra marca.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "2",
+   "veredicto": "sirve con ajustes",
+   "resumen": "La maquetación de texto es igual en las 8 opciones; mi lente solo ve diferencias en cómo la imagen ocupa su máscara. Gana la opción 2, la variante 1 de Nano Banana. El cubo queda centrado y al 85 % en la banda y al 75 % en la columna, como pide G25. El estante apaisado, bajo y ancho, llena el 85 % del ancho en el 2.66:1 y en el 16:9 (3.64:1), con aire parejo arriba y abajo: es el caso que David pidió en G25. Por formato, sirve en el vertical, la historia, el 1:1 de 5/8, el slide y los dos LinkedIn. Necesita ajuste en el 1:1 de banda 2.05:1, donde el estante deja vacío el 60 % del alto de la máscara. Para esa máscara conviene una imagen de ~2–2,5:1 o subir el umbral de imagen ancha; es un defecto de la imagen, no de la maquetación. La opción 1 (Magnific One) falla en las bandas anchas (16:9 al 52 % del ancho) y la opción 3 descentra el cubo con el anclaje. Las opciones 4 y 5 llenan sin vacíos, pero son textura sin foco. La opción 6 tiene la mejor banda de la galería (la planta en V), pero sus piezas en columna quedan cargadas al borde. La opción 7 carga toda la pieza a la izquierda. La opción 8 no llega a llenar sus bandas."
+  },
+  {
+   "id": "G28-v2-forma",
+   "galeria": "G28",
+   "version": "v2",
+   "lente": "forma",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 6,
+    "2": 8.5,
+    "3": 5,
+    "4": 8,
+    "5": 7,
+    "6": 3,
+    "7": 2.5,
+    "8": 2.5
+   },
+   "hallazgos": [
+    {
+     "opcion": "1",
+     "donde": "pieza 4° (slide, máscara 3,64:1) con imagen apaisada formula-a1",
+     "problema": "La banca de Magnific One mide unos 2,1:1 (en perspectiva, por debajo del umbral de 2,5:1) y en la banda ocupa solo el 52 % del ancho (x 672–2005 de 2576), con mucho aire a los lados. Es el caso del objeto chico dentro de una banda ancha, y es un defecto de la imagen, no de la maquetación. La que aprobó David ocupaba del 81 al 85 %.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "1",
+     "donde": "pieza 2° (cuadrado 2,66:1)",
+     "problema": "La misma banca de 2,1:1 llena el 71 % del ancho. Funciona, pero queda por debajo de la referencia aprobada.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "imagen apaisada formula-a1, en todas sus piezas",
+     "problema": "El trazo es de boceto, con líneas de construcción que se salen del objeto y un remate raro en el vano derecho. El objeto es de una pieza, pero su contorno se lee menos limpio.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1",
+     "donde": "piezas 1°, 3°, 5° y 7°",
+     "problema": "El anclaje por acento corre el cubo unos 36 a 50 px a la derecha (2,5–3 % de la máscara). No llega a verse corrido.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "pieza 13° (cuadrado, máscara 2,05:1) con nb-a1",
+     "problema": "El estante de 4,3:1 llena el 85 % del ancho, pero solo el 40 % del alto de la máscara (382 de 943 px). Queda como una franja delgada con aire arriba y abajo. Sirve, aunque la proporción de esa máscara pide un objeto algo menos apaisado.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "pieza 17° (historia)",
+     "problema": "El acento está a la derecha del cubo, así que el anclaje lo corre a la izquierda: el centro queda en x 615 frente a 724 de la máscara (7,5 %), con 135 px de margen a la izquierda y 354 a la derecha. Es un objeto corrido dentro de la máscara.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "3",
+     "donde": "pieza 15° (vertical)",
+     "problema": "Mismo corrimiento hacia la izquierda: centro del cubo en x 771 frente a 862 (5,3 %).",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "imagen apaisada nb-a2 (piezas 16°, 18° y 20°)",
+     "problema": "A la losa superior le faltan los bordes de fondo: dos líneas en fuga terminan en el aire. Además, a la izquierda sobresale un tramo de tubo suelto. El objeto se lee inconcluso, no entero.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "5",
+     "donde": "imagen apaisada fondo-a2 (piezas 30°, 32° y 34°)",
+     "problema": "Es un fondo válido y recortable, pero el trazo es fino y trae una retícula de construcción marcada, mientras fondo-p1 es de trazo grueso. En la misma campaña, el vertical y la historia no se ven de la misma familia que el cuadrado y el slide. En el slide, la ampliación deja los elementos grandes y la banda más rala.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4",
+     "donde": "todas las piezas",
+     "problema": "Los elementos cortados por el borde de la máscara son normales en un fondo y no lo hacen leerse como objeto. Solo un detalle: fondo-a1 trae más losas en turquesa que fondo-p1, pero mantiene la densidad pareja.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "6",
+     "donde": "piezas 36°, 38°, 40° y 42° (región de G-AFI-04)",
+     "problema": "El tercio izquierdo queda vacío, con una regla vertical turquesa, y a la derecha hay un fragmento de torre cortado por los bordes. Es composición de afiche (sujeto a un lado y la otra parte vacía) y se lee como objeto recortado, no como fondo de densidad pareja.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "6",
+     "donde": "piezas 37°, 39° y 41° (franja de H063)",
+     "problema": "La esquina de planta en V funciona como foco, así que la densidad no es pareja. Además viene de otra fuente con otro lenguaje que G-AFI-04, y la campaña se ve como dos piezas distintas.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "7",
+     "donde": "todas las piezas (H021)",
+     "problema": "La ciudad se concentra a la izquierda y se disuelve hacia una mitad derecha vacía; en el slide, x 1700–2576 queda casi en blanco. Hay un sujeto a un lado y otra mitad vacía: no es un fondo recortable en cualquier parte.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "8",
+     "donde": "piezas 50°, 52°, 54° y 56°",
+     "problema": "Usa la misma región de G-AFI-04 que el rescate R1, con el tercio izquierdo vacío y la torre cortada.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "8",
+     "donde": "piezas 51°, 53° y 55° (región de H023)",
+     "problema": "El borde superior corta la retícula de pilares, que es el objeto del diagrama, y el cuarto superior derecho queda vacío. Se lee como un fragmento de objeto con densidad dispareja.",
+     "gravedad": "alta"
+    }
+   ],
+   "mejor": "2",
+   "veredicto": "sirve",
+   "resumen": "Lente de forma. En el camino B gana la opción 2 (Nano Banana 2.1, variante 1). El cubo es compacto y queda centrado en la máscara: el anclaje lo corre solo 22 a 28 px. El estante apaisado mide unos 4,3:1 y llena el 85 % del ancho en el slide (3,64:1) y en el cuadrado de 2,66:1, igual que la referencia que aprobó David.\n\nFormato por formato, la opción 2 sirve en el vertical, el cuadrado de 2,66:1, la historia, el slide y los dos LinkedIn. En el cuadrado de 2,05:1 sirve con un ajuste menor: el estante ocupa solo el 40 % del alto.\n\nLa opción 1 (Magnific One) falla en el slide: su banca de 2,1:1 llena solo el 52 % de la banda. La opción 3 corre el cubo a la izquierda en la historia (7,5 %) y en el vertical (5,3 %), y su estante apaisado está inconcluso.\n\nEn el camino A, la opción 4 (A1) es un fondo válido: densidad pareja, recortable en cualquier parte y del mismo trazo en todos los formatos. La 5 cumple, pero mezcla trazo grueso y fino entre formatos. Los tres rescates (6, 7 y 8) no sirven: tienen composición de afiche o son fragmentos de objeto cortados, no fondos.\n\nSi David quiere conservar los dos caminos, propongo como variantes la opción 2 para el camino B y la opción 4 para el camino A."
+  },
+  {
+   "id": "G28-v2-contenido",
+   "galeria": "G28",
+   "version": "v2",
+   "lente": "contenido",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 7,
+    "2": 5,
+    "3": 4,
+    "4": 6,
+    "5": 6.5,
+    "6": 5,
+    "7": 4,
+    "8": 5.5
+   },
+   "hallazgos": [
+    {
+     "opcion": "1",
+     "donde": "imagen apaisada (piezas 2° T1, 4° T6, 6° T2)",
+     "problema": "El trazo parece un boceto: hay líneas que no cierran y extremos sueltos (la viga y la losa del extremo derecho). La tubería atraviesa otros 3 o 4 pilares sin marcar, así que el choque marcado queda como uno entre varios. Los recorridos alternativos punteados casi no se ven. Cuenta la misma historia, pero más débil que la imagen principal.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "imagen principal (piezas 1° P02, 3° T3, 5° U2, 7° AB2)",
+     "problema": "Los dos recorridos alternativos son lazos punteados cerrados que se leen más como nube de revisión que como dos rutas. Eso refuerza la parte de que la revisión marca el choque, pero deja débil la de qué sigue dependiendo del equipo. El choque tubería-viga sí se lee, con las dos partes en turquesa y sin ruta elegida.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "imagen principal (piezas 8° P02, 10° T3, 12° U2, 14° AB2)",
+     "problema": "Solo el tramo de viga va en turquesa. La tubería cruza sin marcar y hay una sola alternativa ondulada, así que el choque se lee a medias. En el 9:16 el objeto queda en primer plano y el criterio pide que cuente el contenido con claridad: aquí se queda corto.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "imagen apaisada (piezas 9° T1, 11° T6, 13° T2)",
+     "problema": "El tramo turquesa de la tubería y el bloque turquesa de la viga no se tocan, y la tubería atraviesa los 5 pilares sin marcar. No se lee un choque detectado: se ven dos piezas pintadas en una estantería. En estos tres formatos no cuenta el hallazgo.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "3",
+     "donde": "imagen principal (piezas 15° P02, 17° T3, 19° U2, 21° AB2)",
+     "problema": "La viga turquesa corre paralela a la tubería y no la cruza. El único cruce real, el de la tubería con el pilar frontal, no está marcado, así que el hallazgo no se lee. En el 9:16 (17°) queda grande y en primer plano, que es justo donde el criterio exige más.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "3",
+     "donde": "imagen principal, losa superior (se nota en 17° T3)",
+     "problema": "En la losa superior hay pseudoletras tenues, como texto fantasma. Solo se ven de cerca o con más contraste, pero en el 9:16 la losa ocupa mucho lienzo.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "imagen apaisada (piezas 16° T1, 18° T6, 20° T2)",
+     "problema": "La tubería turquesa sube en codo y entra en un bloque turquesa de la viga. Se puede leer como un pase o una conexión resuelta, que es el remedio que el texto niega, más que como un choque. Además hay una losa con cantos negros y un trazo suelto en el borde izquierdo. Aun así, es la mejor apaisada de Nano Banana.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1, 2, 3",
+     "donde": "defecto común del camino B",
+     "problema": "En las tres opciones, la mitad del contraste que dice qué sigue dependiendo del equipo (los recorridos alternativos tenues) apenas se ve a tamaño de feed. Lo anoto aparte y no lo uso para desempatar.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "7",
+     "donde": "imagen de fondo (piezas 43° a 49°)",
+     "problema": "Una ciudad que se disuelve en una red de nodos trae escala urbana (ciudad inteligente) y el cliché de la IA como red. Son elementos ajenos a la coordinación BIM en obra, aunque estén cerca del tema. La misma imagen va en las dos máscaras.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "6",
+     "donde": "G-AFI-04 (36°, 38°, 40°, 42°) y planta H063 (37°, 39°, 41°)",
+     "problema": "El recorte de G-AFI-04 arrastra la línea vertical turquesa de la plantilla de webinar, que es un resto de maqueta y no un elemento del tema. La planta de H063 trae cotas con números falsos. El edificio y la planta sí son del rubro.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "8",
+     "donde": "retícula H023 (51°, 53°, 55°)",
+     "problema": "La retícula de pilares y vigas es del tema. La red de nodos turquesa que va debajo es un cliché genérico de IA, aunque discreto.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "4, 5",
+     "donde": "imagen apaisada (diferencia entre A1 y A3)",
+     "problema": "Las dos opciones solo cambian la apaisada. a1 trae muros en U y no tiene tuberías. a2 trae tuberías, vigas y pilares en alambre, más ligados a la coordinación MEP y estructura y más cercanos a la principal. Ninguna trae elementos ajenos al tema. Como son fondos, no se les exige contar el titular.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "1",
+   "veredicto": "sirve con ajustes",
+   "resumen": "Mi lente elige la opción 1 (Magnific One), la única en que la imagen cuenta la misma comparación que el texto: la tubería y la viga del choque van marcadas en turquesa, hay alternativas sin ruta elegida y no aparece el remedio. Por formato, sirve en los que usan la imagen principal (1° vertical, 3° historia, 5° y 7° LinkedIn). En los apaisados (2°, 4° y 6°) sirve con ajustes: el trazo es de boceto, la tubería cruza otros pilares sin marcar y las alternativas no se ven. Conviene pedir otra apaisada con variantes, no aceptarla tal cual.\n\nNano Banana 2.1 dibuja más limpio, pero pierde el hallazgo. En la variante 1, la principal marca solo la viga y la apaisada no muestra choque. En la variante 2, la principal pinta una viga paralela que no cruza la tubería (falla en el 9:16) y su apaisada puede leerse como pase resuelto.\n\nEl camino A lo juzgo solo por si sus elementos son del tema, porque a un fondo no le corresponde contar el titular. A1 y A3 están bien, y A3 un poco mejor porque su apaisada trae tuberías. R2 trae una ciudad y una red de nodos, ajenas a la obra. R1 arrastra un resto de la plantilla de webinar y números falsos en las cotas. R3 sirve con su cliché de nodos.\n\nPara ampliar la losa de nb2 hice dos recortes temporales en el scratchpad y ya los borré. No gasté créditos."
+  },
+  {
+   "id": "G28-v2-posicion",
+   "galeria": "G28",
+   "version": "v2",
+   "lente": "posicion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 7,
+    "2": 8.5,
+    "3": 6,
+    "4": 6,
+    "5": 5.5,
+    "6": 3,
+    "7": 3,
+    "8": 3
+   },
+   "hallazgos": [
+    {
+     "opcion": "2",
+     "donde": "9° T1 y 11° T6 (bandas 2.66:1 y 3.64:1)",
+     "problema": "Ningún defecto. Es el mejor caso de la galería: la imagen apaisada trae un objeto bajo y ancho que ocupa el 85 % del ancho, con márgenes parejos arriba y abajo (170/173 px y 98/100 px). Es la imagen pensada para la proporción que pidió David en G25.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "10° T3, 12° U2 y 14° AB2",
+     "problema": "El cubo queda corrido hacia arriba alrededor de un 4 % de la máscara (márgenes de 140/258, 143/232 y 112/206 px) y un poco a la derecha. Sigue entero, al 70-75 %. Basta un ajuste vertical.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "13° T2 (2.05:1)",
+     "problema": "El objeto llena el 85 % del ancho, pero solo el 40 % del alto, y deja franjas vacías de unos 280 px arriba y abajo. Cumple mi lente; lo anoto para el juez de composición.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1",
+     "donde": "4° T6 (slide 3.64:1)",
+     "problema": "La apaisada a1 trae un objeto de unos 2:1 que llena el alto, pero ocupa solo el 52 % del ancho y deja vacíos laterales de 673 y 571 px. La imagen no está pensada para esta banda (criterio G25): es un defecto de la imagen, no de la maquetación.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "5° U2, 2° T1 y 7° AB2",
+     "problema": "Con el anclaje por acento, el objeto se corre a la derecha, porque el acento está a la izquierda del objeto. Los márgenes quedan desparejos: 175/102 px en U2, 335/232 en T1 y 266/193 en AB2. En U2 se nota a tamaño de feed.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "17° T3 (historia)",
+     "problema": "El cubo queda corrido a la izquierda, con márgenes de 135 y 354 px (9 % y 24 % del ancho de la máscara), y la línea punteada casi toca el borde izquierdo. Es el objeto corrido que David llama defecto grave (G24). Lo causa el anclaje: el acento está a la derecha del cubo.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "3",
+     "donde": "15° P02 (vertical)",
+     "problema": "El cubo queda corrido a la izquierda, con márgenes de 372 y 555 px, por la misma causa. Se nota en la hoja.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "16° T1, 18° T6, 19° U2, 20° T2 y 21° AB2",
+     "problema": "Sirven: el objeto está entero y centrado, al 74-85 %. En T6 el margen superior es justo, 57 px, por las aristas de la losa.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1, 2, 3",
+     "donde": "Método camino B (anclaje por acento al 33 %)",
+     "problema": "El método es explícito y comprobable, pero choca con el criterio de David de objeto entero y centrado: descentra el objeto en proporción a lo lejos que esté el acento de su centro. Solo funciona bien cuando el acento ya está casi al centro, como en NB1. Propongo limitar el corrimiento a una tolerancia de márgenes, por ejemplo que el margen menor sea al menos el 80 % del mayor, o centrar el objeto y anclar solo dentro de esa holgura.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "6",
+     "donde": "36° P02, 38° T3, 40° U2 y 42° AB2 (G-AFI-04)",
+     "problema": "El recorte corta la estructura por dos o tres lados. Además, corta las losas turquesa en el borde derecho y en el inferior, justo lo que el recorte óptimo debía evitar, y carga la máscara de turquesa. Aun con la región útil, el tercio izquierdo queda vacío con una línea suelta: sigue siendo una composición de afiche.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "6",
+     "donde": "37° T1 y 39° T6 (planta H063)",
+     "problema": "Los pilares turquesa quedan cortados en el borde superior.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "7",
+     "donde": "Todos los formatos (H021)",
+     "problema": "La ciudad está a un lado, cortada por el borde izquierdo y el superior, y la otra mitad queda vacía: es la composición de afiche que el requisito técnico pide evitar. Un recorte con foco 0.40-0.50 no la arregla.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "8",
+     "donde": "50° P02, 52° T3, 54° U2 y 56° AB2 (iguales a R1) y 51° T1, 53° T6 y 55° T2 (retícula H023)",
+     "problema": "Repite los cortes de R1 en los formatos verticales. En las bandas, la retícula queda cortada por el borde superior y el sujeto se va a la esquina superior izquierda, con la mitad derecha vacía.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "4, 5",
+     "donde": "Todas las piezas",
+     "problema": "Son tramas sin objeto, así que mi lente solo revisa el recorte. A1 no corta acentos turquesa en los bordes de las piezas revisadas. A3 corta una viga turquesa en el borde izquierdo del 32° T6. El método de recorte sigue sin validar por David.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "4, 5, 6, 7, 8",
+     "donde": "Todas las piezas del camino A (fondo que llena la máscara)",
+     "problema": "Faltan las cruces de registro sobre la zona de imagen, por ejemplo arriba en P02, T1, T3 y T6, y a la derecha en U2. En el camino B sí están. Quitarlas no es una mejora (G06): conviene reponerlas.",
+     "gravedad": "media"
+    }
+   ],
+   "mejor": "2",
+   "veredicto": "sirve",
+   "resumen": "Mi lente elige la Opción 2 (Nano Banana 2.1, variante 1). Sirve en los 7 formatos: el objeto está entero y casi centrado en todas las máscaras, y su apaisada baja y ancha llena las bandas al 85 % (T1, T6 y T2). Solo T3, U2 y AB2 quedan un 4 % altos. La Opción 1 sirve con ajustes: en el slide el objeto ocupa la mitad del ancho y en U2 queda corrido a la derecha. La Opción 3 falla en T3 (alta) y en P02 (media): el anclaje por acento corre el cubo a la izquierda, y ahí se ve el problema común del método, que descentra el objeto cuando el acento no está al centro; conviene limitarlo con una tolerancia de márgenes. En el camino A, los rescates R1, R2 y R3 no sirven: cortan el sujeto o los acentos turquesa en el borde y dejan composición de afiche. A1 y A3 no tienen objeto que posicionar, así que su puntaje refleja solo el recorte. A todo el camino A le faltan las cruces sobre la imagen."
+  },
+  {
+   "id": "G28-v2-unidad",
+   "galeria": "G28",
+   "version": "v2",
+   "lente": "unidad",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 7,
+    "2": 6,
+    "3": 4.5,
+    "4": 7.5,
+    "5": 6,
+    "6": 3.5,
+    "7": 8,
+    "8": 4
+   },
+   "hallazgos": [
+    {
+     "opcion": "1",
+     "donde": "imagen apaisada (piezas 2°, 4° y 6°: T1, T6, T2)",
+     "problema": "La apaisada tiene vista oblicua con fuga y un trazo de boceto, con líneas dobles, temblorosas y de construcción marcadas. La principal es un isométrico limpio. El grosor medido es parecido (2,3 px contra 2,0 px a 2160 px de ancho), igual que la cobertura de línea y el acento: el mismo manguito turquesa en la tubería, con 0,22 % contra 0,23 % de la imagen. Es un ajuste y no un veto, porque David ya aprobó una apaisada así.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "tono del turquesa en T1, T6 y T2",
+     "problema": "El acento de la apaisada (30,178,156) es algo más claro que el de la principal (31,165,151).",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "piezas 8° (P02) contra 9° (T1), ambas de 2160 px de ancho",
+     "problema": "La principal es un cubo isométrico y la apaisada un alzado casi frontal. El trazo medido baja de 4,8 px a 2,9 px, así que la principal se ve bastante más gruesa que la apaisada.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "acento",
+     "problema": "La principal lleva una sola placa turquesa en la zona de choque. La apaisada lleva un tramo de tubería y un bloque en la viga: son dos acentos de otro tipo, y el tratamiento no se repite.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "imagen apaisada (piezas 16°, 18° y 20°)",
+     "problema": "La apaisada es un alzado frontal con geometría imposible: salen líneas de las esquinas de la losa hacia ninguna parte y los cantos de la losa van rellenos de negro, algo que la principal no tiene. El acento es una tubería doblada más un bloque, mientras que la principal usa dos barras largas. No se lee como la misma familia.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "4",
+     "donde": "imagen apaisada (piezas 23°, 25° y 27°)",
+     "problema": "El trazo es idéntico (2,0 px), la vista es isométrica en las dos y el tono coincide. Pero la apaisada añade muros en U y pilares sin zapata que la principal no tiene, y pierde las tuberías y las marcas de cota. La retícula pasa de turquesa discontinua a gris punteada, y el turquesa sube del 1,5 % al 2,8 % de la imagen.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "5",
+     "donde": "imagen apaisada (piezas 30°, 32° y 34°)",
+     "problema": "Los objetos son los mismos, pero la apaisada está dibujada con línea gris muy fina y objetos transparentes con aristas ocultas discontinuas: la cobertura de línea oscura cae del 1,39 % al 0,37 %. La retícula continua pesa más y el turquesa es más claro (52,165,156 contra 30,159,153). Se ve más pálida que la principal.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "6",
+     "donde": "principal G-AFI-04 contra apaisada H063 (piezas 37°, 39° y 41°)",
+     "problema": "Son dos familias distintas. La principal muestra losas turquesa grandes (12 % de la imagen) sobre un alambre fino. La apaisada es una planta dibujada a mano, con pilares turquesa pequeños (0,8 %), cotas con texto ilegible, trazo más grueso (3,5 px contra 2,2 px) y un turquesa más oscuro (32,141,123).",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "8",
+     "donde": "principal G-AFI-04 contra apaisada H023 (piezas 51°, 53° y 55°)",
+     "problema": "En la principal el turquesa forma planos grandes (12 %); en la apaisada solo nodos pequeños de una red (0,3 %). La apaisada es más densa: retícula de pilares, malla de puntos y una cobertura de línea del 2,4 % contra el 1,1 %. Además, muestra halos blancos de reescalado alrededor de las líneas. Comparten la vista isométrica, pero no los objetos ni el tratamiento del acento.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "6 y 8",
+     "donde": "recorte de G-AFI-04 en P02, T3, U2 y AB2",
+     "problema": "La principal trae una línea vertical turquesa suelta que no aparece en la apaisada.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "7",
+     "donde": "todas las piezas (43° a 49°)",
+     "problema": "Usa la misma imagen en las dos máscaras, así que la unidad viene dada. Pero los edificios llevan sombreado gris y el turquesa queda reducido a puntos de la red (0,07 %), lo que choca en parte con el criterio de David de una línea isométrica, plana y clara. Por eso no le doy más nota.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "7",
+     "donde": "lectura del resultado",
+     "problema": "Que esta opción salga mejor no demuestra que el motor logre una familia con dos imágenes distintas. Entre los pares de imágenes distintas, la mejor es la 4.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "7",
+   "veredicto": "sirve",
+   "resumen": "Lente UNIDAD. La 7 (H021 en las dos máscaras) es la más unida, porque repite la misma imagen: la unidad se mantiene en los 7 formatos. Solo pierde nota por el sombreado gris y porque el acento se reduce a puntos.\n\nEntre las parejas de imágenes distintas gana la 4 (A1): trazo idéntico, vista isométrica y mismo tono. Sirve tal cual en P02, T3, U2 y AB2, y con ajustes en T1, T6 y T2, por los muros en U y la retícula gris.\n\nLa 1 (MO) mantiene los objetos, el grosor medido y el acento, pero su apaisada es oblicua y abocetada: es un ajuste, no un veto. La 2 (NB1) cambia a alzado frontal y su principal se ve más gruesa (4,8 px contra 2,9 px). La 5 (A3) es más pálida y transparente.\n\nNo sirven la 3, por la geometría imposible y los rellenos negros, ni las parejas cruzadas 6 y 8, que unen familias distintas: planos turquesa grandes contra planta o red de nodos.\n\nNo llamé a Magnific, no gasté créditos y no escribí archivos."
+  },
+  {
+   "id": "G28-v2-oficio",
+   "galeria": "G28",
+   "version": "v2",
+   "lente": "oficio",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 6.5,
+    "2": 5,
+    "3": 4.5,
+    "4": 7.5,
+    "5": 6.5,
+    "6": 4,
+    "7": 3.5,
+    "8": 4.5
+   },
+   "hallazgos": [
+    {
+     "opcion": "1",
+     "donde": "imagen apaisada formula-a1 → piezas T1, T6 y T2",
+     "problema": "Es un boceto, no un dibujo terminado: líneas dobles, pilares de grosor irregular que flotan, el extremo derecho de la viga sin resolver y la retícula de fondo pasando por encima del pórtico. Además las aristas largas no son paralelas (0,13 y 0,19 de pendiente), así que no es una axonometría coherente. Que difieran el trazo y la vista respecto de la principal es un ajuste, no un veto, pero estos defectos se ven en el slide.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "imagen principal formula-p1 → P02, T3 (9:16), U2, AB2",
+     "problema": "Al pilar del fondo le falta el tramo del piso inferior (termina en el nivel intermedio). Además, unas líneas de la retícula cruzan los pilares izquierdo y frontal a media altura. El resto es isométrico, de trazo fino y limpio, y el pasante verde se lee bien. En el 9:16 el objeto se ve grande y estos detalles se notan.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "imagen apaisada nb-a1 → T1, T6 y T2",
+     "problema": "La proyección está mezclada: las vigas van en alzado frontal, los pilares tienen capiteles isométricos y la losa inferior está en oblicua. La tubería aparece cortada en tramos con tapa elíptica en cada pilar, así que no se lee como una tubería continua. Hay una curva punteada sinusoidal suelta y un tramo de tubería fantasma punteado en la cuarta crujía.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "imagen principal nb-p1 → P02, T3, U2, AB2",
+     "problema": "El acento verde es un paralelogramo cizallado que no se lee ni como manguito ni como zona de choque. La ruta punteada es una curva libre, fuera de los ejes isométricos. El trazo es medio-grueso, con barras de doble línea, y se aleja de la línea aprobada de trazo fino. Igual que en la opción 1, le falta el tramo inferior del pilar del fondo.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "imagen apaisada nb-a2 → T1 (16°), T6 (18°) y T2 (20°)",
+     "problema": "Hay un error de proyección: los bordes de la losa se fugan simétricamente hacia lados opuestos, algo imposible en isometría. Esas dos aristas largas quedan abiertas, sin arista posterior que las cierre. Los extremos llevan rellenos negros macizos, ajenos a la familia plana. Hay además un tramo de tubería suelto a la izquierda. El público BIM lo nota a tamaño de feed, así que veta esos tres formatos.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "3",
+     "donde": "imagen principal nb-p2 → P02, T3, U2, AB2",
+     "problema": "El dibujo está bien resuelto (uniones limpias, losa superior cerrada, oclusiones correctas). Pero la viga verde y el tramo verde de la tubería corren paralelos y no se tocan, así que el choque no queda dibujado. La ruta punteada tiene un tramo fuera de eje y el trazo es más grueso que el de la línea aprobada. En T3 el objeto queda pegado al borde izquierdo de la máscara.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4",
+     "donde": "fondo-p1 y fondo-a1 → todos los formatos",
+     "problema": "La isometría es coherente y los perfiles huecos muestran la cara correcta. Las uniones están resueltas, sin artefactos, y el trazo es el mismo en la principal y la apaisada. Solo hay diferencias menores: la apaisada suma muros con vano y la principal zapatas y tubos. En el 9:16 la trama no tiene protagonista que cuente el texto. Es un tipo de pieza nuevo (fondo), así que el criterio del 9:16 se usa como señal y no como veto.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "5",
+     "donde": "fondo-a2 → T1 (30°), T6 (32°) y T2 (34°)",
+     "problema": "El trazo es de línea capilar, con aristas ocultas punteadas, y la retícula sólida pasa por dentro de los objetos, que parecen de vidrio. No combina con el trazo más oscuro de fondo-p1 que usan las piezas verticales. Es un ajuste de familia, no un veto. Hay un trazo suelto cerca del borde superior derecho.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "6",
+     "donde": "rescate gafi04 (región 0,42–1,0) → P02 (36°), T3 (38°) y donde el recorte la incluye",
+     "problema": "La línea vertical turquesa que dividía la composición original queda dentro del recorte y corta la imagen como una raya suelta. El recorte amplía la imagen alrededor de 1,8×, lo que deja halos blancos alrededor de las líneas sobre el turquesa y la torre cortada por los bordes.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "6",
+     "donde": "rescate h063 (franja de la planta) → T1, T6 (39°) y T2",
+     "problema": "Las cotas son pseudotexto ilegible generado por la IA, algo que un público BIM detecta. Las líneas son dobles y de trazo de ilustración, y la ampliación de alrededor de 2,3× (franja de 1638×575 px) las deja blandas. La planta es solo una esquina parcial que no se lee como objeto.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "7",
+     "donde": "rescate h021 → todos los formatos",
+     "problema": "No pertenece a la familia aprobada: es una ciudad detallada con sombreado gris, de aspecto de render, y la transición hacia la red es ruido de líneas. Con la ampliación queda borrosa. En el 9:16 (45°) el objeto es genérico y no está bien trabajado a ese tamaño. Coincide en ambas máscaras, pero eso no salva el oficio.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "8",
+     "donde": "principal gafi04 → P02 (50°), T3 (52°), U2, AB2",
+     "problema": "Es el mismo artefacto de la opción 6: la línea divisoria turquesa del original y los halos que deja la ampliación.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "8",
+     "donde": "rescate h023 (región retícula) → T1 (51°), T6 (53°) y T2",
+     "problema": "Es isométrico y está en la familia de trazo fino, pero las uniones entre pilares y vigas tienen líneas encimadas y capiteles dobles. El pórtico queda cortado por el borde superior y la ampliación de alrededor de 2,3× ablanda los puntos de la red.",
+     "gravedad": "media"
+    }
+   ],
+   "mejor": "4",
+   "veredicto": "sirve",
+   "resumen": "Por oficio gana la opción 4 (A1, fondos p1 y a1): isometría coherente, uniones limpias, sin artefactos y el mismo trazo fino en la principal y la apaisada. Sirve en los 7 formatos; en el 9:16 la trama no tiene protagonista, pero como es un tipo de pieza nuevo eso cuenta como señal, no como veto.\n\nLa opción 5 comparte la principal, pero su apaisada (a2) es de línea capilar con la retícula pasando por dentro de los objetos. Sirve con ajustes en T1, T6 y T2.\n\nEn el camino B, la mejor es la 1 (Magnific One). La principal está a la altura del 9:16 y sirve en P02, T3, U2 y AB2, aunque al pilar del fondo le falta el tramo inferior. La apaisada es un boceto (líneas dobles, extremo sin resolver, ejes que no son paralelos), así que T1, T6 y T2 sirven con ajustes; conviene pedir otra apaisada con variantes.\n\nNano Banana 2.1 dibuja más nítido pero con trazo más grueso, y su acento no muestra el choque:\n- Opción 2: su apaisada mezcla proyecciones y corta la tubería en tramos. Sirve con ajustes en todos los formatos.\n- Opción 3: sirve con ajustes en P02, T3, U2 y AB2, y no sirve en T1, T6 ni T2 porque su apaisada tiene un error de proyección: la losa se fuga hacia ambos lados.\n\nLos rescates no sirven tal cual:\n- Opciones 6 y 8: el recorte de G-AFI-04 arrastra la línea divisoria turquesa del original y halos de la ampliación.\n- Opción 6: además, la planta de H063 trae cotas ilegibles generadas por la IA.\n- Opción 7: H021 está fuera de la familia de trazo fino."
+  },
+  {
+   "id": "G28-v2-costuras",
+   "galeria": "G28",
+   "version": "v2",
+   "lente": "costuras",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 9,
+    "2": 9,
+    "3": 8.5,
+    "4": 6.5,
+    "5": 5.5,
+    "6": 3,
+    "7": 6,
+    "8": 3.5
+   },
+   "hallazgos": [
+    {
+     "opcion": "6",
+     "donde": "P02, T3, U2 y AB2 (G-AFI-04, región [0.42, 0, 1, 1])",
+     "problema": "Los planos turquesa grandes quedan cortados por el borde derecho y por el borde con el panel. En la franja de 4 px del borde hay 1.155 px turquesa abajo y 501 a la derecha en P02, y 1.017 abajo y 1.716 a la derecha en T3. La máscara queda entre 9 y 12 % turquesa (en las opciones B es 0,2 a 0,9 %). Además, el filete turquesa vertical de la imagen recorre la máscara de arriba abajo, cortado en los dos extremos, y a tamaño de feed se lee como el borde de un panel pegado. Es lo contrario de lo que pide el método de recorte.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "8",
+     "donde": "P02, T3, U2 y AB2 (misma G-AFI-04 que R1)",
+     "problema": "Tiene el mismo defecto que R1: planos turquesa cortados en el borde derecho y en el borde con el panel, una máscara cargada de turquesa (9 a 12 %) y un filete turquesa vertical que corta la máscara como una costura.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "4, 5, 6, 7, 8",
+     "donde": "Los 7 formatos del camino A: esquinas sobre la imagen",
+     "problema": "El motor 0.3o no dibuja las cruces de registro sobre una imagen tipo fondo, así que quedan 2 cruces de 4 (se midió turquesa 0 en esas esquinas). Según el criterio de David, quitarlas no es una mejora: si chocan con las cruces del patrón, hay que moverlas o abrirles un claro, no suprimirlas. El control sin_choques dice «ninguno» porque no mide si falta una cruz. En las opciones B están las 4 en los 7 formatos.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "6",
+     "donde": "T6 y T1 (planta H063)",
+     "problema": "Los pilares turquesa quedan cortados por el borde superior: hay 136 px turquesa en el borde en T6 y 21 px en T1. La planta sale cortada arriba.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "5",
+     "donde": "T2 (cuadrado 2,05:1, apaisada A2)",
+     "problema": "Una viga turquesa sale cortada por el borde superior, a la derecha. Hay 288 px turquesa en el borde y se nota a tamaño de feed: el recorte óptimo no la evitó.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "5",
+     "donde": "T6 (slide, apaisada A2)",
+     "problema": "La viga turquesa de la izquierda sale de cuadro por el borde izquierdo: la cara turquesa termina a 27 px del borde. Otra viga turquesa queda a 22 px del borde con el panel.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "8",
+     "donde": "T6, T2 y T1 (retícula H023)",
+     "problema": "La estructura, que es el sujeto, sale cortada por el borde superior. Los nodos turquesa no se cortan: solo tocan el borde 5 a 9 px.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "7",
+     "donde": "T6, AB2 y T2",
+     "problema": "Algunos nodos turquesa de la red tocan el borde: 29 px arriba en T6, 14 px a la derecha en AB2 y 4 px a la izquierda en T2. La ciudad gris sangra por el borde izquierdo y el superior, lo que en un fondo es aceptable.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "4",
+     "donde": "T3, P02 y U2",
+     "problema": "Solo tocan el borde marcas turquesa pequeñas del patrón: en T3, 12 px abajo y 11 a la derecha; en P02, 10 px abajo; en U2, 5 px a la derecha. Las placas y vigas turquesa quedan enteras.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "U2, T2, T3, AB2, T6 y T1 (fondo extendido)",
+     "problema": "Es la opción con más fondo extendido (38 % de la máscara en U2 y 35 % en T2), pero sin escalón: la diferencia en la costura es de 0 niveles, el ruido es menor que 2 y las guías se desvanecen en unos 60 px. Las líneas abiertas de la viga superior en T6 y T1 vienen así en la imagen, no son un corte.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1",
+     "donde": "T6 (extensión lateral) y T1",
+     "problema": "La extensión #F9F8F7 en los costados de T6 no tiene escalón (0 niveles). Las verticales tenues de la imagen son líneas de construcción del dibujo, no bordes. En T1 y T6 el dibujo queda justo, a 39–52 px del borde superior, aunque sin cortar.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "1",
+   "veredicto": "sirve",
+   "resumen": "Lente de costuras. En las tres opciones B (1, 2 y 3) el fondo extendido no tiene escalón (0 niveles en la costura) ni rectángulo, ningún acento turquesa toca el borde y las 4 cruces no chocan con el dibujo. Sirven en los 7 formatos. Entre ellas mi lente casi no ve diferencia: elijo la 1 porque solo extiende el fondo en T6, y la 2 queda empatada.\n\nEl camino A pierde las cruces sobre la imagen en todos los formatos (motor 0.3o, contra el criterio de David). A1 (4) y R2 (7) sirven con ajustes en los 7 formatos: devolver las cruces. A3 (5) sirve con ajustes, y en T2 y T6 además corta vigas turquesa.\n\nR1 (6) y R3 (8) no sirven en vertical, historia ni en los dos LinkedIn: hay planos turquesa cortados, la máscara queda 9 a 12 % turquesa y un filete turquesa vertical se lee como costura. En cuadrados y slide sirven con ajustes.\n\nEl método de recorte óptimo, que David aún no valida, funcionó en A1 pero no evitó los cortes en A3 ni en R1/R3. No escribí archivos ni gasté créditos."
+  }
+ ]
+}

@@ -1,0 +1,66 @@
+{
+ "galeria": "G04",
+ "seccion": null,
+ "rubrica": "pred-crit-b",
+ "retro": true,
+ "criterios_hasta": "G04",
+ "sellado": "2026-11-11T00:43:02",
+ "hash_rubrica": "2afef7084991",
+ "hash_criterios": "fd98b8707561",
+ "votos": [
+  {
+   "id": "G04-pcb-prediccion",
+   "galeria": "G04",
+   "version": "pred-crit-b",
+   "lente": "prediccion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 6,
+    "2": 8,
+    "3": 7,
+    "4": 4.5
+   },
+   "hallazgos": [
+    {
+     "opcion": "1",
+     "donde": "Columna de datos y esquina inferior izquierda (logo y INSCRÍBETE)",
+     "problema": "Mide 10,13:1, pero la textura todavía se ve detrás del texto: hay manchas claras arriba a la izquierda y una mancha azulada junto al borde del velo, a la altura de los datos. Es justo la zona que David marcó en G01. Además, con el velo al 0,84 el texto queda sobre un panel oscuro sucio que termina en un corte vertical duro en la línea del tercio. Se ve como el sangrado lateral de la opción 2, pero con ruido detrás del texto, y el sangrado completo no aporta nada.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "Separación entre la columna de texto y la caja de la imagen",
+     "problema": "La caja deja unos 86 px de margen arriba, a la derecha y abajo, pero apenas unos 33 px a la izquierda. Ahí casi toca el subtítulo y la etiqueta EJEMPLO, así que se ve apretada contra la columna de texto. En el celular, el radio de 8 px y los márgenes casi no se notan: la diferencia con la opción 2 se pierde y la imagen solo queda más chica.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "4",
+     "donde": "Isometría vectorial en los dos tercios libres",
+     "problema": "El trazo es fino, de unos 2 o 3 px sobre un ancho de 3840, y a tamaño de feed en el celular casi desaparece. La pieza se ve vacía y fría al lado de las otras. Además es un dibujo de líneas, no la isometría plana con superficies de Magnific One que David aprobó como referencia.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4",
+     "donde": "Posición de la ilustración",
+     "problema": "La ilustración flota centrada y no alinea sus bordes con la grilla: arriba empieza en ~137 px y la etiqueta EJEMPLO en 86; abajo termina en ~1310 y el logo en 1362. Deja franjas oscuras sin función a ambos lados, el patrón que el laboratorio ya había observado con la isometría.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "Esquinas superior e inferior derechas",
+     "problema": "Las marcas de registro (+) de la derecha quedan sobre la zona gris clara de la imagen y casi no se ven. Pasa lo mismo en la opción 1.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1, 2 y 3 (común)",
+     "donde": "La imagen",
+     "problema": "La imagen tiene un haz turquesa luminoso parecido a un resplandor, un contraste claro-oscuro dramático y una franja blanca brillante en el borde inferior. Esto choca con los vetos de marca: brillo o resplandor, y luz y sombras dramáticas. Como la imagen viene de la base que David ya eligió, no lo uso para desempatar entre 1, 2 y 3, pero conviene revisarlo antes de aprobar.",
+     "gravedad": "media"
+    }
+   ],
+   "mejor": "2",
+   "veredicto": "sirve",
+   "resumen": "Creo que David elegiría la 2. Mantiene la imagen de la base con el máximo de presencia, hasta el borde, y saca la textura de detrás de los datos, el logo y el llamado, que era su queja de G01. La 3 queda cerca porque se alinea bien con la grilla, pero la caja queda apretada contra el texto y en el celular la imagen pierde tamaño sin ganar nada visible. La 1 cumple la medida de contraste, pero se ve como una versión sucia de la 2, con textura todavía visible en la esquina inferior izquierda. La 4 respeta la marca, pero su trazo fino casi desaparece en el celular y la ilustración flota sin alinearse con la grilla. Defecto común a 1, 2 y 3: la imagen tiene un haz turquesa luminoso y un contraste dramático; conviene revisarlo aparte frente a los vetos de marca."
+  }
+ ]
+}

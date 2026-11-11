@@ -1,0 +1,66 @@
+{
+ "galeria": "G05",
+ "seccion": null,
+ "rubrica": "pred-crit-a",
+ "retro": true,
+ "criterios_hasta": "G05",
+ "sellado": "2026-11-11T00:43:03",
+ "hash_rubrica": "2afef7084991",
+ "hash_criterios": "fd98b8707561",
+ "votos": [
+  {
+   "id": "G05-pca-prediccion",
+   "galeria": "G05",
+   "version": "pred-crit-a",
+   "lente": "prediccion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 7,
+    "2": 8.5,
+    "3": 5.5,
+    "4": 4.5
+   },
+   "hallazgos": [
+    {
+     "opcion": "1",
+     "donde": "Etiquetas FECHA/HORA/LUGAR en gris (#9BA3AD), el texto más chico de la pieza",
+     "problema": "Son el texto más chico de la pieza y quedan en 7,2:1. Sobre el panel liso se leen, pero en el celular se ven más apagadas que el resto del bloque de datos. Están por debajo de la referencia de 10:1 que el laboratorio adoptó para el texto chico.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "Etiquetas en blanco #ECEDEE dentro del bloque de datos",
+     "problema": "Al quedar en el mismo blanco que los valores, la jerarquía entre etiqueta y valor depende solo del tamaño. Se sigue leyendo bien porque la diferencia de cuerpo es clara. Es el único cambio que sube el mínimo medido (de 7,24 a 9,92:1, casi en el objetivo de 10:1) y refuerza los datos fuertes elegidos en G03.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "Kicker, subtítulo, números y llamado en #99F6E4 frente a «BIM» del logotipo, que sigue en #2DD4BF",
+     "problema": "El menta claro se ve pastel y lavado a tamaño de feed y pierde la fuerza del turquesa de marca. El «BIM» del logotipo queda como el único turquesa saturado y parece de otro color que el llamado que tiene al lado. Además no mejora el mínimo medido, que sigue en 7,24:1 porque las etiquetas siguen en gris.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4",
+     "donde": "Panel en #1A1A2E junto a la imagen",
+     "problema": "El azul de portada se ve violáceo al lado del negro y el gris neutros de la tinta, y la unión entre panel e imagen se nota como un cambio de temperatura. Además baja el mínimo medido a 6,69:1, que es la peor cifra de la galería y queda cerca del rango que David vio flojo (4,6 a 6,3:1).",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "común",
+     "donde": "Imagen del sangrado lateral (igual en las cuatro)",
+     "problema": "La columna turquesa luminosa puede leerse como brillo o resplandor, y la tinta abstracta no sigue la línea isométrica plana de las referencias aprobadas. La imagen viene fija de pasos anteriores, así que no cambia la elección; queda anotado aparte.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "común",
+     "donde": "Panel de texto, entre el subtítulo y el bloque de datos",
+     "problema": "Queda un vacío oscuro grande y sin función entre el subtítulo y el bloque de datos. Es igual en las cuatro opciones.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "2",
+   "veredicto": "sirve",
+   "resumen": "Predigo que David elige la 2°. Su criterio constante es que el texto chico se lea con holgura. Las etiquetas FECHA, HORA y LUGAR son el texto más chico, y la 2° es la única opción que sube el mínimo medido (de 7,24 a 9,92:1, casi en el objetivo de 10:1). También refuerza los datos fuertes sin tocar la marca. La 1° sirve tal cual, pero sus etiquetas grises se ven más apagadas. La 3° se ve lavada, deja descolgado el «BIM» del logotipo y no mejora el mínimo. La 4° baja el contraste a 6,69:1 y su panel azul choca con la imagen neutra. Comunes a las cuatro, sin efecto en la elección: posible resplandor en la imagen y un vacío en el panel."
+  }
+ ]
+}

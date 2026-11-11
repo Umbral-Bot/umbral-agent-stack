@@ -1,0 +1,83 @@
+{
+ "galeria": "G14",
+ "seccion": null,
+ "rubrica": "pred-crit-a",
+ "retro": true,
+ "criterios_hasta": "G14",
+ "sellado": "2026-11-11T00:43:04",
+ "hash_rubrica": "2afef7084991",
+ "hash_criterios": "fd98b8707561",
+ "votos": [
+  {
+   "id": "G14-pca-prediccion",
+   "galeria": "G14",
+   "version": "pred-crit-a",
+   "lente": "prediccion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 7,
+    "2": 7.5,
+    "3": 4
+   },
+   "hallazgos": [
+    {
+     "opcion": "3",
+     "donde": "zona de imagen (mitad superior)",
+     "problema": "La isometría es de alambre con trazo de unos 2 px sobre 2160. En una vista de 390 px eso queda en 0,4 px CSS, así que en el celular la mitad de arriba se ve casi vacía y oscura. Además pierde la composición compleja que David valora.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "3",
+     "donde": "ilustración centrada",
+     "problema": "Flota al centro, con el borde izquierdo en unos 557 px frente a la columna de texto en 103 px. Deja vacíos oscuros grandes a ambos lados y no se alinea con la grilla ni con el texto, como plantea la hipótesis del laboratorio.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "contenido de la ilustración",
+     "problema": "Un edificio de alambre no transmite «IA» como el brazo robótico. Tampoco es la línea isométrica plana de Magnific One aprobada como referencia: es un dibujo de líneas finas.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "borde superior e inferior de la imagen",
+     "problema": "El sangrado no se ve completo: el recorte conserva la franja crema del papel arriba (unos 48 px) y abajo (unos 50 px), pero no a los lados. El borde superior del lienzo queda crema y en el feed claro se funde con la interfaz, así que la pieza parece cortada.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "esquinas superiores",
+     "problema": "Las cruces verdes de registro caen sobre la imagen (crema y turquesa) en vez de sobre el fondo oscuro.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "unión entre la caja y el kicker «ARTÍCULO»",
+     "problema": "La caja queda a unos 38 px del kicker, frente a un margen de 103 px en lados y arriba. El aire de abajo es más apretado que el del resto del marco.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "caja de imagen",
+     "problema": "Se repite la franja crema del papel arriba y abajo, sin margen en los lados. Dentro de la caja se lee más como paspartú, pero sigue siendo irregular.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1 y 2 (común)",
+     "donde": "estilo de la imagen",
+     "problema": "Es un grabado retro con grano, no la línea isométrica plana de Magnific One que sirve de referencia. Como es igual en ambas, no desempata.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas (común)",
+     "donde": "pie: logo y llamado",
+     "problema": "El texto más chico mide 11,0 px CSS, justo en el umbral del celular. El contraste mínimo es 7,24:1 sobre fondo oscuro liso, así que no se ve lavado. Como es común a todas, no desempata.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "2",
+   "veredicto": "sirve",
+   "resumen": "Las tres conservan la banda, la jerarquía y los textos iguales, así que lo único que cambia es la imagen. Elijo la 2. La caja va alineada a la columna de texto y al borde de «EJEMPLO», y el marco oscuro cierra la pieza, así que en el celular se ve completa y ordenada. Las cruces de registro quedan sobre el fondo oscuro y la imagen solo pierde un 20 % de área. La 1 está muy cerca y tiene más impacto. Pero su sangrado deja franjas crema arriba y abajo y no a los lados: el borde superior queda crema y en el feed la pieza parece cortada. La 3 no sirve: la isometría de líneas finas casi desaparece a tamaño de feed, deja vacíos grandes, flota sin relación con la grilla y no comunica IA."
+  }
+ ]
+}

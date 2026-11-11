@@ -1,0 +1,366 @@
+{
+ "galeria": "G12",
+ "seccion": null,
+ "rubrica": "v2",
+ "retro": true,
+ "criterios_hasta": "G12",
+ "sellado": "2026-11-11T00:33:17",
+ "hash_rubrica": "f69064585452",
+ "hash_criterios": "fd98b8707561",
+ "votos": [
+  {
+   "id": "G12-v2-jerarquia",
+   "galeria": "G12",
+   "version": "v2",
+   "lente": "jerarquia",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 8,
+    "2": 8.5,
+    "3": 6,
+    "4": 6.5
+   },
+   "hallazgos": [
+    {
+     "opcion": "2",
+     "donde": "fila del logo y el llamado, justo encima del borde de la imagen",
+     "problema": "El llamado y el logo quedan a unos 48 px del borde de la imagen, que está muy cargada. Tienen fondo liso y se leen bien, pero a tamaño de feed pueden confundirse con el pie de la imagen y no con el cierre del bloque de texto. Conviene dejar un poco más de aire.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1",
+     "donde": "mitad superior (imagen a sangre)",
+     "problema": "Primero se lee la imagen: el brazo robótico ocupa la primera mitad del lienzo y gana la primera mirada. El titular sigue siendo el elemento más grande, con kicker y bajada cerca del 28 % de su altura, pero entra en segundo lugar. Para esta lente, la opción 2 resuelve mejor que el titular mande.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "titular de la columna izquierda",
+     "problema": "Es la única opción en que el titular se achica a 107 px (contra 156 en las otras tres), mientras kicker y bajada conservan su tamaño. Medido en píxeles, la altura de mayúscula del kicker pasa a ser cerca del 40 % de la del titular (64/159), contra el 28 % de las demás. La bajada, en cinco líneas, ocupa casi tanta superficie como el titular. No supera el tope de 45 % de David, pero se acerca y la jerarquía se aplana a tamaño de feed.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "columna de texto, entre y=1483 y y=2465",
+     "problema": "El bloque de texto se amontona arriba y deja un vacío oscuro de unos 980 px (36 % de la altura) antes del logo. El llamado no cierra la pieza: queda a media columna y el logo queda aislado abajo.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "franja de imagen a la derecha",
+     "problema": "El recorte en franja deja fuera el brazo robótico y solo muestra un fragmento de la pinza. La imagen no compite, pero tampoco acompaña: se lee como manchas abstractas.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4",
+     "donde": "zona del kicker y la primera línea del titular",
+     "problema": "Bajo el velo se ve la silueta de la pinza cruzando entre «ARTÍCULO» y «La IA entra», y los bloques de edificio se ven detrás de la bajada y de la fila del logo. El contraste medido cumple (10,19:1), pero la textura de la imagen compite con el texto. Es justo lo que David marcó como defecto en G01.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4",
+     "donde": "velo inferior y franja final",
+     "problema": "El velo gris neutro apaga la base oscura y deja una banda gris más plana bajo el logo, donde termina el margen crema de la imagen. El bloque de texto pierde nitidez frente a la versión sobre fondo liso.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "4",
+     "donde": "imagen a sangre",
+     "problema": "Para cubrir todo el lienzo, el recorte se acerca demasiado: el círculo queda cortado en el borde y del brazo solo se ve el tramo superior, que además queda en parte bajo el velo. La imagen pierde lectura.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "común a todas",
+     "donde": "palabra «Umbral BIM» junto al isotipo",
+     "problema": "Es el texto más chico de la pieza, 11 px CSS en una vista de 390 px. Se lee, pero con poca holgura en el celular. Es un defecto común a las cuatro opciones y no desempata.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "2",
+   "veredicto": "sirve",
+   "resumen": "Según la lente de jerarquía, gana la 2. El titular se lee primero, kicker y bajada quedan cerca del 28 % de su altura, el llamado cierra el bloque sobre fondo liso y la imagen acompaña debajo sin competir. La 1 tiene la misma escala, pero la imagen arriba gana la primera mirada. La 4 iguala en tamaños, pero la pinza y los bloques se ven a través del velo detrás del titular y de los textos chicos, el defecto que David marcó en G01. La 3 es la más débil: el titular baja a 107 px, la relación kicker/titular sube a ~40 %, queda un vacío de un tercio de la columna y la franja pierde el robot."
+  },
+  {
+   "id": "G12-v2-posicion",
+   "galeria": "G12",
+   "version": "v2",
+   "lente": "posicion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 7,
+    "2": 6.5,
+    "3": 2,
+    "4": 2.5
+   },
+   "hallazgos": [
+    {
+     "opcion": "3",
+     "donde": "franja de imagen a la derecha (x≈1265–2160 px)",
+     "problema": "VETO: el brazo robótico queda cortado por la máscara. Solo se ve la pinza, que además sale por el borde derecho. El codo, el hombro y la base quedan fuera del lienzo. La franja muestra sobre todo bloques y fondo turquesa, sin el sujeto.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "4",
+     "donde": "imagen a sangre, esquina superior derecha y borde del velo (y≈1322 px)",
+     "problema": "VETO: el recorte amplía la imagen y corta el brazo. El hombro sale por el borde superior derecho y la articulación circular queda fuera. La pinza baja y se mete en el panel de texto, bajo el velo, a la altura de «ARTÍCULO» y del titular. El círculo negro también queda cortado por el borde izquierdo.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "2",
+     "donde": "marca de esquina inferior derecha (≈2090, 2631 px)",
+     "problema": "La marca cae justo sobre el borde inferior del pedestal del robot. El pedestal oscuro termina en y≈2636 y la marca está en y≈2631, así que la toca. En la opción 1, el mismo pedestal queda a más de 1.300 px de cualquier marca. Es la única diferencia de posición entre la 1 y la 2.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1",
+     "donde": "marca de esquina superior derecha (≈2090, 62 px)",
+     "problema": "La marca queda montada sobre el límite entre el marco crema de la ilustración y el campo turquesa (y≈58–60). No toca el brazo, pero queda sobre una línea en vez de sobre un fondo liso.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1, 2 (común)",
+     "donde": "banda de imagen, lado derecho",
+     "problema": "Defecto común a todas: la imagen fija tiene composición de afiche, con el sujeto a la derecha y la mitad izquierda ocupada por formas. El brazo queda unos 540 px a la derecha del centro. La articulación circular llega a 54 px del borde derecho, más afuera que la columna de las marcas (x≈2090) y que el margen del texto (≈130 px), y no hay margen parejo con el lado izquierdo. Es justo el requisito del motor (sujeto al centro): por esta composición, los recortes de la 3 y la 4 cortan el brazo. No lo uso para desempatar.",
+     "gravedad": "media"
+    }
+   ],
+   "mejor": "1",
+   "veredicto": "sirve",
+   "resumen": "Desde la posición, la diferencia está en si el recorte deja entero el brazo robótico. En la 1 y la 2 queda entero y no toca el panel de texto. La 1 queda arriba porque ninguna marca toca el objeto; en la 2, la marca inferior derecha cae sobre el borde del pedestal (detalle menor). La 3 y la 4 tienen el veto: la máscara corta el brazo (en la 3 solo queda la pinza; en la 4 falta el hombro y la pinza entra bajo el velo del texto). Defecto común: la imagen tiene el sujeto a la derecha, con la articulación a 54 px del borde, así que conviene una imagen con el sujeto al centro."
+  },
+  {
+   "id": "G12-v2-composicion",
+   "galeria": "G12",
+   "version": "v2",
+   "lente": "composicion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 7.5,
+    "2": 7,
+    "3": 4.5,
+    "4": 6
+   },
+   "hallazgos": [
+    {
+     "opcion": "3",
+     "donde": "columna de texto, entre el llamado (termina en y≈1490 px reales) y el logo (y≈2455 px)",
+     "problema": "Bajo los datos queda un vacío oscuro de unos 970 px, el 36 % del alto, que no cumple ninguna función. A tamaño de feed la pieza se ve sin terminar: el bloque de texto se queda arriba y el logo cae solo abajo.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "3",
+     "donde": "franja de imagen a la derecha (x≈1264–2160 px)",
+     "problema": "La franja al 41 % del ancho corta al protagonista. Del brazo robótico solo queda la pinza, cortada contra el borde derecho; el resto son bloques crema y turquesa planos. La imagen deja de contar 'un brazo robótico construyendo'.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "titular",
+     "problema": "Para caber en 545 px el titular baja a 107 px, frente a 156 px en las opciones 1, 2 y 4. Pierde casi un tercio de su tamaño y la jerarquía de la pieza se debilita frente a la bajada, que queda en 5 líneas.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "píldora EJEMPLO, arriba a la derecha de la columna",
+     "problema": "La píldora va sobre el kicker y queda a unos 48 px del corte con la imagen. El margen izquierdo de la columna es de unos 129 px, así que los márgenes internos quedan asimétricos y la píldora se pega a la división.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "4",
+     "donde": "velo inferior (desde y≈1323 px) sobre el titular y la bajada",
+     "problema": "Bajo el velo plano siguen viéndose los bloques oscuros y claros de la imagen como rectángulos irregulares detrás del titular y la bajada. El fondo del texto queda en parches. El velo, además, corta en seco en la misma línea que la banda de la opción 1, así que en la práctica es una banda con ruido debajo.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4",
+     "donde": "pinza del brazo cruzando el borde del velo (y≈1325–1550 px, detrás de 'entra' y de EJEMPLO)",
+     "problema": "Es la única opción que integra imagen y texto: el brazo 'entra' en la zona del titular. Pero el corte duro del velo parte la pinza en dos tonos y la mitad de abajo queda como una mancha fantasma detrás del titular. La integración es ambiciosa pero no está bien resuelta.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4",
+     "donde": "encuadre de la imagen y franja inferior (y≈2556–2700 px)",
+     "problema": "Para cubrir el lienzo, el encuadre se acerca. El círculo queda cortado contra el borde izquierdo y la base del brazo sale del cuadro. Abajo, el velo sobre el margen de papel de la imagen deja una franja gris lisa que no se alinea con nada.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "pie con logo y LEE EL ARTÍCULO (y≈1270 px, en la costura con la imagen)",
+     "problema": "La firma y el llamado quedan a media altura de la pieza y la lectura termina en la imagen, no en el llamado. Lo compensa la base del brazo apoyada en el borde inferior, que asienta bien el peso. Comparada con la opción 1 es casi un espejo, pero con un orden de cierre peor.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1",
+     "donde": "división al 49 % (imagen 0–1323 px, banda 1323–2700 px)",
+     "problema": "La partición es casi mitad y mitad, limpia pero estática: la composición es simple. Se compensa porque el sujeto se ve entero, el suelo de la ilustración se apoya en la banda y el recorrido termina en el llamado. Nada de esto impide usarla.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "bordes superior e inferior de la imagen",
+     "problema": "Defecto común a las cuatro, no desempata. El margen de papel crema propio de la imagen de Midjourney (unos 60–120 px) aparece como franja arriba y abajo, pero no en los costados, así que la imagen no llega de verdad al borde. En la opción 1 se ve como una línea crema entre la ilustración y la banda oscura.",
+     "gravedad": "media"
+    }
+   ],
+   "mejor": "1",
+   "veredicto": "sirve",
+   "resumen": "Lo que cambia entre las opciones es la división. La mejor es la 1 (banda abajo): conserva el brazo completo, el suelo de la ilustración se apoya en la banda, el titular mantiene sus 156 px y la lectura termina en el llamado. Es simple pero está bien resuelta. La 2 es su espejo: asienta bien la imagen en el borde, pero deja la firma y el llamado a media altura. La 4 es la más ambiciosa porque el brazo entra en el texto, pero el velo plano deja parches detrás del titular, corta la pinza en seco y aprieta el encuadre. La 3 no sirve tal cual: deja un vacío del 36 % del alto bajo los datos, la franja corta al protagonista y el titular baja a 107 px. Defecto común a todas: el margen de papel crema de la imagen aparece como franja arriba y abajo."
+  },
+  {
+   "id": "G12-v2-lectura",
+   "galeria": "G12",
+   "version": "v2",
+   "lente": "lectura",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 8,
+    "2": 7.5,
+    "3": 6,
+    "4": 7
+   },
+   "hallazgos": [
+    {
+     "opcion": "2",
+     "donde": "Pie: logo «Umbral BIM» y llamado «LEE EL ARTÍCULO · umbralbim.io», justo encima del borde de la imagen",
+     "problema": "El logo y el llamado quedan a unos 40–55 px del borde crema, que es la zona más clara de la imagen. No caen sobre ella, pero el brillo de al lado compite con el texto chico a tamaño de feed. En la 1 el pie está rodeado de fondo oscuro.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "Columna de texto: entre el llamado (bajo la bajada) y el logo (abajo a la izquierda)",
+     "problema": "Las separaciones son muy disparejas. Entre el título, la bajada y el llamado hay unos 60 px, pero entre el llamado y el logo queda un hueco de cerca del 40 % del alto. El logo queda suelto y el bloque de lectura carga todo arriba.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "Etiqueta EJEMPLO y final de las líneas de la bajada, en el borde derecho de la columna",
+     "problema": "El margen derecho hacia la imagen es de unos 40–60 px, frente a 100 px a la izquierda. EJEMPLO queda encima del kicker y apretado contra el corte, y la bajada en 5 líneas casi toca la imagen.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "Titular",
+     "problema": "El titular baja de 156 a 107 px, unos 31 % más chico que en las demás. Se sigue leyendo bien en el celular, pero pierde fuerza de lectura en el feed respecto de las opciones 1, 2 y 4.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "4",
+     "donde": "Velo bajo kicker, titular y bajada",
+     "problema": "El velo de 0,86 alcanza 10,19:1, justo sobre el objetivo de 10:1. Aun así, a través de él se ven parches de la imagen: gris sobre el crema, teal oscuro y la pinza del brazo cruzando la zona del kicker y del título. El fondo del texto chico no es parejo y compite levemente con la textura, que es justo lo que David marcó en G01.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4",
+     "donde": "Borde inferior, bajo el pie",
+     "problema": "El velo sobre el margen crema de la imagen deja una franja gris plana distinta del resto de la banda, justo debajo del logo y del llamado. Ensucia el remate del pie.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1, 2, 4 (común)",
+     "donde": "Primera línea de texto de la banda (kicker y EJEMPLO en la 1 y la 4; logo y llamado en la 2), junto al corte con la imagen",
+     "problema": "El bloque de texto queda pegado al corte, a unos 40 px, cuando el margen exterior es de unos 100–120 px. El título se redujo dos veces para caber en 497 px de alto y la banda queda apretada.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas (común)",
+     "donde": "Texto más chico: palabra «Umbral BIM» del logo, a 11,0 px CSS",
+     "problema": "Está justo en la referencia de 11 px CSS para feed en celular, sin holgura. El logo cuenta como texto chico. No es veto, pero conviene subirlo un punto.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1, 2, 3 (común)",
+     "donde": "Bajada en gris secundario sobre el panel con trama de puntos",
+     "problema": "Mide 7,24:1 sobre fondo liso. Pasa, pero se ve más apagada que la bajada en tinta clara de la opción 4, y los puntos de la trama cruzan las letras. A tamaño de feed apenas se nota.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "1",
+   "veredicto": "sirve",
+   "resumen": "Para lectura, la 1 y la 2 casi empatan: todo el texto va sobre panel liso a 7,24:1, con los mismos tamaños y separaciones parejas. La 1 gana por poco porque el logo y el llamado quedan rodeados de oscuro, lejos del crema claro de la imagen; en la 2 quedan pegados a ese borde. La 4 llega a 10,19:1 con el velo, pero detrás del texto se ven parches de la imagen y la pinza, así que el texto chico compite con la textura. La 3 lee bien, pero tiene el título 31 % más chico y separaciones muy disparejas: el logo queda suelto al fondo de la columna. Defectos comunes: el logo está justo en 11 px CSS y la banda queda apretada contra el corte."
+  },
+  {
+   "id": "G12-v2-costuras",
+   "galeria": "G12",
+   "version": "v2",
+   "lente": "costuras",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 7,
+    "2": 6.5,
+    "3": 8,
+    "4": 5
+   },
+   "hallazgos": [
+    {
+     "opcion": "4",
+     "donde": "Borde superior del velo (y=1328), pinza del brazo robótico",
+     "problema": "El borde recto del velo corta la pinza por la mitad. Una parte queda clara sobre la imagen y la otra sigue oscurecida bajo el velo, con píxeles oscuros hasta y≈1550, detrás de 'La IA entra'. La costura atraviesa al protagonista.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4",
+     "donde": "Franja inferior, y≈2570–2700, todo el ancho",
+     "problema": "El margen de papel crema del original, bajo un velo de 0.86, queda como una banda gris plana (50,50,50) bajo el llamado. Encima hay casi negro o teal oscuro (17–31). Se ve un escalón de color de lado a lado, como un pie añadido, y las cruces inferiores caen dentro de esa banda.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4",
+     "donde": "Zona del velo, detrás del titular y la bajada (bloques crema del original)",
+     "problema": "Bajo el velo, los bloques crema se ven como rectángulos grises (≈1,45:1 frente al casi negro) detrás de 'a la obra' y 'dependiendo'. No son parches de extensión, sino geometría propia de la imagen, pero a tamaño de feed parecen rectángulos sueltos.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4",
+     "donde": "Borde izquierdo, x 0–125, y 270–900; borde derecho arriba, desde y≈292",
+     "problema": "Con la escala de 3,31×, el círculo negro queda reducido a una medialuna cortada contra el borde izquierdo y el codo del brazo queda cortado en el borde derecho.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "Costura entre la imagen y la banda, y 1260–1328",
+     "problema": "Se conserva una tira de 68 px (≈12 px CSS) del margen de papel crema justo en la unión con el panel oscuro, mientras los lados van a sangre. Se lee como un filete sobrante en medio del lienzo.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "Costura entre la banda y la imagen, y 1374–1435 (mitad derecha); margen inferior 2633–2700",
+     "problema": "Es la misma tira crema del margen original en la unión con el panel, y otra al pie del lienzo, con los lados a sangre. El encuadre queda inconsistente.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "Cruces inferiores izquierda y derecha (y 2617–2654)",
+     "problema": "Las dos cruces quedan montadas sobre el borde inferior del dibujo (teal o negro hasta y≈2633). El brazo superior entra unos 16 px en el dibujo.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1",
+     "donde": "Cruz superior derecha (x 2077–2114, y 45–82)",
+     "problema": "La cruz queda sobre el borde superior del bloque teal, que empieza en y≈59–60, y su brazo inferior entra unos 22 px en el dibujo. Al ser turquesa sobre teal, casi no se ve.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "Borde derecho de la franja, y 1195–1560",
+     "problema": "La pinza entra cortada por el borde derecho y el resto del brazo queda fuera, así que del protagonista solo se ve un fragmento. Es un problema de recorte cercano al encuadre.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "Costura vertical x=1266, y 2020–2024",
+     "problema": "Queda una línea teal de unos 4 × 40 px pegada a la costura, resto de un bloque cortado. Solo se ve de cerca.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "común",
+     "donde": "Las cuatro piezas",
+     "problema": "Ninguna extiende la imagen: todas son recortes, a 1,63× en N1/N2 y 3,31× en N3/N4, y las costuras con el panel son rectas y limpias, con 1 px de suavizado. Las cuatro conservan el margen de papel arriba y abajo y lo recortan a los lados, pero solo en N1 y N2 esa tira cae en la unión con el panel.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "3",
+   "veredicto": "sirve",
+   "resumen": "Ninguna de las cuatro extiende la imagen; todas la recortan y ninguna tiene parche (sin veto). La 3 tiene la costura más limpia: corte vertical recto, cruces sin choque y los márgenes de papel en el borde del lienzo, no en la unión. Solo pierde por la pinza cortada en el borde derecho. La 1 y la 2 dejan una tira crema de unos 68 px en la unión con el panel, y sus cruces pisan el borde del dibujo (una cruz en la 1, dos en la 2). La 4 es la más débil: el velo corta la pinza, el margen inferior queda como una banda gris de lado a lado, los bloques crema se ven como rectángulos grises bajo el texto, y el círculo y el codo quedan cortados en los bordes."
+  }
+ ]
+}

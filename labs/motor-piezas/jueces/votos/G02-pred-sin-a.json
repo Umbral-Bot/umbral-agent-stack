@@ -1,0 +1,90 @@
+{
+ "galeria": "G02",
+ "seccion": null,
+ "rubrica": "pred-sin-a",
+ "retro": true,
+ "criterios_hasta": null,
+ "sellado": "2026-11-11T00:45:33",
+ "hash_rubrica": "2afef7084991",
+ "hash_criterios": "fd98b8707561",
+ "votos": [
+  {
+   "id": "G02-qa-prediccion",
+   "galeria": "G02",
+   "version": "pred-sin-a",
+   "lente": "prediccion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 8,
+    "2": 4.5,
+    "3": 7.5,
+    "4": 5.5
+   },
+   "hallazgos": [
+    {
+     "opcion": "1",
+     "donde": "columna de texto, entre el subtítulo y la fila 01 (y≈660–850 de 1449)",
+     "problema": "Queda un hueco vertical vacío: el bloque del título y los datos se separan más de lo que piden. Es tarea del paso 2, pero se nota.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1",
+     "donde": "corte vertical en x≈1304",
+     "problema": "El velo termina en seco a mitad del lienzo. Es limpio, pero corta la mancha de tinta de la imagen justo en el borde.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "título y subtítulo",
+     "problema": "El título baja de 176 a 98 px y el subtítulo se parte en 2 líneas. En el feed del celular el título pierde fuerza y deja de mandar.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "2",
+     "donde": "pie, en la columna de 4/12",
+     "problema": "El logo y 'INSCRÍBETE · umbralbim.io' quedan apretados en la franja angosta.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "columna de texto",
+     "problema": "Queda un hueco grande entre el subtítulo y los datos (y≈600–850), y el texto se ve encajonado al lado de una imagen que domina.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "franja de imagen arriba (y 0–708)",
+     "problema": "Se ve la parte clara y gris del cuadro, y la masa oscura con el brillo cian queda tapada por el velo de la banda. La imagen luce menos que en la 1°.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "título",
+     "problema": "El título se reduce a 143 px por el alto de la banda: queda un poco más chico que en la 1°.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "4",
+     "donde": "cuadrante superior derecho (≈x 1450–2576, y 0–740)",
+     "problema": "Queda una zona grande velada, gris plana y vacía, junto a EJEMPLO. En el feed se lee como fondo sucio o muerto.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4",
+     "donde": "recuadro de imagen sin velo (x≥898, y≥740)",
+     "problema": "La ventana de imagen en L tiene bordes duros sobre la misma pintura: parece un recorte por error y no una división intencional.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4",
+     "donde": "pie, columna izquierda",
+     "problema": "El logo y el CTA comparten 4 columnas y quedan apretados.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "1",
+   "veredicto": "sirve",
+   "resumen": "Predigo que David elige la 1°. Es la mitad que ya eligió en G01, ahora con el contraste corregido: título grande (149 px) que manda en el celular, imagen con su masa oscura y cian bien visible y una división limpia. La 3° (banda) es la alternativa real: queda ordenada y aprovecha el ancho, pero la imagen pierde su parte más fuerte bajo el velo y el título baja a 143 px. La 4° tiene el título más grande, pero la zona gris vacía arriba a la derecha y la ventana en L parecen un error. La 2° pierde jerarquía: título de 98 px y subtítulo partido en 2 líneas."
+  }
+ ]
+}

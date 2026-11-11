@@ -1,0 +1,59 @@
+{
+ "galeria": "G22",
+ "seccion": null,
+ "rubrica": "pred-crit2-a",
+ "retro": true,
+ "criterios_hasta": "G22",
+ "sellado": "2026-11-11T00:51:31",
+ "hash_rubrica": "b71ce177d875",
+ "hash_criterios": "11070cf84d18",
+ "votos": [
+  {
+   "id": "G22-raa-prediccion",
+   "galeria": "G22",
+   "version": "pred-crit2-a",
+   "lente": "prediccion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 7.5,
+    "2": 5,
+    "3": 6
+   },
+   "hallazgos": [
+    {
+     "opcion": "1",
+     "donde": "columna de texto, entre el titular y el botón",
+     "problema": "La separación no es pareja: hay 32 px entre «Artículo» y el titular, pero unos 69 px entre el titular y el botón. Según el criterio de David, en la pieza apaisada sin bajada pesa más que el botón cierre la columna al pie, así que aquí se acepta. El texto se reparte a lo alto del panel, con el titular al centro óptico, y no queda como un bloque apretado.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "pie del panel oscuro, bajo el botón",
+     "problema": "El botón deja de cerrar la columna al pie, que es lo que manda en la apaisada sin bajada (base G20 4°). El bloque queda apilado al medio y deja abajo un vacío de unos 105 px sin función. Se lee como una pila por defecto y no como un reparto deliberado (criterios de G01 y G18).",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "panel oscuro, entre el logo y «Artículo»",
+     "problema": "Mantiene el botón al pie y la separación pareja, pero hunde los tres textos en la mitad inferior del panel. Entre el logo y el kicker queda un hueco de unos 130 px. El texto vuelve a ser un bloque apretado en una mitad, justo lo que David rechazó en el formato apaisado (G18).",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "todas",
+     "donde": "texto del botón «LEE EL ARTÍCULO / umbralbim.io»",
+     "problema": "Común a las tres: el texto más chico mide 9,3 px CSS en la vista de 390 px, bajo la referencia de 11 px. Es el texto del botón, donde ese mínimo es un aviso y no un veto. No sirve para desempatar.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "chip EJEMPLO, arriba a la derecha del panel",
+     "problema": "Común a las tres: el chip no choca con el logo ni le quita espacio a la columna. No se evalúa como diseño.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "1",
+   "veredicto": "sirve",
+   "resumen": "Predigo que David elige la 1. Es la base de G20 4° con 32 px entre «Artículo» y el titular, y el botón sigue cerrando la columna al pie. Según su criterio, en la apaisada sin bajada eso pesa más que la separación pareja. Además, el texto se reparte a lo alto del panel con intención. La 2 sacrifica el botón al pie y deja un vacío abajo. La 3 conserva el botón al pie, pero hunde el bloque en la mitad inferior y deja un hueco bajo el logo. Ambas caen en el «bloque apretado en una mitad» que David rechazó en G18. Contraste (9,92:1) y tamaño son iguales en las tres y no desempatan."
+  }
+ ]
+}

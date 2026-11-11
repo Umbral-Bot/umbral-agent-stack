@@ -1,0 +1,66 @@
+{
+ "galeria": "G13",
+ "seccion": null,
+ "rubrica": "pred-crit2-b",
+ "retro": true,
+ "criterios_hasta": "G13",
+ "sellado": "2026-11-11T00:51:29",
+ "hash_rubrica": "b71ce177d875",
+ "hash_criterios": "11070cf84d18",
+ "votos": [
+  {
+   "id": "G13-rab-prediccion",
+   "galeria": "G13",
+   "version": "pred-crit2-b",
+   "lente": "prediccion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 8,
+    "2": 6,
+    "3": 5.5,
+    "4": 6.5
+   },
+   "hallazgos": [
+    {
+     "opcion": "1",
+     "donde": "bajada gris sobre la banda oscura",
+     "problema": "La bajada mide 7,24:1. Como va sobre fondo liso, se lee bien, pero queda bajo la referencia de 10:1 del laboratorio. El aire entre la bajada y el pie es justo, aunque suficiente.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "banda, entre el titular y el pie",
+     "problema": "Sin bajada, queda un vacío sin función de cerca del 12 % del alto bajo el titular. Además, la pieza pierde el contexto de la noticia. El titular gigante la acerca a un afiche genérico: es más simple y menos sobria, y el texto más grande no basta para ganar.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "bajada de 17,6 px CSS",
+     "problema": "La bajada gris ocupa todo el ancho y forma un bloque de área parecida a la del titular. La proporción (cerca del 36 %) cumple el tope, pero a la vista aplana la jerarquía y aprieta la banda. El titular manda menos.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4",
+     "donde": "titular de 110 px y lado derecho de la banda",
+     "problema": "El titular ocupa cerca del 55 % del ancho, así que quedan vacíos a su derecha y bajo la bajada. En el feed pierde fuerza frente a la imagen. La 'banda con aire' se lee como banda medio vacía.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "todas",
+     "donde": "imagen superior (común, no cambia entre opciones)",
+     "problema": "El turquesa domina como fondo de la ilustración, que choca con el veto 'turquesa como fondo'. El estilo es de grabado retro con grano, no la línea isométrica plana de Magnific One. Como es común a todas, no sirve para desempatar; se anota para el paso de imagen.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "todas",
+     "donde": "bordes de la imagen y pie (común)",
+     "problema": "Quedan franjas crema arriba y abajo de la ilustración, así que no sangra del todo hasta el corte de la banda. El texto del logotipo está en el mínimo de 11 px CSS: sobre el fondo liso se lee, pero va justo.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "1",
+   "veredicto": "sirve",
+   "resumen": "Predigo que David elige la 1. Es la que mejor reparte el peso: el titular manda y llena la banda, la bajada a 14 px CSS da contexto sin competir (cerca del 25 % del titular) y la banda queda llena, sin vacíos. La 4 es sobria, pero deja aire sin función y el titular pierde fuerza. La 2 es la más grande y la más simple, pero deja un vacío bajo el titular y pierde la bajada. En la 3, la bajada aplana la jerarquía. Hay un defecto común que no desempata: la imagen tiene turquesa de fondo y un estilo que no es la línea isométrica de Magnific One."
+  }
+ ]
+}

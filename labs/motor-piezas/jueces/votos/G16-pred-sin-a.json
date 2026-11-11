@@ -1,0 +1,60 @@
+{
+ "galeria": "G16",
+ "seccion": null,
+ "rubrica": "pred-sin-a",
+ "retro": true,
+ "criterios_hasta": null,
+ "sellado": "2026-11-11T00:45:37",
+ "hash_rubrica": "2afef7084991",
+ "hash_criterios": "fd98b8707561",
+ "votos": [
+  {
+   "id": "G16-qa-prediccion",
+   "galeria": "G16",
+   "version": "pred-sin-a",
+   "lente": "prediccion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 7,
+    "2": 6.8,
+    "3": 7.6,
+    "4": 6.5
+   },
+   "hallazgos": [
+    {
+     "opcion": "1,2,4",
+     "donde": "pie, llamado 'LEE EL ARTÍCULO · umbralbim.io'",
+     "problema": "Visto en el celular, 1°, 2° y 4° son casi iguales. El llamado en turquesa fino y espaciado se lee como un pie chico y no como una invitación a leer. Es lo único que realmente cambia la elección en este paso.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "pie, bloque turquesa del llamado",
+     "problema": "El botón ocupa cerca del 60 % del ancho y deja chicos al logo y a 'Umbral BIM'. Además se parece a un botón de anuncio que no se puede pulsar. Conviene acortarlo (por ejemplo, solo 'LEE EL ARTÍCULO') o achicar su relleno para que no domine el pie.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1,3,4",
+     "donde": "cruces de las esquinas superiores",
+     "problema": "Las cruces de arriba quedan sobre la ilustración. La de la derecha se pierde en el turquesa y la de la izquierda parece una marca de registro suelta sobre el crema. Solo se notan de cerca.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1,2,3",
+     "donde": "trama de puntos de la banda",
+     "problema": "En el feed la trama no se ve y no cambia la lectura. Solo se distingue a tamaño completo.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1,2,3,4",
+     "donde": "borde inferior de la ilustración (unos 50 px crema antes de la banda)",
+     "problema": "La ilustración trae un margen crema arriba y abajo. Por eso la imagen no se ve realmente a sangre y queda una franja crema entre la imagen y la banda oscura. Viene de pasos anteriores, ya fijos.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "3",
+   "veredicto": "sirve",
+   "resumen": "En el celular, 1°, 2° y 4° se ven iguales: las cruces y la trama solo se notan de cerca. La 3° es la única con un cambio visible. El llamado como bloque turquesa con texto oscuro se lee bien a tamaño de feed, cierra el pie y retoma el turquesa de la imagen, en la línea de legibilidad que David eligió con la bajada blanca. Predigo la 3°, con un ajuste: un botón más corto para que no tape el logo. Si no le convence el botón, volvería a la 1°, que es la base coherente con el Preset 01."
+  }
+ ]
+}

@@ -1,0 +1,207 @@
+{
+ "galeria": "G12",
+ "seccion": null,
+ "rubrica": "v1",
+ "retro": true,
+ "criterios_hasta": null,
+ "sellado": "2026-11-11T00:00:25",
+ "hash_rubrica": "de3f9cdef0fe",
+ "hash_criterios": "-",
+ "votos": [
+  {
+   "id": "G12-v1-posicion",
+   "galeria": "G12",
+   "version": "v1",
+   "lente": "posicion",
+   "puntajes": {
+    "1": 7.5,
+    "2": 6.5,
+    "3": 2,
+    "4": 2.5
+   },
+   "hallazgos": [
+    {
+     "opcion": "3",
+     "donde": "Franja derecha de imagen (x ≈ 1265–2160 px)",
+     "problema": "VETO: el brazo robótico queda cortado por la máscara. Del brazo solo asoma la pinza, que además corta el borde derecho. No se ven ni el brazo, ni el codo, ni la base. La franja muestra sobre todo planos crema y cian sin protagonista.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "4",
+     "donde": "Borde derecho e imagen bajo el velo",
+     "problema": "VETO: el recorte a sangre corta el brazo por la derecha. El hombro y el codo quedan fuera de cuadro y la base no aparece. La pinza baja hasta la zona del velo, detrás de EJEMPLO y del final de «entra». El círculo negro también queda cortado por la izquierda.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "2",
+     "donde": "Marca de esquina inferior derecha (≈2090, 2630 px)",
+     "problema": "La cruz de esquina cae sobre la base oscura del robot, en la franja inferior de la imagen (píxeles negros de la base justo encima de la marca). La cruz inferior izquierda queda sobre el borde cian/crema. Las marcas tocan el objeto.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "Mitad inferior, dirección del brazo",
+     "problema": "La pinza apunta hacia abajo a la izquierda, lejos del titular. El acento no lleva la mirada al texto, que queda arriba, y la lectura termina en la imagen en vez de en el llamado.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1",
+     "donde": "Borde derecho de la imagen, altura del codo",
+     "problema": "El anillo del codo queda a unos 60 px del borde derecho, mientras que a la izquierda el círculo deja unos 160 px. Los márgenes laterales son desparejos y el brazo se ve apretado contra el borde. No llega a cortarse.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1",
+     "donde": "Marca de esquina superior derecha (≈2090, 63 px)",
+     "problema": "La cruz cae justo en el canto superior del bloque cian de la imagen (crema arriba, cian abajo). Monta el límite interno de la ilustración, aunque no toca el brazo.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1",
+     "donde": "Unión imagen/panel (y ≈ 1255–1328 px)",
+     "problema": "Queda una franja crema propia de la ilustración, de unos 60 px, entre la imagen y el panel oscuro. Funciona como respiro, pero suma un borde claro que no es parte de la división.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "1",
+   "veredicto": "sirve",
+   "resumen": "Las opciones 3 y 4 no sirven por el veto: el brazo robótico queda cortado por la máscara. En la 3 solo asoma la pinza y en la 4 se pierden el hombro y la base, y la pinza se mete bajo el velo. La 1 y la 2 muestran la ilustración entera, con el brazo completo y sin choques con el texto. Elijo la 1: la pinza apunta hacia el titular y lleva la mirada al texto. Sus detalles son menores: poco aire a la derecha del codo (unos 60 px) y la cruz superior derecha sobre el canto del bloque cian. La 2 queda detrás porque la cruz inferior derecha cae sobre la base oscura del robot y el brazo apunta lejos del texto."
+  },
+  {
+   "id": "G12-v1-jerarquia",
+   "galeria": "G12",
+   "version": "v1",
+   "lente": "jerarquia",
+   "puntajes": {
+    "1": 7.5,
+    "2": 8,
+    "3": 6,
+    "4": 5
+   },
+   "hallazgos": [
+    {
+     "opcion": "2",
+     "donde": "G12-N2, fila del logo y el llamado (y≈1270 px) justo sobre el borde de la imagen (y≈1370 px)",
+     "problema": "El logo y el llamado quedan a media pieza. La lectura termina en la imagen y no en el llamado, y las masas negras de abajo (el círculo y los bloques) jalan la vista hacia el final después del botón. El titular sigue siendo lo primero que se ve y domina.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "G12-N2, borde inferior (y≈2625-2700 px)",
+     "problema": "Abajo se ve la franja crema del margen propio de la imagen de Midjourney, con las marcas de esquina encima. Parece un marco y no una imagen a sangre.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1",
+     "donde": "G12-N1, mitad superior (imagen)",
+     "problema": "En el feed la imagen se lee antes que el titular. El círculo negro y el brazo son las masas de más contraste del lienzo, así que el titular queda segundo en el orden de lectura, aunque en su banda domina sin discusión.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1",
+     "donde": "G12-N1, franja crema entre la imagen y la banda oscura (y≈1256-1322 px) y franja superior (y≈0-60 px)",
+     "problema": "El margen crema propio de la imagen aparece como un filete claro sobre la banda de texto y como un marco arriba. La imagen no queda limpia a sangre.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "G12-N3, titular",
+     "problema": "El titular baja a 107 px, contra 156 px en las otras tres opciones (−31 %), y en la vista de 390 px queda en unos 19 px CSS. Es la opción donde el titular pesa menos frente a la franja de imagen.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "G12-N3, columna de texto entre el llamado y el logo (y≈1500-2440 px)",
+     "problema": "Queda un vacío de casi un tercio del alto. El bloque de texto se carga arriba y el logo queda aislado abajo, sin relación con el resto.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "G12-N3, franja derecha de imagen (x≈1265-2160 px)",
+     "problema": "El recorte pierde el brazo robótico: solo queda un fragmento de la pinza en el borde (x≈1845-2160, y≈1190-1560). El bloque crema, la zona más clara de la pieza, atrae la vista sin contar nada. La imagen ocupa espacio pero no acompaña al titular.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4",
+     "donde": "G12-N4, pinza del brazo que cruza el borde del velo (x≈1210-1570, y≈1322-1550 px), sobre la línea 'entra'",
+     "problema": "El velo atenúa la pinza, pero se sigue viendo y entra en la zona del kicker y del titular. Es justo lo que la lente pide evitar: la imagen compite con el titular.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "4",
+     "donde": "G12-N4, fondo bajo el velo: rectángulo gris tras 'modelos se revisan' (y≈2160-2340 px) y banda gris inferior (y≈2555-2700 px)",
+     "problema": "Las zonas crema de la imagen, vistas a través del velo, forman parches grises y bloques teal oscuro detrás de la bajada y del pie. El contraste medido es de 10,19:1, pero el fondo del texto queda ruidoso y con una costura visible abajo. Además, el panel ya no se ve como el fondo oscuro protegido del Preset 01.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4",
+     "donde": "G12-N4, mitad superior",
+     "problema": "El recorte ampliado deja casi toda la zona libre en turquesa vacío y corta la cabeza del brazo en el borde derecho. Arriba la imagen comunica menos y abajo estorba más.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "2",
+   "veredicto": "sirve",
+   "resumen": "Elijo la 2. Es la única donde el titular manda en el orden de lectura: va primero, arriba y sobre el fondo oscuro, con la imagen debajo como apoyo y separada por un corte limpio. El logo y el llamado se leen bien. Lo único es que el pie queda a media pieza y la lectura termina en la imagen. La 1 tiene casi la misma calidad, pero la imagen se ve antes que el titular. La 3 debilita el titular (107 px) y deja una columna vacía. La 4 es la peor para esta lente: la pinza se mete en la zona del titular y el velo deja parches grises detrás del texto."
+  },
+  {
+   "id": "G12-v1-costuras",
+   "galeria": "G12",
+   "version": "v1",
+   "lente": "costuras",
+   "puntajes": {
+    "1": 8.5,
+    "2": 7.5,
+    "3": 7.5,
+    "4": 6
+   },
+   "hallazgos": [
+    {
+     "opcion": "1",
+     "donde": "cruz superior derecha (2097, 63 px)",
+     "problema": "Cae justo en el borde entre el margen crema y el turquesa de la imagen: el entorno de 61×61 px es 42 % crema y 56 % turquesa. La mitad de la cruz turquesa se pierde sobre el turquesa y la cruz pisa el borde del dibujo. Se corrige bajando la imagen unos 20 px o sacando esa cruz.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "cruces inferiores (63, 2637) y (2097, 2637)",
+     "problema": "Las dos caen en bordes del dibujo. La izquierda queda en el corte entre turquesa y margen crema (54/44 %). La derecha queda en la esquina del bloque oscuro de la base del robot (53 % crema, 42 % oscuro), así que toca el sujeto.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "borde derecho del lienzo, x≈1850–2160, y≈1190–1570",
+     "problema": "La pinza del brazo, que es el hallazgo de la imagen, queda cortada por el borde del lienzo y sin el brazo. A tamaño de feed se ve como un fragmento suelto. No es turquesa, pero es un corte en el borde.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "corte de la franja de imagen, x 1267–1309, y 2019–2024",
+     "problema": "Queda una astilla turquesa de unos 42×7 px, resto de una línea del dibujo, pegada al corte con el panel oscuro. Solo se ve de cerca.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "4",
+     "donde": "pie de la pieza, y 2565–2700, ancho completo",
+     "problema": "Hay una franja gris totalmente plana (#323232, desviación 0): es el margen crema de la imagen bajo el velo de 0.86. Sube de luminancia de golpe frente al dibujo velado de encima (≈#1E2224) y se lee como banda de lado a lado bajo el logo y el llamado. No es un parche de extensión, pero es un escalón visible.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4",
+     "donde": "borde del velo en y=1322",
+     "problema": "El borde recto del velo atraviesa la pinza del robot: una mitad queda a color y la otra velada. La costura del velo corta justo el sujeto.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4",
+     "donde": "zona de lectura bajo el velo (franja izquierda 0–125 px y bloques centrales)",
+     "problema": "Bajo el velo, los bloques crema quedan como rectángulos grises detrás del titular y la bajada. Son formas del dibujo, no parches de extensión, por eso no hay veto, pero a tamaño de feed ensucian el fondo de lectura.",
+     "gravedad": "media"
+    }
+   ],
+   "mejor": "1",
+   "veredicto": "sirve",
+   "resumen": "Ninguna pieza extiende el fondo: el código recorta la imagen para cubrir el lienzo, sin relleno, así que no hay parches de extensión y nadie cae en el veto. La 1 es la más limpia: margen crema nítido contra el panel y una sola cruz (arriba a la derecha) sobre el borde del dibujo. La 2 tiene las dos cruces de abajo sobre bordes del dibujo, una en la base del robot. En la 3 las cruces están limpias, pero la pinza queda cortada por el borde derecho. La 4 es la más floja con esta lente: una banda gris plana al pie (el margen crema velado), el borde del velo cortando la pinza y bloques grises bajo el texto. Elijo la 1."
+  }
+ ]
+}

@@ -1,0 +1,59 @@
+{
+ "galeria": "G25",
+ "seccion": null,
+ "rubrica": "pred-crit2-a",
+ "retro": true,
+ "criterios_hasta": "G25",
+ "sellado": "2026-11-11T00:51:32",
+ "hash_rubrica": "b71ce177d875",
+ "hash_criterios": "11070cf84d18",
+ "votos": [
+  {
+   "id": "G25-raa-prediccion",
+   "galeria": "G25",
+   "version": "pred-crit2-a",
+   "lente": "prediccion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 6.4,
+    "2": 7.6,
+    "3": 8.1
+   },
+   "hallazgos": [
+    {
+     "opcion": "1",
+     "donde": "Bandas: 1° (4:5), 2° (1:1), 4° (16:9) y 6° (1:1 sin bajada)",
+     "problema": "Al 75 % el edificio queda chico en la máscara ancha y baja y deja mucho vacío a los lados y sobre la banda. En el 4:5 se nota además una franja lisa entre el final de la trama de la imagen y la banda, donde se extiende el fondo. Corrige la posición que pidió David, pero la imagen pierde presencia.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "3° (historia 9:16)",
+     "problema": "Al 75 % sobra aire bajo el edificio y la trama se desvanece antes de llegar a la banda: queda un vacío sin función sobre el texto. Al 85 % (17°) la máscara se llena sin cortar el objeto.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "10° (historia 9:16, tratada como máscara en columna)",
+     "problema": "La regla mixta deja la historia al 75 % (igual que la 3°) y hereda su vacío bajo el edificio. Es la pieza que más diferencia hay entre la opción 2 y la 3, y aquí la 3 se ve mejor.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "19° y 21° (LinkedIn, imagen en columna)",
+     "problema": "Al 85 % el edificio queda a unos 95 px del borde de arriba y del de abajo (≈7,5 % del alto), con menos aire vertical que horizontal. Se ve contundente y entero, pero algo apretado. Si David pide aire en la columna, la regla mixta de la opción 2 lo resuelve.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "16° (1:1, banda de 5/8)",
+     "problema": "La base del edificio queda a unos 60 px de la banda: el aire es justo, aunque el objeto sigue entero y centrado.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "3",
+   "veredicto": "sirve",
+   "resumen": "Las tres opciones corrigen la queja de G24: el edificio queda entero y centrado en la máscara de cada formato, sin cortes ni desplazamientos. Lo único que cambia es el tamaño. Al 75 % (opción 1) el objeto se ve chico en las bandas anchas (4:5, 1:1 y 16:9) y en la historia, y deja vacíos y una franja de fondo extendido sobre el texto. Al 85 % (opción 3) llena cada máscara con más presencia, cerca de lo «a sangre» que David viene eligiendo, sin cortar nada. En la historia 9:16 es claramente mejor. La opción 2 es casi igual a la 3 en las bandas, pero deja la historia y los LinkedIn al 75 %. En LinkedIn es casi un empate y en la historia pierde. Predigo la 3 por la regla única y la imagen más fuerte. El único reparo es el poco aire vertical en los LinkedIn de columna, que es de gravedad baja. Si David lo nota, la 2 queda como alternativa razonable."
+  }
+ ]
+}

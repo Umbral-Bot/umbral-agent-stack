@@ -1,0 +1,65 @@
+{
+ "galeria": "G25",
+ "seccion": null,
+ "rubrica": "pred-crit2-b",
+ "retro": true,
+ "criterios_hasta": "G25",
+ "sellado": "2026-11-11T00:51:32",
+ "hash_rubrica": "b71ce177d875",
+ "hash_criterios": "11070cf84d18",
+ "votos": [
+  {
+   "id": "G25-rab-prediccion",
+   "galeria": "G25",
+   "version": "pred-crit2-b",
+   "lente": "prediccion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 6.4,
+    "2": 7.2,
+    "3": 7.6
+   },
+   "hallazgos": [
+    {
+     "opcion": "1",
+     "donde": "Piezas 2° (1:1, banda 5/8) y 4° (16:9): máscara ancha y baja",
+     "problema": "Con el objeto al 75 %, el edificio queda chico dentro de una máscara muy apaisada. Su dibujo de línea fina se pierde a tamaño de feed y a los lados quedan franjas lisas grandes. Corrige el corte de G24, pero la imagen pierde presencia.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "Pieza 1° (4:5, Preset 02)",
+     "problema": "Al 75 % la imagen ya no cubre toda la máscara y el fondo extendido deja un borde difuso en los costados: la trama se corta antes del borde del lienzo. Al 85 % la imagen cubre la máscara entera y ese borde no aparece.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "Piezas 10° (historia), 12° y 14° (LinkedIn) frente a las bandas",
+     "problema": "Mezcla escalas: en las columnas y la historia el objeto va al 75 % y en las bandas al 85 %. La historia tiene una máscara casi cuadrada y al 75 % la desaprovecha. En los LinkedIn al 75 % el edificio no se alinea con el alto de la columna de texto, cosa que sí ocurre al 85 %.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "Pieza 19° (LinkedIn con bajada, columna de imagen angosta)",
+     "problema": "Al 85 % es el formato más justo: unos 95 px de margen arriba y abajo, y la arista derecha queda cerca de la cruz de registro superior derecha. No choca ni corta, pero conviene vigilarlo si el objeto cambia de proporción.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "16:9 (piezas 4°, 11° y 18°) y 1:1 con banda 5/8",
+     "problema": "Defecto común a las tres opciones, no desempata. La imagen no cubre el ancho de la máscara: la trama termina en un borde difuso y quedan flancos lisos grandes, sin función. Aun centrado y entero, el objeto se ve chico en la diapositiva.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "todas",
+     "donde": "LinkedIn con bajada (9,3 px CSS) y botón del LinkedIn sin bajada (7,1 px CSS)",
+     "problema": "Es común a las tres opciones. Por los criterios de David queda como aviso y no como veto: el LinkedIn está pensado para computador y el botón sigue leyéndose como botón.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "3",
+   "veredicto": "sirve",
+   "resumen": "Las tres opciones corrigen la queja de G24: el edificio queda entero y centrado en cada máscara, sin corte arriba ni desplazamiento a la derecha. La diferencia está solo en la escala del objeto. Predigo la opción 3 (85 % en todos los formatos): da más presencia a un dibujo de línea fina que en el celular se lee mejor grande, la serie mantiene un tamaño parejo y en los LinkedIn el alto del edificio se alinea con la columna de texto. La opción 2 está cerca, pero baja la historia y los LinkedIn al 75 % sin ganar nada visible. La opción 1 deja el objeto chico en las máscaras anchas. El defecto común de las tres son los flancos lisos de las máscaras apaisadas, sobre todo en la 16:9."
+  }
+ ]
+}

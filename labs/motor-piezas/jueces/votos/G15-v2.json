@@ -1,0 +1,230 @@
+{
+ "galeria": "G15",
+ "seccion": null,
+ "rubrica": "v2",
+ "retro": true,
+ "criterios_hasta": "G15",
+ "sellado": "2026-11-11T00:33:18",
+ "hash_rubrica": "f69064585452",
+ "hash_criterios": "fd98b8707561",
+ "votos": [
+  {
+   "id": "G15-v2-posicion",
+   "galeria": "G15",
+   "version": "v2",
+   "lente": "posicion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 8,
+    "2": 8,
+    "3": 8
+   },
+   "hallazgos": [
+    {
+     "opcion": "todas",
+     "donde": "zona de imagen (y 0 a 1326 px)",
+     "problema": "Sin diferencia de posición: la zona de imagen de R1 y R2 es idéntica píxel a píxel. En R3 solo cambia el color de las marcas de esquina (filas 45 a 83). El brazo robótico queda entero y no lo corta la máscara. Los márgenes crema arriba (unos 60 px) y abajo (unos 68 px) son parejos, y la banda empieza en y≈1326 sin choque con la ilustración.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "esquina superior derecha, marca + en (≈2090, 63)",
+     "problema": "Defecto común a las tres: la marca de esquina superior derecha cae justo sobre el borde superior del rectángulo turquesa de la ilustración y queda montada sobre la imagen. La izquierda queda sobre crema.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "composición de la ilustración",
+     "problema": "Defecto común ya elegido en G14: el sujeto (el brazo) está a la derecha y los bloques abstractos a la izquierda, no al centro. No se corta en este formato, pero choca con el requisito del motor de sujeto centrado si se recorta para otra máscara. No se rediscute aquí.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "unión entre la franja crema bajo la ilustración y el panel claro",
+     "problema": "La franja crema (≈245,233,205) casi se funde con el panel claro, así que el límite inferior del bloque de imagen se lee más difuso que contra la banda oscura. La posición no cambia: es un efecto del color y se lo dejo a la lente de color o composición. No lo puntúo.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "",
+   "veredicto": "sirve",
+   "resumen": "Esta galería solo cambia el color de la banda. La posición de la imagen es idéntica en las tres (verificado píxel a píxel en la zona de imagen): brazo entero, sin corte de máscara, márgenes crema parejos y sin choque con la banda. Mi lente no ve diferencia, así que no elijo. Defectos comunes, todos menores: la marca superior derecha queda montada sobre el borde turquesa, y el sujeto está a la derecha, no al centro, como ya se eligió en G14.",
+   "puntajes_nota": "null"
+  },
+  {
+   "id": "G15-v2-composicion",
+   "galeria": "G15",
+   "version": "v2",
+   "lente": "composicion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 8,
+    "2": 7.5,
+    "3": 6
+   },
+   "hallazgos": [
+    {
+     "opcion": "3",
+     "donde": "Límite entre imagen y banda (y≈1326 px de 2700)",
+     "problema": "La franja crema inferior de la ilustración (246,233,206) toca el panel claro (250,250,249) casi sin contraste, cerca de 1,1:1. La división en dos zonas (imagen arriba, 4 de 8 filas de texto abajo) se borra y la banda deja de leerse como un panel separado de la imagen. Queda una costura entre crema y blanco roto que parece un error a tamaño de feed.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "Ilustración, vista con la pieza entera",
+     "problema": "Sobre el fondo claro, las franjas crema de arriba y abajo se funden con el lienzo. La ilustración se lee como un bloque encajado sobre un fondo claro y no como una imagen a sangre que manda arriba. Debilita lo que se eligió en G14.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "Bloque de texto: del título a la bajada",
+     "problema": "Con la bajada en blanco, el bloque de texto pesa más y se pierde el escalón de tono entre el título y la bajada. Por eso se percibe menos aire entre los dos bloques. La disposición es la misma que en la 1°.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "Bordes superior e inferior de la ilustración",
+     "problema": "Defecto común a las tres, no se usa para desempatar: la ilustración trae sus propias franjas crema, de unos 60 px arriba y 70 px abajo. No llega limpia al borde superior del lienzo ni toca la banda de forma directa.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "1",
+   "veredicto": "sirve",
+   "resumen": "Las tres tienen la misma disposición: imagen a sangre arriba y banda de 4 de 8 filas abajo. Solo cambia el color, así que la lente mira cómo ese color afecta la división y el aire. En la 1° y la 2°, la banda oscura deja la división nítida y da una base pesada que equilibra la imagen clara de arriba. La 1° queda primera porque la bajada en gris escalona el bloque de texto y deja aire entre el título y la bajada. En la 2° ese bloque se vuelve más compacto, aunque la diferencia es pequeña. En la 3°, el panel claro se funde con la franja crema de la ilustración (cerca de 1,1:1): se pierde la separación entre imagen y banda, y la imagen se lee como un bloque encajado. Sirve con ajustes."
+  },
+  {
+   "id": "G15-v2-lectura",
+   "galeria": "G15",
+   "version": "v2",
+   "lente": "lectura",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 8,
+    "2": 9,
+    "3": 5
+   },
+   "hallazgos": [
+    {
+     "opcion": "3",
+     "donde": "logotipo, abajo a la izquierda: «BIM» en turquesa sobre el panel claro",
+     "problema": "En el panel claro, «BIM» del logotipo mide 2,82:1 (turquesa #0FA994 sobre #FAFAF9). Queda bajo el mínimo de 4,5:1, y según el criterio de David el logo cuenta como texto chico. A tamaño de feed se ve lavado. En las opciones 1 y 2 el mismo «BIM» mide 9,9:1.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "3",
+     "donde": "bajada gris en el panel claro",
+     "problema": "La bajada mide 4,63:1, apenas sobre el mínimo y dentro del rango de 4,6 a 6,3:1 que David ya vio flojo. Va sobre un fondo liso con una retícula de puntos tenue, así que pesa menos que sobre la imagen, pero sigue siendo la más débil de las tres. Conviene oscurecer el gris.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "bajada gris sobre la banda oscura",
+     "problema": "La bajada mide 7,24:1. Supera el rango que David vio flojo y está sobre un fondo liso, así que se lee bien. Aun así es el texto de lectura más débil de la pieza y queda lejos de la referencia de 10:1 del laboratorio, que es solo una referencia y no un veto.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "bajada blanca",
+     "problema": "No veo defecto de lectura. La bajada mide 15,8:1 y el texto más débil de la pieza es el turquesa del kicker, del llamado y de «BIM», a 9,92:1, prácticamente en la referencia de 10:1.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "texto más chico (llamado, logotipo, etiqueta EJEMPLO)",
+     "problema": "Defecto común a las tres, que no cuento para desempatar: el texto más chico mide justo 11,0 px CSS en una vista de 390 px. Cumple la referencia, pero no deja holgura. El logotipo «Umbral BIM» es el elemento más pequeño de la banda.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "2",
+   "veredicto": "sirve",
+   "resumen": "Esta galería solo cambia el color de la banda. Para la lectura, la 2 es la mejor: la bajada blanca llega a 15,8:1 y ningún texto baja de 9,9:1. La 1 también sirve: su bajada gris mide 7,2:1 sobre un fondo liso. La 3 sirve con ajustes: «BIM» del logotipo cae a 2,8:1 y la bajada a 4,6:1, un valor que David ya vio flojo. Hay que corregir las dos cosas antes de aprobarla. Las tres comparten el texto mínimo justo en 11 px CSS."
+  },
+  {
+   "id": "G15-v2-jerarquia",
+   "galeria": "G15",
+   "version": "v2",
+   "lente": "jerarquia",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 8.5,
+    "2": 7,
+    "3": 6.5
+   },
+   "hallazgos": [
+    {
+     "opcion": "2",
+     "donde": "bajada (3 líneas bajo el titular)",
+     "problema": "La bajada va en el mismo blanco que el titular (#ECEDEE). Solo el tamaño la separa, aunque sigue en cerca del 25 % de la altura de mayúsculas del titular. A tamaño de feed, el bloque blanco de tres líneas pesa más y la bajada ya no se ve claramente secundaria (criterio G13). La 1° marca ese escalón también con el tono.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "logo, esquina inferior izquierda («BIM» del wordmark)",
+     "problema": "«BIM» va en turquesa #0FA994 sobre #FAFAF9 y medí 2,8:1. Es el texto más chico de la pieza y no se lee con holgura, lo que choca con el criterio de David sobre datos, llamado y logo abajo a la izquierda. Fondo claro e imagen están fuera de esta lente, pero el mínimo de 4,63:1 del código no parece incluir el logo. En la 1° y la 2°, el mismo «BIM» da 9,9:1.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "bajada",
+     "problema": "La bajada gris queda en 4,6:1 y, a unos 14 px CSS en el celular, se ve algo lavada. Sigue siendo secundaria, pero pierde lectura más de lo que hace falta para subordinarla.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "unión entre imagen y banda",
+     "problema": "El crema del margen de la imagen y el blanco hueso del panel casi se confunden. La banda de texto se lee menos como un panel propio que en la 1° y la 2°, aunque la imagen no invade la zona del titular.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "kicker «ARTÍCULO» y llamado",
+     "problema": "En verde oscuro (9,2:1) son legibles, pero pierden el acento turquesa. El paso del kicker al titular queda marcado solo por el tamaño y el tracking. No es un defecto, es un escalón algo más plano.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "titular en la banda",
+     "problema": "Defecto común a las tres, no influye en el desempate: el titular, a 156 px, ocupa cerca del 79 % del ancho útil y deja aire a la derecha de «La IA entra». Las proporciones son buenas: kicker y bajada quedan en cerca del 25 al 27 % del titular, por debajo del 45 %.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "1",
+   "veredicto": "sirve",
+   "resumen": "La lente de jerarquía sí ve diferencias en el color. La 1° es la que mejor ordena la lectura: el titular blanco manda, la bajada gris (7,2:1) queda claramente secundaria y legible, y el turquesa separa el kicker y el llamado. El logo se lee a 9,9:1. La 2° iguala la bajada al blanco del titular, la separa solo por tamaño y le da más peso del que corresponde en una noticia. La 3° conserva el orden, pero el «BIM» del logo baja a 2,8:1 en la esquina inferior izquierda, la bajada queda algo lavada y la banda se distingue menos de la imagen. Elijo la 1°."
+  },
+  {
+   "id": "G15-v2-costuras",
+   "galeria": "G15",
+   "version": "v2",
+   "lente": "costuras",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 8,
+    "2": 8,
+    "3": 6
+   },
+   "hallazgos": [
+    {
+     "opcion": "3",
+     "donde": "costura imagen→banda (y≈1326 px, ancho completo)",
+     "problema": "El margen crema de la imagen (≈246,233,206) se junta con el panel claro (≈250,250,249). Son dos blancos de distinta temperatura y casi la misma luminancia, con un salto de unos 15 ΔE en el tono. A tamaño de feed se ve como una línea pálida o como dos papeles distintos, más que como una división hecha a propósito. En 1 y 2 el paso de crema a oscuro (17,20,24) da un borde limpio. Ajuste: quitar la franja crema inferior para que el dibujo toque el panel, o marcar la división con un filete de 2–4 px.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "todas (común, no desempata)",
+     "donde": "cruz de registro superior derecha (≈2096, 46–82 px)",
+     "problema": "La cruz queda justo sobre el borde entre el margen crema y el campo turquesa del dibujo. El brazo inferior, turquesa oscuro sobre turquesa, casi se pierde y toca el canto del dibujo. Viene de la imagen fijada en G14 y es igual en las tres opciones.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas (común, no desempata)",
+     "donde": "franjas crema superior (y 0–59) e inferior (y 1259–1326)",
+     "problema": "Las franjas crema son planas (desviación ≈0,3–0,5) y el crema del dibujo tiene grano (≈4,5). El color medio coincide, así que no hay escalón de color. El escalón de textura solo se ve de cerca y es igual en las tres opciones.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "1",
+   "veredicto": "sirve",
+   "resumen": "En costuras, 1 y 2 empatan: tienen la misma banda oscura y la misma unión con la imagen, así que mi lente no ve diferencia entre ellas. Pongo la 1 solo porque es la base, no porque la prefiera. La 3 pierde puntos porque el crema de la imagen choca con el panel claro y se ve una línea pálida a tamaño de feed (media). No hay parches rectangulares ni acentos turquesa cortados. Los defectos comunes (la cruz superior derecha sobre el borde del dibujo y el crema plano frente al crema con grano) son de la imagen fijada en G14 y no desempatan."
+  }
+ ]
+}

@@ -1,0 +1,77 @@
+{
+ "galeria": "G09",
+ "seccion": null,
+ "rubrica": "pred-sin-b",
+ "retro": true,
+ "criterios_hasta": null,
+ "sellado": "2026-11-11T00:45:35",
+ "hash_rubrica": "2afef7084991",
+ "hash_criterios": "fd98b8707561",
+ "votos": [
+  {
+   "id": "G09-qb-prediccion",
+   "galeria": "G09",
+   "version": "pred-sin-b",
+   "lente": "prediccion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 6.5,
+    "2": 4.5,
+    "3": 8
+   },
+   "hallazgos": [
+    {
+     "opcion": "3",
+     "donde": "rótulos FECHA/HORA/LUGAR y CTA «INSCRÍBETE · umbralbim.io»",
+     "problema": "El mínimo de 11 px CSS se midió con una vista de 555 px. En el celular (390 px) baja a unos 7,7 px: los rótulos y la URL quedan justos, aunque los valores de los datos y el título sí se leen.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "fin de «TALLER PRÁCTICO · UMBRAL BIM» junto a la columna de datos",
+     "problema": "El subtítulo llega casi hasta la línea de la columna de datos y queda muy poco aire entre los dos bloques.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "banda de imagen superior",
+     "problema": "El recorte apaisado deja fuera la mancha oscura que en L1 y L2 hace de foco. La banda funciona como textura de marca, pero tiene menos punto de interés.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1",
+     "donde": "panel izquierdo, entre «BIM + IA» y la línea de la fecha",
+     "problema": "Queda un vacío oscuro de cerca del 15 % del alto que el contenido no justifica y se nota en el feed.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "bloque de datos",
+     "problema": "Solo aparece la fecha. Para un workshop faltan la hora y el lugar, que eran parte de los «datos fuertes» del Preset 01.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "pieza entera",
+     "problema": "Supone que se ve en el computador y achica el texto, pero sigue mostrando solo la fecha: cede legibilidad en el celular sin ganar información.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "2",
+     "donde": "panel izquierdo, entre el título y la fecha",
+     "problema": "El vacío central es mayor que en L1, cerca de un cuarto del alto, y el panel se ve a medio llenar.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "fila inferior con logo y CTA",
+     "problema": "La CTA y la fecha, más chicas, quedan cerca de 7–8 px CSS en el celular.",
+     "gravedad": "media"
+    }
+   ],
+   "mejor": "3",
+   "veredicto": "sirve",
+   "resumen": "Predigo que David elige la 3 (banda). Es la única que da los tres datos y llena el formato 1200×627 sin vacíos. Además conserva el color de marca, la trama y los datos fuertes del Preset 01. Su punto débil son los rótulos y la CTA, chicos en el celular, que se corrigen con un ajuste menor. La 1 se lee bien en el celular, pero deja un vacío y omite la hora y el lugar. La 2 es la peor: achica el texto y no muestra más datos."
+  }
+ ]
+}

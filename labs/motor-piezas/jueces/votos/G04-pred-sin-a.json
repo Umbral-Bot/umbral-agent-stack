@@ -1,0 +1,72 @@
+{
+ "galeria": "G04",
+ "seccion": null,
+ "rubrica": "pred-sin-a",
+ "retro": true,
+ "criterios_hasta": null,
+ "sellado": "2026-11-11T00:45:34",
+ "hash_rubrica": "2afef7084991",
+ "hash_criterios": "fd98b8707561",
+ "votos": [
+  {
+   "id": "G04-qa-prediccion",
+   "galeria": "G04",
+   "version": "pred-sin-a",
+   "lente": "prediccion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 6.5,
+    "2": 8.2,
+    "3": 5.5,
+    "4": 4
+   },
+   "hallazgos": [
+    {
+     "opcion": "1",
+     "donde": "tercio de texto (velo 0.84)",
+     "problema": "Para llegar a 10:1, el velo sube a 0.84 y casi tapa la imagen detrás del texto. El efecto «a sangre» elegido en G03 deja de leerse: se ve como un panel con manchas oscuras y el mismo corte vertical en x≈1338 que en la opción 2. En el celular parece una opción 2 sucia.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "filas de datos 01-03",
+     "problema": "Las etiquetas FECHA/HORA/LUGAR pasan a tinta blanca, igual que los valores, y la jerarquía etiqueta/valor se aplana frente al gris de marca de las opciones 2 a 4.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "franja inferior derecha de la foto",
+     "problema": "La banda casi blanca del borde inferior de la imagen (último ~10 % de alto) es la zona más brillante de la pieza y tira la mirada hacia la esquina, lejos del texto.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "separación entre la columna de texto y la caja",
+     "problema": "Medida: la columna de texto termina en x=1303 (etiqueta EJEMPLO y marcas de las filas) y la caja empieza en x=1338. El calle es de 35 px, frente a márgenes de 127 px arriba, abajo y a la derecha. A tamaño de feed la caja casi toca el texto y la grilla se ve descompensada.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "imagen en caja",
+     "problema": "Con margen y radio, la foto pierde escala e impacto. Además, la banda blanca inferior de la pintura queda pegada al borde de la caja y parece un corte, no un borde pensado.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "4",
+     "donde": "ilustración isométrica",
+     "problema": "Las líneas miden 2 px a 3840 en un turquesa apagado (≈31,116,108). En el feed del celular bajan a ~0,5 px y casi desaparecen: los dos tercios derechos se ven vacíos y la pieza pierde la energía visual que daba la foto.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4",
+     "donde": "composición de la ilustración",
+     "problema": "La ilustración ocupa ~49 % del ancho libre y la losa inferior flota separada del volumen. Se lee como un esquema técnico suelto, no como imagen protagonista.",
+     "gravedad": "media"
+    }
+   ],
+   "mejor": "2",
+   "veredicto": "sirve",
+   "resumen": "David probablemente elegiría la opción 2 (sangrado lateral). El texto queda limpio sobre fondo liso, con etiquetas en gris de marca y 7,24:1, y la foto se ve con toda su fuerza hasta el borde. La opción 1 conserva la idea de G03, pero con velo 0.84 la imagen apenas se ve detrás del texto y la pieza parece una opción 2 manchada. La opción 3 achica la foto y deja un calle de 35 px frente a márgenes de 127 px. La opción 4 se pierde en el celular porque sus líneas de 2 px casi desaparecen."
+  }
+ ]
+}

@@ -1,0 +1,112 @@
+{
+ "galeria": "G28",
+ "seccion": null,
+ "rubrica": "pred-crit2-b",
+ "retro": false,
+ "criterios_hasta": null,
+ "sellado": "2026-11-11T00:51:27",
+ "hash_rubrica": "b71ce177d875",
+ "hash_criterios": "11070cf84d18",
+ "votos": [
+  {
+   "id": "G28-pred2b-prediccion",
+   "galeria": "G28",
+   "version": "pred-crit2-b",
+   "lente": "prediccion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 5.5,
+    "2": 7.5,
+    "3": 4.5,
+    "4": 6,
+    "5": 5,
+    "6": 2.5,
+    "7": 3,
+    "8": 3
+   },
+   "hallazgos": [
+    {
+     "opcion": "1",
+     "donde": "pieza 4° (slide 16:9) y 2° (cuadrado 2,66:1): imagen apaisada mg-articulo-ia-obra-formula-a1",
+     "problema": "La apaisada de Magnific One es un pórtico en perspectiva oblicua, más alto que ancho para esa banda. En la slide ocupa cerca del 52 % del ancho de la máscara 3,64:1 y en el cuadrado T1 cerca del 70 %, lejos del 81–85 % de la única apaisada aprobada. Es un defecto de la imagen, no de la maquetación.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "1",
+     "donde": "imagen apaisada (piezas 2°, 4° y 6°)",
+     "problema": "El trazo es de boceto: líneas dobles y temblorosas, pilares que no cierran y vista oblicua. No calza con la principal, isométrica y limpia, ni con la línea plana de Magnific One aprobada. A tamaño de feed se ve menos terminada que la NB 2.1 v1.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "imagen apaisada mg-articulo-ia-obra-nb-a1 (piezas 9°, 11° y 13°) frente a la principal",
+     "problema": "La principal es isométrica y la apaisada es casi un alzado frontal, que se lee un poco como una estantería. Es una diferencia de vista entre principal y apaisada: se anota como ajuste, no veto. Llena el 85 % del ancho de la banda y está centrada.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "pieza 14° (LinkedIn sin bajada, columna)",
+     "problema": "El objeto ocupa cerca del 68 % del ancho de la columna y el 75 % del alto, con un leve hueco lateral. Es aceptable para una máscara en columna; se anota.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "piezas 15° (vertical 4:5) y 17° (historia 9:16)",
+     "problema": "Con el anclaje por acento, el cuerpo del objeto queda corrido hacia la izquierda: el centro está cerca de 5 % del ancho a la izquierda en el 4:5 y de 7–8 % en el 9:16, con el tubo asomando a la derecha. Es el mismo defecto de posición en la máscara que David reclamó en G24.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "3",
+     "donde": "imagen apaisada mg-articulo-ia-obra-nb-a2 (piezas 16°, 18° y 20°)",
+     "problema": "El dibujo tiene errores visibles: diagonales que salen de los extremos de la losa como un techo, cantos rellenos en negro más pesados que el resto y un tramo de tubo suelto fuera del pórtico a la izquierda. Se lee como una geometría rota.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "4",
+     "donde": "imagen apaisada mg-articulo-ia-obra-fondo-a1 (piezas 23°, 25° y 27°)",
+     "problema": "Hay cinco a siete losas turquesa macizas en la banda, que cargan la máscara de turquesa en contra del propio método de recorte. Además, los muros con muesca no aparecen en la principal y su forma de U puede leerse como un glifo. La principal (pilares con zapata, vigas, tubos) sí es un fondo limpio y del tema.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "5",
+     "donde": "piezas 30° (cuadrado) y 32° (slide): imagen apaisada mg-articulo-ia-obra-fondo-a2",
+     "problema": "El recorte óptimo deja una viga turquesa cortada en el borde izquierdo, justo lo que el método dice evitar. El trazo de la a2 (alambre fino con ocultas a trazos y una retícula densa) no coincide con la principal, de trazo más firme.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "6",
+     "donde": "piezas 39° y 41° (planta H063)",
+     "problema": "La planta trae cotas con números y glifos dibujados dentro de la imagen: es un veto de marca. Además, el trazo es de boceto.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "6",
+     "donde": "piezas 36° y 38° (G-AFI-04 recortada)",
+     "problema": "Losas turquesa enormes llenan la máscara y quedan cortadas en el borde. Un filete turquesa vertical suelto deja un tercio izquierdo vacío. Se lee como un fragmento de objeto mal recortado, no como un fondo, y el turquesa deja de ser acento.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "7",
+     "donde": "todas (H021 en las dos máscaras)",
+     "problema": "La imagen tiene composición de afiche: la ciudad a la izquierda, cortada por el borde, se disuelve en una red, y la mitad derecha queda vacía. No es un fondo de densidad pareja sino un sujeto a un lado. Además, el sombreado gris de los edificios se acerca al render.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "8",
+     "donde": "piezas 50° y 52° (G-AFI-04) y 53° y 55° (retícula H023)",
+     "problema": "La principal arrastra los mismos defectos que R1. En la apaisada, la estructura queda cortada por el borde superior y la nube de puntos se lee como fragmento de un objeto, no como fondo recortable.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "",
+     "donde": "común a todas (paneles de texto)",
+     "problema": "Los paneles son iguales en todas las opciones: titular, bajada, botón y chip EJEMPLO no cambian y el contraste medido es de 9,92:1. No pesan en la elección.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "2",
+   "veredicto": "sirve",
+   "resumen": "David elegiría la opción 2, Nano Banana 2.1 v1: es la única donde el objeto queda entero y centrado en las 7 máscaras. Su apaisada es baja y ancha, llena el 85 % de la banda en la slide y los cuadrados, y el dibujo es isométrico, plano, de trazo limpio, con el choque del tubo marcado en turquesa, que cuenta el artículo. Ajuste anotado: la apaisada tiene vista casi frontal y la principal es isométrica.\n\nMagnific One (opción 1) sirve en el vertical, la historia y LinkedIn, pero falla en la slide y queda floja en los cuadrados: su apaisada es oblicua, de boceto, y en la slide solo cubre el 52 % del ancho de la banda.\n\nLa NB v2 (opción 3) queda corrida a la izquierda en el 4:5 y en el 9:16 por el anclaje, y su apaisada tiene errores de dibujo.\n\nDel camino A, A1 (opción 4) es un fondo válido, pero la apaisada carga turquesa. En A3 (opción 5), el recorte corta acentos en el borde. Los rescates (opciones 6 a 8) no sirven: tienen números en la planta, turquesa masivo cortado y composición de afiche."
+  }
+ ]
+}

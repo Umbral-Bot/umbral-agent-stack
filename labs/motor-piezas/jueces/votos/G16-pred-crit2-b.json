@@ -1,0 +1,66 @@
+{
+ "galeria": "G16",
+ "seccion": null,
+ "rubrica": "pred-crit2-b",
+ "retro": true,
+ "criterios_hasta": "G16",
+ "sellado": "2026-11-11T00:51:31",
+ "hash_rubrica": "b71ce177d875",
+ "hash_criterios": "11070cf84d18",
+ "votos": [
+  {
+   "id": "G16-rab-prediccion",
+   "galeria": "G16",
+   "version": "pred-crit2-b",
+   "lente": "prediccion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 8,
+    "2": 7,
+    "3": 5.5,
+    "4": 7
+   },
+   "hallazgos": [
+    {
+     "opcion": "3",
+     "donde": "pie de la banda, llamado como botón",
+     "problema": "El bloque turquesa lleno ocupa más de la mitad del ancho del pie. Con eso el turquesa deja de ser un acento y pasa a ser la segunda masa más fuerte de la banda, después del titular. Además se suma al kicker ARTÍCULO como un segundo foco turquesa. La pieza se vuelve más llamativa y más genérica, con aire de anuncio, sin ganar lectura: todas las opciones miden 9,92:1. Choca con el criterio de sobriedad del panel oscuro y con el de no elegir el llamado más llamativo.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4",
+     "donde": "fondo de la banda de texto",
+     "problema": "Al quitar la trama de puntos, la banda queda plana. Se pierde el guiño técnico de grilla y la coherencia con el Preset 01. En el celular la diferencia casi no se ve, así que no mejora la lectura y solo resta carácter.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "esquinas del lienzo",
+     "problema": "Sin las cruces, la pieza pierde las marcas de encuadre que la emparentan con el Preset 01 y le dan un aire de plano. El cambio casi no se percibe a tamaño de feed, y lo que se pierde es carácter.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1",
+     "donde": "cruz de la esquina superior derecha",
+     "problema": "La cruz turquesa cae sobre el turquesa de la imagen y casi desaparece. La de arriba a la izquierda, sobre el crema, sí se ve. Las cuatro marcas quedan desparejas. Es un detalle que solo se nota de cerca.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "común",
+     "donde": "titular en la banda",
+     "problema": "Es común a las cuatro opciones y no desempata. Para caber en el alto disponible, el titular se redujo a 156 px y deja aire a la derecha de la banda (cerca de un 18 % del ancho). Se acerca al titular mediano que G13 rechaza.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "común",
+     "donde": "etiqueta EJEMPLO, arriba a la derecha",
+     "problema": "Es común a las cuatro opciones. Es una marca de laboratorio y tiene que salir antes de publicar.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "1",
+   "veredicto": "sirve",
+   "resumen": "Todas las opciones ya cumplen el contraste (9,92:1) y el tamaño mínimo (11 px CSS), así que la lectura no decide. La 3 es la que menos se parece a lo que David elegiría: el botón turquesa lleno convierte el acento en una masa, compite en el pie y vuelve la pieza más genérica. Entre la 1, la 2 y la 4 la diferencia en el celular es mínima. La 1 conserva las cruces y la trama del Preset 01, que dan carácter técnico sin quitar sobriedad. Quitar cualquiera de las dos solo resta identidad sin mejorar nada. Predigo la 1."
+  }
+ ]
+}

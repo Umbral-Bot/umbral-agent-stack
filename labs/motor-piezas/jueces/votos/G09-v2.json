@@ -1,0 +1,307 @@
+{
+ "galeria": "G09",
+ "seccion": null,
+ "rubrica": "v2",
+ "retro": true,
+ "criterios_hasta": "G09",
+ "sellado": "2026-11-11T00:33:16",
+ "hash_rubrica": "f69064585452",
+ "hash_criterios": "fd98b8707561",
+ "votos": [
+  {
+   "id": "G09-v2-composicion",
+   "galeria": "G09",
+   "version": "v2",
+   "lente": "composicion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 6.5,
+    "2": 7.5,
+    "3": 6
+   },
+   "hallazgos": [
+    {
+     "opcion": "3",
+     "donde": "pieza entera (banda con los tres datos)",
+     "problema": "Choca con un criterio de David: en LinkedIn ya eligió solo la fecha con aire frente a una banda con los tres datos (G08). Como composición es la más compleja y está bien amarrada: el borde superior de WORKSHOP (y=581) coincide con la primera línea de datos (y≈582), y los bordes derechos de EJEMPLO, las líneas y el CTA caen en x≈2320–2330. Aun así reabre una decisión ya tomada, y por eso baja el puntaje.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "separación entre la columna del título y la de los datos",
+     "problema": "El subtítulo «TALLER PRÁCTICO · UMBRAL BIM» termina en x=1367 y la línea de los datos empieza en x≈1400: quedan 33 px de 2400 (unos 8 px CSS en la vista de 555). Las dos columnas casi se tocan, mientras los márgenes laterales miden 75 px.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "borde superior de la banda oscura",
+     "problema": "SAVE THE DATE empieza 33 px bajo el borde de la imagen (y 468→501). Los laterales y el inferior tienen unos 75 px, así que la parte de arriba de la banda queda apretada y el texto se pega a la franja de imagen.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "bloque inferior: fecha, CTA y logo",
+     "problema": "Tres filas apiladas entre y=785 y y=1178. La fecha a tamaño de celular (132 px de alto) compite con el título como segundo foco. Además llega a x=1176 y deja 40 px hasta el borde del panel, contra 77 px a la izquierda: los márgenes quedan asimétricos.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "bordes derechos y fila del logo",
+     "problema": "Los finales a la derecha no coinciden: título 1131, CTA 1146, fecha 1176 y EJEMPLO 1183. El logo queda solo en la última fila y deja vacía la mitad derecha del pie.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "hueco entre el título y los datos",
+     "problema": "Hay 351 px (28 % del alto) entre el final del título (y=552) y la primera línea (y=903). Funciona como el aire que David pidió para LinkedIn, pero es el vacío más grande de la galería. Subir el bloque de datos 60–80 px lo equilibraría sin perder aire.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "fila de la fecha",
+     "problema": "La fecha termina en x=972 y las líneas llegan a x=1186: quedan unos 210 px vacíos a la derecha dentro de la banda de datos. En cambio, EJEMPLO, el CTA y las líneas sí cierran el mismo borde derecho (≈1175–1186).",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1 y 2 (común)",
+     "donde": "mitad de la imagen",
+     "problema": "La mancha oscura toca la división en la parte baja (x≈1216–1260) y se funde con el panel. La imagen termina abajo en una franja casi blanca (y≈1150–1254) que lleva la mirada a la esquina inferior derecha. Es un defecto común a ambas opciones y no desempata.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "2",
+   "veredicto": "sirve",
+   "resumen": "Elijo la 2. Mantiene la base de solo la fecha con aire que David eligió para LinkedIn y la resuelve mejor que la 1. El pie junta el logo y el CTA en una sola fila, el borde derecho queda alineado entre EJEMPLO, las líneas y el CTA, y la jerarquía es clara: el título manda y la fecha queda como dato secundario. Sus defectos son leves: un hueco de 351 px entre el título y los datos, y la fecha corta frente a las líneas. La 1 funciona, pero apila tres filas abajo, la fecha compite con el título y los márgenes del panel quedan asimétricos (40 px a la derecha, 77 px a la izquierda). La 3 es la composición más compleja y está bien alineada, pero vuelve a la banda con los tres datos que David descartó para LinkedIn en G08. Además el subtítulo queda a 33 px de la columna de datos y la banda no tiene margen arriba."
+  },
+  {
+   "id": "G09-v2-jerarquia",
+   "galeria": "G09",
+   "version": "v2",
+   "lente": "jerarquia",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 7,
+    "2": 8,
+    "3": 6
+   },
+   "hallazgos": [
+    {
+     "opcion": "1",
+     "donde": "pie de la columna: llamado «INSCRÍBETE · umbralbim.io» bajo la fecha",
+     "problema": "El llamado (33.8 px, turquesa, muy espaciado) mide unos 540 px de ancho y queda más ancho que la línea de la fecha (unos 470 px). Por eso compite con el dato principal y con el kicker. Además, el kicker (47.3 px) y la fecha (50.1 px) tienen casi el mismo tamaño, así que no hay un segundo nivel claro bajo el título.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "chip EJEMPLO sobre el kicker",
+     "problema": "El chip es más grande que en las otras opciones (zona de 171×31 px) y queda pegado al kicker, por lo que suma ruido arriba del título. Es una marca de laboratorio, pero aquí pesa más de lo necesario.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "centro de la columna, entre el título y la fila de la fecha",
+     "problema": "Queda un vacío de unos 175 px (cerca del 28 % del alto) entre el final del título (y≈280) y la fila de datos (y=455). El texto se parte en dos bloques y la fecha empieza a leerse más como pie que como dato fuerte. Es el «aire» de la propuesta, pero conviene subir un poco la fila.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "llamado y etiqueta FECHA, vistos en el celular",
+     "problema": "La pieza está calculada para una vista de 555 px. En el celular (390 px), el llamado y la etiqueta (23.8 px) bajan a unos 7.7 px CSS y la fecha a unos 13.2 px CSS. La fecha sigue legible, pero el llamado queda por debajo del mínimo de 11 px. Es el costo asumido de suponer el computador.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "decisión de formato: banda con los tres datos",
+     "problema": "Choca con el criterio de David para LinkedIn: ahí eligió solo la fecha con aire frente a una banda con los tres datos (G08). Por mi lente la jerarquía funciona bien: el título manda con 102.5 px, los datos tienen peso propio, la imagen acompaña como franja y el llamado y el logo están en su lugar. Igual la puntúo más bajo por ese choque.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "subtítulo «TALLER PRÁCTICO · UMBRAL BIM» junto a la fila 03",
+     "problema": "El subtítulo llena la zona de texto hasta su borde (x≈687) y queda a unos 25 px del número «03», casi en la misma línea base que «Online · Zoom». A tamaño de feed puede leerse de corrido («UMBRAL BIM 03 Online · Zoom») y compite con los datos. Conviene acortarlo o dar más medianil.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "comun",
+     "donde": "logotipo inferior izquierdo (lockup de 120 px)",
+     "problema": "Común a las tres opciones: el logotipo está en el mínimo del manual, así que el texto «Umbral BIM» queda muy chico a tamaño de feed. Va sobre el panel oscuro, no sobre la imagen, así que no hay problema de contraste con la textura. No desempata.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "2",
+   "veredicto": "sirve",
+   "resumen": "Elijo la 2. Tiene la escala más limpia: título (94 px), luego fecha (40.5 px), luego kicker (33.3 px) y al final el llamado (23.8 px), que va en el pie junto al logo. Además es la que mejor coincide con el criterio de David para LinkedIn, solo la fecha con aire. Su costo es un vacío central amplio y un llamado de unos 7.7 px CSS si se ve en el celular. La 1 es la más robusta en el celular (fecha de 16.3 px CSS), pero el llamado es más ancho que la fecha y kicker y fecha casi empatan, así que el segundo nivel se pierde. La 3 tiene una buena jerarquía por mi lente, pero choca con la elección de David en LinkedIn (banda con tres datos) y su subtítulo queda pegado a la fila 03. Ninguna pone texto sobre la imagen."
+  },
+  {
+   "id": "G09-v2-posicion",
+   "galeria": "G09",
+   "version": "v2",
+   "lente": "posicion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 5.5,
+    "2": 5.5,
+    "3": 6.5
+   },
+   "hallazgos": [
+    {
+     "opcion": "1",
+     "donde": "mitad derecha (imagen, x 608–1200 del lienzo)",
+     "problema": "Con la división en la mitad y el registro al lienzo (foco 0.5 = x 600), el centro de la imagen queda 8 px dentro del panel. La ventana conserva solo el 20,6 % del turquesa (el haz de luz que es el acento de la pintura), y ese turquesa queda pegado a la división (centroide x rel 0,09). La masa oscura toca el panel en el 28 % de la altura del borde izquierdo y queda abajo a la izquierda (centroide 0,28 / 0,66). No está centrada y los márgenes no son parejos: 0 a la izquierda y aire gris arriba y a la derecha.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "mitad derecha (imagen, x 608–1200 del lienzo)",
+     "problema": "Tiene el mismo recorte que la 1: el SVG trae el mismo clip (x 608, ancho 592) y la imagen está en la misma posición. Por eso aparecen los mismos defectos: el acento turquesa queda bajo el panel (20,6 % visible, pegado a la división) y la masa oscura toca el borde del panel. Desde la posición no hay ninguna diferencia entre 1 y 2.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "borde inferior de la banda de imagen (y 234 px), sobre el panel",
+     "problema": "Las siluetas de edificios quedan cortadas por la línea de la banda: solo asoman las puntas, como la chimenea en x≈0,70 y el bloque a su derecha. El 20 % del borde inferior es masa oscura que toca el panel. A tamaño de feed se ven como muescas chicas; de todos modos, es lo más cercano a un objeto cortado de toda la galería.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "banda superior completa",
+     "problema": "Es la que mejor ubica el acento: conserva el 41,4 % del turquesa (el doble que 1 y 2) y lo deja centrado en horizontal (centroide x rel 0,46). Para quitar las puntas cortadas basta un ajuste chico de la altura de la banda o del foco vertical, dentro de esta misma opción.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "imagen fija mj3_V-S2b_0",
+     "problema": "Aparte, común a las tres opciones: la imagen es abstracta (prompt «turquoise light beams forming a building silhouette») y no tiene un objeto aislado. Por eso no aplico el veto de objeto cortado y evalúo dónde cae el acento. El registro al lienzo se eligió en pasos anteriores y no lo discuto; solo anoto que su efecto depende de la división de cada formato. Las cruces de registro de las esquinas caen sobre zonas grises claras y la masa no las toca en ninguna opción.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "3",
+   "veredicto": "sirve con ajustes",
+   "resumen": "Desde la posición, la 1 y la 2 son idénticas porque tienen el mismo clip y la imagen en el mismo lugar. Las dos esconden bajo el panel el haz turquesa, que es el acento de la pintura: queda visible el 20,6 %, pegado a la división. La masa oscura queda abajo a la izquierda, tocando el panel. La 3 conserva el 41,4 % del turquesa y lo deja centrado (x 0,46), pero corta las puntas de los edificios en el borde de la banda. Elijo la 3, con un ajuste: mover un poco la banda o el foco vertical para que no queden puntas cortadas."
+  },
+  {
+   "id": "G09-v2-lectura",
+   "galeria": "G09",
+   "version": "v2",
+   "lente": "lectura",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 6.5,
+    "2": 5.5,
+    "3": 7.5
+   },
+   "hallazgos": [
+    {
+     "opcion": "1",
+     "donde": "bloque de datos",
+     "problema": "Es la opción que mejor se lee en celular: a 390 px todo el texto de lectura mide 11 px CSS o más, con el llamado a unos 11,6 px y la fecha a unos 16,5 px. Pero solo muestra la fecha. Faltan la hora y el lugar, así que choca con el criterio de David de que los tres datos prácticos tienen peso propio y se leen en el celular. Por eso queda bajo la 3.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "reparto vertical y borde derecho del panel",
+     "problema": "Entre el título y la regla de datos hay un hueco de ~205 px en el PNG de 2400 (~33 px CSS a 390). Abajo, la regla, el llamado y el logo quedan apretados, a 40–47 px entre sí. Además, «Jueves 19 nov 2026» termina a 38 px del borde del panel (~6 px CSS a 390) y el margen izquierdo es de ~75 px: el texto queda pegado a la imagen.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "rótulo FECHA y llamado",
+     "problema": "Tiene el mismo contenido que la 1, pero con el texto más chico. A 555 px el rótulo mide 11 px y el llamado ~11,8 px, ambos en el límite. Si la imagen se ve en celular (390 px), bajan a ~7,7 y ~8,3 px. Es aviso y no veto, porque es una imagen de LinkedIn pensada para computador. Achicar el texto no suma ningún dato.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "panel entre el título y los datos",
+     "problema": "El texto se achicó y a la vez quedan ~357 px vacíos en el PNG (~83 px CSS a 555) entre el título y la regla de datos. Para lectura, es espacio desaprovechado. También muestra solo la fecha, con el mismo choque con el criterio de datos fuertes que la 1.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "subtítulo «TALLER PRÁCTICO · UMBRAL BIM» junto a la columna de datos",
+     "problema": "El subtítulo termina en x=1367 del PNG. Queda a ~38 px del inicio de la regla de datos y a 62 px del «03», a la misma altura, lo que equivale a ~9–14 px CSS a 555. Se lee pegado a la columna de datos, aunque el código no marque choque.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "llamado y rótulos FECHA/HORA/LUGAR",
+     "problema": "A 555 px, el llamado mide ~11,8 px y los rótulos 11 px. En celular (390 px) bajan a ~8,3 y ~7,7 px. Es aviso, por ser LinkedIn para computador. Los valores sí se leen en celular (~13,4 px a 390), así que los rótulos se pueden quitar o subir sin perder los datos. El llamado conviene subirlo a la altura de los valores.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "todas",
+     "donde": "logotipo, esquina inferior izquierda",
+     "problema": "La palabra «Umbral BIM» tiene 21 px de altura de mayúscula en el PNG de 2400: ~4,7 px CSS a 390 y ~6,7 px a 555. No se lee como texto a tamaño de feed en ninguna opción, y solo el isotipo se reconoce. El contraste está bien porque va sobre el panel liso. No sirve para desempatar.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "todas",
+     "donde": "rótulo sobre valor (FECHA → «Jueves…»)",
+     "problema": "Entre el rótulo y el valor quedan 6–9 px en el PNG (~1,5–2 px CSS), así que se leen como un bloque apretado. Mide 7,24:1, el mínimo medido en las tres, porque son los rótulos grises sobre el panel liso. Sin textura debajo, ese contraste alcanza, y en ninguna opción hay texto sobre la imagen.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "3",
+   "veredicto": "sirve",
+   "resumen": "La 3 es la única que pone los tres datos con peso propio. Sus valores miden ~19 px CSS en computador y siguen leyéndose en celular (~13 px), y ningún texto cae sobre la imagen. Antes de aprobarla conviene despegar el subtítulo de la columna de datos y subir el llamado (~11,8 px), y quitar o agrandar los rótulos, que en celular bajan a ~7,7 px (aviso, no veto, por ser LinkedIn para computador). La 1 es la que mejor se lee en celular, pero deja fuera la hora y el lugar. La 2 achica el texto sin sumar ningún dato. Defecto común a las tres: la palabra del logotipo no se lee a tamaño de feed (~5–7 px CSS)."
+  },
+  {
+   "id": "G09-v2-costuras",
+   "galeria": "G09",
+   "version": "v2",
+   "lente": "costuras",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 6,
+    "2": 6,
+    "3": 8
+   },
+   "hallazgos": [
+    {
+     "opcion": "1",
+     "donde": "Borde izquierdo de la imagen, pegado a la división (x≈608–618 px, y 0–390 de 627)",
+     "problema": "La división corta a lo largo el haz turquesa del cuadro: su cuerpo (x 540–608 en la fuente, 74–78 % turquesa) queda tapado por el panel y solo asoma una franja de unos 10 px de turquesa saturado (≈80,195,205), más viva que la imagen que la rodea. A tamaño de feed es un filo turquesa de unos 5 px CSS a lo largo de la división, en el 60 % superior; parece un acento cortado y no un filete intencional.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "Esquina inferior derecha de la imagen (x≈925–1200, y≈578–627)",
+     "problema": "Se ve el margen blanco del propio cuadro (255 puro en la fuente, filas 728–816), con el borde superior recto: el salto está en y≈578 en todo el tramo. Arriba el gris ronda 150–170 de luminancia y la franja, 245–255. Es un bloque claro casi rectangular de unos 127×23 px CSS en el feed, y da la impresión de que la imagen no llega al borde aunque está a sangre. No lo creó el motor (no hay extensión) y por la izquierda se funde con el suelo garabateado, así que no lo trato como veto.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "Borde de la división, y≈420–560",
+     "problema": "La mancha negra del cuadro (≈4,10,7) toca el panel (#111418) y la línea de la división desaparece en unos 140 px. La imagen queda apenas más oscura que el panel y la mancha parece derramarse hacia el lado del texto.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "Borde izquierdo de la imagen junto a la división, esquina inferior derecha y tramo oscuro de la división",
+     "problema": "Recorte idéntico al de la opción 1, píxel a píxel en la zona de imagen (x 608–1200): tiene la misma franja turquesa cortada a lo largo de la división, el mismo bloque blanco de borde recto abajo a la derecha y la misma mancha negra que se funde con el panel. En costuras no hay ninguna diferencia con la opción 1.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "Borde inferior de la banda de imagen (y=234), x≈400–750",
+     "problema": "El haz turquesa queda cortado contra el panel oscuro a todo su ancho (≈250 px). El corte es perpendicular al haz y se lee como una ventana sobre una forma que sigue, no como un resto pegado al borde. Aceptable.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "Borde inferior de la banda, x≈840–880 y esquina inferior izquierda x≈0–50",
+     "problema": "Las puntas de la silueta (las chimeneas) asoman como dientes oscuros justo en la costura, y una masa negra se funde con el panel en la esquina izquierda. Son fragmentos chicos (≈16×18 px CSS en el feed).",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "Cruces de registro sobre la imagen (1182,18 en todas; 1182,609 en 1 y 2; 18,18 en 3)",
+     "problema": "Es un defecto común y no lo uso para desempatar. Ninguna cruz choca con el dibujo: debajo hay 0 % de trazo oscuro y poca textura (desviación 0–18). Sobre el gris claro o el blanco quedan casi invisibles (contraste de 1,7 a 1,9:1).",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "3",
+   "veredicto": "sirve",
+   "resumen": "En ninguna opción hay imagen extendida: las tres usan un recorte de la misma imagen, ajustada al lienzo (1200×672,5, y −22,76), así que no hay escalón ni parche creado por el motor. Las opciones 1 y 2 tienen el mismo recorte y en costuras no se distinguen. En las dos, la división corta a lo largo el haz turquesa y deja un filo turquesa de unos 10 px pegado al borde. Además se ve abajo a la derecha el margen blanco del cuadro, con el borde recto, como un bloque claro. Por eso sirven con ajustes (6). La opción 3 corta el haz en perpendicular, como una ventana. Solo deja asomar, pequeñas, las puntas de la silueta en la costura: sirve (8). Las cruces no chocan con el dibujo en ninguna opción."
+  }
+ ]
+}

@@ -1,0 +1,124 @@
+{
+ "galeria": "G28",
+ "seccion": null,
+ "rubrica": "pred-crit-a",
+ "retro": false,
+ "criterios_hasta": null,
+ "sellado": "2026-11-11T00:46:28",
+ "hash_rubrica": "2afef7084991",
+ "hash_criterios": "fd98b8707561",
+ "votos": [
+  {
+   "id": "G28-preda-prediccion",
+   "galeria": "G28",
+   "version": "pred-crit-a",
+   "lente": "prediccion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 6.5,
+    "2": 7.5,
+    "3": 4.5,
+    "4": 6.5,
+    "5": 5,
+    "6": 2.5,
+    "7": 3.5,
+    "8": 3
+   },
+   "hallazgos": [
+    {
+     "opcion": "2",
+     "donde": "piezas 9°, 11° y 13° (imagen apaisada)",
+     "problema": "La apaisada es casi un alzado frontal, mientras que la principal es isométrica. Comparten trazo y acentos, pero no la vista. Es un ajuste para anotar, no un veto. En el 16:9 la banda queda resuelta: el objeto ocupa cerca del 85 % del ancho.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "piezas 8°, 10°, 12° y 14° (imagen principal)",
+     "problema": "El trazo es medio, con perfiles dobles y relleno blanco, y queda algo más grueso que la línea fina de Magnific One aprobada como dirección. El anclaje por acento deja el cubo centrado en todas las máscaras.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "pieza 13° (1:1 con máscara 2,05:1)",
+     "problema": "El objeto llena el 85 % del ancho, pero solo cerca del 41 % del alto: queda aire arriba y abajo. Se acepta porque la máscara está en el límite de las anchas.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1",
+     "donde": "pieza 4° (16:9, máscara 3,64:1)",
+     "problema": "El objeto de la apaisada mide cerca de 2:1 y llena solo el 52 % del ancho de la banda, con huecos grandes a ambos lados. No es el objeto bajo y ancho que pide una máscara tan apaisada. Es un defecto de la imagen, no de la maquetación.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "piezas 2°, 4° y 6° (imagen apaisada)",
+     "problema": "La apaisada es abocetada, con líneas dobles, líneas de construcción sueltas y vista oblicua. Se aleja de la principal, isométrica, limpia y de trazo fino. En el 1:1 casi toca el borde superior.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "piezas 15°, 17°, 19° y 21° (vertical, historia y LinkedIn)",
+     "problema": "Como el acento está en el lado derecho del objeto, el anclaje corre el cubo a la izquierda. En la historia, el cubo queda centrado cerca del 42 % del ancho de la máscara y deja un hueco a la derecha. Es un objeto corrido, justo lo que David señaló como defecto grave.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "3",
+     "donde": "piezas 16°, 18° y 20° (imagen apaisada)",
+     "problema": "El dibujo de la apaisada tiene errores. La losa remata en cuñas negras y en diagonales que suben en los extremos, con una perspectiva incoherente. Además, a la izquierda queda un tubo suelto.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4",
+     "donde": "piezas 23°, 25° y 27° (fondo apaisado a1)",
+     "problema": "Hay cinco o seis losas turquesa por banda: la máscara queda cargada de turquesa, lo que el propio método de recorte busca evitar. En el 1:1, una losa toca la esquina inferior derecha junto al panel.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4",
+     "donde": "piezas 22° a 28° (y también en 5° a 8°)",
+     "problema": "Sobre los fondos no se ven las cruces de registro superiores: o las tapa el dibujo o el motor no las pone. Quitarlas no es una mejora; si chocan con el dibujo, hay que moverlas.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "5",
+     "donde": "piezas 30° y 32° (fondo apaisado a2)",
+     "problema": "El acento turquesa queda cortado por el borde izquierdo de la máscara, contra la regla del recorte óptimo. La apaisada tiene un trazo más fino, aristas ocultas en trazo discontinuo y una grilla de construcción más marcada que la principal: la campaña mezcla dos líneas.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "6",
+     "donde": "piezas 37°, 39° y 41° (planta H063)",
+     "problema": "La planta trae cotas con cifras y signos dibujados, lo que rompe el veto de marca de texto o números en la imagen. Además, tiene textura de papel abocetado.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "6",
+     "donde": "piezas 36°, 38°, 40° y 42° (G-AFI-04 recortada)",
+     "problema": "El recorte se lee como un objeto cortado, no como un fondo. Las losas turquesa son grandes y cargan la máscara, y queda un tercio izquierdo vacío con una línea turquesa suelta.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "7",
+     "donde": "piezas 43° a 49° (H021)",
+     "problema": "Tiene composición de afiche: la ciudad, cortada, se apoya en un lado y la otra mitad queda vacía. No es un fondo de densidad pareja ni un objeto centrado en la máscara. Su sombreado gris denso la aleja de la línea plana. El tema, ciudad que se vuelve red, sí está relacionado.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "8",
+     "donde": "piezas 50°, 52°, 54° y 56° (G-AFI-04) y 51°, 53° y 55° (H023)",
+     "problema": "La principal repite los defectos de R1. La retícula H023 aparece cortada en el borde superior, tiene muchos nodos turquesa y un trazo distinto del de la principal.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "",
+     "donde": "piezas AB2 (7°, 14°, 21°, 28°, 35°, 42°, 49° y 56°)",
+     "problema": "Es un defecto común a todas las opciones: el texto del botón mide 7,1 px CSS. Queda como aviso, no como veto, porque sigue leyéndose como botón. No sirve para desempatar.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "2",
+   "veredicto": "sirve",
+   "resumen": "David elegiría la opción 2, B con Nano Banana 2.1, variante 1. Es la única en que el objeto queda entero y centrado en todas las máscaras, y su apaisada baja y ancha llena la banda del 16:9 (cerca del 85 % del ancho). La línea es limpia, con fondo claro, y el choque marcado en turquesa cuenta el hallazgo del artículo. Como ajustes, la apaisada usa una vista frontal distinta de la principal isométrica y el trazo es algo más grueso que el de Magnific One.\n\nLa opción 1 (Magnific One) tiene la principal más fina, pero su apaisada es abocetada y en el 16:9 llena solo la mitad de la banda. La opción 3 corre el objeto hacia un lado por el anclaje.\n\nEn el camino A, la mejor es la opción 4 (A1): fondo coherente y a sangre, aunque carga demasiado turquesa en las bandas. Se puede proponer como variante del camino A junto a la 2 (criterio 41). La opción 5 mezcla dos líneas y corta acentos en el borde. Los rescates (6, 7 y 8) no sirven: recortes que se leen como objeto cortado, composición de afiche y cifras dentro de la imagen.\n\nEl veredicto va por formato. La opción 2 sirve en todos. La opción 1 sirve en vertical, historia y LinkedIn, pero no en el 16:9."
+  }
+ ]
+}

@@ -1,0 +1,147 @@
+{
+ "galeria": "G16",
+ "seccion": null,
+ "rubrica": "v1",
+ "retro": true,
+ "criterios_hasta": null,
+ "sellado": "2026-11-11T00:00:25",
+ "hash_rubrica": "de3f9cdef0fe",
+ "hash_criterios": "-",
+ "votos": [
+  {
+   "id": "G16-v1-jerarquia",
+   "galeria": "G16",
+   "version": "v1",
+   "lente": "jerarquia",
+   "puntajes": {
+    "1": 7.5,
+    "2": 7.5,
+    "3": 6.5,
+    "4": 8
+   },
+   "hallazgos": [
+    {
+     "donde": "Todas · logo en el pie",
+     "problema": "El nombre «Umbral BIM» del logo mide unos 30 px de alto de mayúscula sobre 2160, que en la vista de 390 px quedan en unos 5,4 px CSS (un cuerpo de 7 a 8 px). Está por debajo de los 11 px del mínimo medido; el código no lo cuenta porque es logo. El isotipo, de 106 px (unos 19 px CSS), sí se reconoce.",
+     "gravedad": "media",
+     "opcion": "1,2,3,4"
+    },
+    {
+     "donde": "Opción 3 · llamado como botón",
+     "problema": "El bloque turquesa es la mancha más saturada de la banda. Ocupa cerca de 2/3 del ancho útil y en el feed salta antes que la bajada. Además, el logo de al lado se ve más chico y débil. El orden de lectura queda en título, botón y bajada, en vez de título, bajada y llamado. Sugerencia: un botón más corto (solo «LEE EL ARTÍCULO») o de contorno.",
+     "gravedad": "media",
+     "opcion": "3"
+    },
+    {
+     "donde": "Opciones 1, 2 y 3 · trama de puntos",
+     "problema": "La trama pasa por detrás del título y de la bajada. De cerca agrega ruido al fondo del texto y no aporta jerarquía. En el feed no se ve.",
+     "gravedad": "baja",
+     "opcion": "1,2,3"
+    },
+    {
+     "donde": "Opciones 1, 3 y 4 · cruces de las esquinas",
+     "problema": "Las cruces de arriba caen sobre la imagen, en las zonas crema y turquesa, y casi no se ven. Las de abajo apenas se notan. No ordenan la lectura: son decoración neutra.",
+     "gravedad": "baja",
+     "opcion": "1,3,4"
+    },
+    {
+     "donde": "Todas · fila superior de la banda",
+     "problema": "La etiqueta EJEMPLO, en crema sobre marrón, compite con el antetítulo ARTÍCULO en la misma fila. Es una marca de laboratorio y no debe quedar en la pieza final.",
+     "gravedad": "baja",
+     "opcion": "1,2,3,4"
+    }
+   ],
+   "mejor": "4",
+   "veredicto": "sirve",
+   "resumen": "En las cuatro opciones la jerarquía base se sostiene. La imagen está separada por la banda y no compite con el título, que es claramente lo más grande. El llamado en texto se lee bien. La 4° (banda lisa) es la que deja el fondo más limpio detrás del título y de la bajada. La 1° y la 2° casi no se distinguen entre sí, porque las cruces no pesan. La 3° es la que más asegura que el botón se lea, pero lo sube por encima de la bajada y deja el logo débil a su lado: sirve con ajustes. Hay un problema común a las cuatro: el nombre del logo queda en unos 7 a 8 px CSS en el móvil, demasiado chico. Conviene agrandarlo o dejar solo el isotipo."
+  },
+  {
+   "id": "G16-v1-posicion",
+   "galeria": "G16",
+   "version": "v1",
+   "lente": "posicion",
+   "puntajes": {
+    "1": 7,
+    "2": 7.5,
+    "3": 7,
+    "4": 7
+   },
+   "hallazgos": [
+    {
+     "donde": "Imagen, abajo a la derecha (pedestal del robot, y≈1150–1255)",
+     "problema": "El plinto oscuro del robot llega hasta el borde derecho (píxeles oscuros hasta x=2159). El brazo, la pinza y la columna están enteros, así que no aplico el veto, pero la base queda cortada por el sangrado lateral.",
+     "gravedad": "media",
+     "opcion": "todas"
+    },
+    {
+     "donde": "Imagen, codo del robot (anillo, y≈500–700)",
+     "problema": "El anillo termina en x≈2095–2106, a unos 55 px del borde, cuando el margen de la retícula es de 128 px. El objeto queda apretado contra la derecha y el aire alrededor es desparejo: la izquierda sangra con bloques y la derecha queda justa.",
+     "gravedad": "media",
+     "opcion": "todas"
+    },
+    {
+     "donde": "Cruz superior derecha (x≈2077–2114, y≈45–82)",
+     "problema": "La cruz cae sobre el borde del panel turquesa de la ilustración. La marca toca la imagen (no el robot) y medio trazo se pierde, turquesa sobre turquesa.",
+     "gravedad": "baja",
+     "opcion": "1, 3, 4"
+    },
+    {
+     "donde": "Pie, botón del llamado (x 763–2031, y 2463–2572)",
+     "problema": "Sin choque: queda alineado al margen derecho de 128 px y a la misma altura que el logo (2464–2570), con 128 px abajo. Solo agrega peso en la esquina inferior derecha, debajo de donde ya carga el robot.",
+     "gravedad": "baja",
+     "opcion": "3"
+    }
+   ],
+   "mejor": "2",
+   "veredicto": "sirve",
+   "resumen": "En las cuatro piezas la imagen es la misma (diferencia ≤1 en la zona de imagen; en la 2° solo cambian las cruces). Por eso la posición casi no las distingue. El robot está entero y no toca el panel de texto, que empieza en y=1326 con una franja crema de por medio. Los peros, comunes a todas: el plinto sale por el borde derecho y el codo queda a unos 55 px del borde (el margen es de 128). Elijo la 2° porque, sin cruces, ninguna marca toca la imagen. En la 1°, la 3° y la 4°, la cruz de arriba a la derecha se monta sobre el panel turquesa. El botón de la 3° queda bien alineado."
+  },
+  {
+   "id": "G16-v1-costuras",
+   "galeria": "G16",
+   "version": "v1",
+   "lente": "costuras",
+   "puntajes": {
+    "1": 6,
+    "2": 8.5,
+    "3": 6,
+    "4": 6.5
+   },
+   "hallazgos": [
+    {
+     "opcion": "1, 3, 4",
+     "donde": "Cruz de registro arriba a la derecha (centro x≈2095, y≈63 px de 2160×2700)",
+     "problema": "La cruz cae justo en el borde superior del rectángulo turquesa del dibujo, que empieza en y≈58. El brazo horizontal y la mitad baja quedan turquesa sobre turquesa: la cruz choca con el dibujo y casi desaparece. La de arriba a la izquierda queda sobre crema y las de abajo sobre la banda oscura, así que las cuatro esquinas no se ven iguales.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1, 2, 3",
+     "donde": "Trama de puntos de la banda de texto (x 125–1986, y 1371–2528)",
+     "problema": "La trama termina a 125 px del borde izquierdo y a 174 px del derecho, mientras el margen del texto es de 128 px por lado: el campo de puntos queda corrido a la izquierda y termina a media altura del pie. Los puntos son tenues (≈#282D34 sobre #111418), así que no se lee como parche a tamaño de feed.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "Campo turquesa de la imagen, vertical en x≈1086 px (x≈732 de la fuente mj3_V-S17b_0, de 1456 px)",
+     "problema": "Hay un escalón de tono recto de arriba abajo (verde 189→201, azul 185→194). Viene de la ilustración original, no de una extensión del motor, pero puede leerse como una unión. Es igual en las cuatro opciones.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "Unión de la imagen con la banda oscura (y=1326) y esquinas de la pieza",
+     "problema": "Sin problema: el corte es limpio, sin línea clara, sin esquinas redondeadas que dejen ver el fondo y sin fondo extendido (la imagen 16:9 se recorta a los lados, no se rellena). No hay parche rectangular, así que no se activa el veto.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "Botón turquesa del llamado (x 763–2031, y 2463–2572)",
+     "problema": "Sin problema de costura: el bloque queda 129 px dentro del borde derecho, no se corta y tapa limpio la trama de detrás. Su puntaje baja solo porque conserva la cruz que choca arriba a la derecha.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "2",
+   "veredicto": "sirve",
+   "resumen": "Para costuras, la mejor es la 2°. Al quitar las cruces desaparece el único choque real: la cruz de arriba a la derecha cae sobre el borde del rectángulo turquesa del dibujo y se pierde turquesa sobre turquesa. Ese choque está en la 1°, la 3° y la 4°, que quedan en «sirve con ajustes». Ninguna opción tiene parche rectangular ni fondo extendido: la imagen se recorta a los lados y su unión con la banda oscura es limpia. Quedan dos detalles que solo se ven de cerca: la trama de puntos está corrida unos 46 px a la izquierda, y el escalón vertical en el turquesa viene de la ilustración original."
+  }
+ ]
+}

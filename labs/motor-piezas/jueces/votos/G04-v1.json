@@ -1,0 +1,238 @@
+{
+ "galeria": "G04",
+ "seccion": null,
+ "rubrica": "v1",
+ "retro": true,
+ "criterios_hasta": null,
+ "sellado": "2026-11-11T00:00:24",
+ "hash_rubrica": "de3f9cdef0fe",
+ "hash_criterios": "-",
+ "votos": [
+  {
+   "id": "G04-v1-jerarquia",
+   "galeria": "G04",
+   "version": "v1",
+   "lente": "jerarquia",
+   "puntajes": {
+    "1": 5.5,
+    "2": 6,
+    "3": 7,
+    "4": 7.5
+   },
+   "hallazgos": [
+    {
+     "opcion": "1",
+     "donde": "dos tercios derechos (imagen a sangre)",
+     "problema": "La imagen se lleva el primer golpe de vista, no el titular. El 26 % de sus píxeles es claro (>200) y el tercio derecho llega al 50 %, contra un 5,5 % en la columna de texto. La masa blanca y gris queda en el extremo opuesto al titular.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "borde del velo en x≈1338 px",
+     "problema": "Con opacidad 0,84 el velo casi borra la imagen detrás del texto y termina en un corte vertical duro. Se lee como la opción 2 con el fondo sucio, no como una imagen a sangre. La textura que asoma detrás de las filas de datos mete ruido junto al texto chico, aunque el contraste medido (10,13:1) cumple.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "franja inferior de la imagen, a la altura del logo y del CTA",
+     "problema": "La banda blanca del pie de la imagen (54 % de píxeles claros) queda a la misma altura que el logo y «INSCRÍBETE · umbralbim.io» y le compite a esa fila.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "dos tercios derechos (imagen a sangre lateral)",
+     "problema": "Tiene el mismo peso lumínico que la opción 1 (26 % de píxeles claros, 50 % en el tercio derecho). La foto domina y el titular, reducido de 176 a 98 px, queda segundo en lectura.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "medianil entre la columna de texto y la imagen",
+     "problema": "La imagen arranca en x=1338 px. Los remates de las filas terminan en 1303 px y el texto en ≈1280 px, así que quedan entre 35 y 60 px de aire contra 130 px de margen exterior. La imagen se pega a la columna del titular y la aprieta.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "esquinas derechas y franja inferior",
+     "problema": "Las cruces de registro de las esquinas derechas casi no se ven sobre el gris claro. La banda blanca inferior compite con la fila del logo y el CTA.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "caja de imagen",
+     "problema": "El margen oscuro y el radio contienen la imagen: baja al 16 % de píxeles claros y la banda inferior al 14,6 %. Aun así, la masa clara de la derecha (33 %) sigue pesando más que el titular.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "medianil izquierdo de la caja",
+     "problema": "La caja está bien alineada arriba con la etiqueta (127 px) y abajo con el logo (2032 px), y su margen derecho iguala al izquierdo (≈130 px). Pero el medianil con el texto es de solo 35 a 60 px: la grilla es coherente por fuera y no entre columnas.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4",
+     "donde": "ilustración isométrica",
+     "problema": "El trazo mide unos 3 px en 3840 y en un feed de 1080 px queda en menos de 1 px. Los dos tercios derechos pueden leerse como un bloque vacío y todo el peso cae a la izquierda. Conviene engrosar el trazo a 6-8 px o sumarle algún plano de relleno tenue.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4",
+     "donde": "color de la ilustración frente al CTA",
+     "problema": "La ilustración usa el mismo turquesa que el CTA y el subtítulo, y el CTA pierde algo de singularidad como acento.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "CTA «INSCRÍBETE · umbralbim.io»",
+     "problema": "Se lee, pero no es un botón: tiene el mismo estilo (mayúsculas espaciadas en turquesa) que «TALLER PRÁCTICO · UMBRAL BIM» y la jerarquía no lo distingue como acción. Viene fijado del paso 2, así que no separa las opciones.",
+     "gravedad": "media"
+    }
+   ],
+   "mejor": "4",
+   "veredicto": "sirve",
+   "resumen": "Por jerarquía, la 4 es la única en la que la imagen acompaña sin competir: el titular manda y el logo y el CTA quedan limpios. Hay que engrosar su trazo para que no desaparezca en el feed. La 3 es la mejor foto, porque la caja la contiene y cuadra con la grilla, pero le falta medianil con el texto. Las opciones 1 y 2 dejan que la masa blanca de la foto le gane al titular, y en la 1 el velo deja un corte duro."
+  },
+  {
+   "id": "G04-v1-posicion",
+   "galeria": "G04",
+   "version": "v1",
+   "lente": "posicion",
+   "puntajes": {
+    "1": 6,
+    "2": 6.5,
+    "3": 5.5,
+    "4": 9
+   },
+   "hallazgos": [
+    {
+     "opcion": "1",
+     "donde": "Borde izquierdo de la ventana (x=1338), filas 851–1986",
+     "problema": "La silueta oscura (masa x 1338–2946, y 880–1973) toca el borde de la ventana en 608 filas: la parte baja de la izquierda queda cortada. El cuerpo principal está entero, así que no lo cuento como veto.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "Panel de texto bajo el velo (x 1200–1337, y 1300–1900)",
+     "problema": "La masa sigue por detrás de las filas de datos (luminancia 20 bajo el velo frente a 39 en la imagen libre): el objeto pasa por debajo del panel de texto. Como el velo al 0,84 marca un borde duro en x=1338, el corte se ve igual que en la opción 2.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "Encuadre horizontal de la imagen",
+     "problema": "La masa no está centrada: su centro está en x≈2142 y el de la ventana en x≈2589 (447 px hacia el texto). El tercio derecho queda sin objeto, solo con textura clara.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "Borde de la división (x=1338), filas 851–1986",
+     "problema": "Es el mismo corte de la parte baja izquierda de la silueta, en 608 filas. La masa oscura queda pegada a las marcas de las filas de datos (fin de columna en x=1303, 35 px).",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "Encuadre horizontal",
+     "problema": "La masa está desplazada 447 px a la izquierda del centro de la ventana y deja vacío el último tercio. Habría que mover la imagen unos 400 a 450 px a la derecha para centrarla y dejar de cortarla.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "Marcas de esquina derechas (3776,64) y (3776,2096)",
+     "problema": "Las cruces quedan sobre imagen casi blanca (luminancia 240–252) y se pierden. No tocan el objeto.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "Gutter entre la columna de texto y la caja",
+     "problema": "Los márgenes no son parejos: la columna termina en x=1303 (insignia EJEMPLO y marcas de las filas) y la caja empieza en x=1338, con 35 px de separación. Los márgenes exteriores de la caja miden 127 px arriba, a la derecha y abajo.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "Borde izquierdo de la caja, filas 140–2020",
+     "problema": "La silueta queda cortada por el borde de la caja (585 filas oscuras en el borde), igual que en las opciones 1 y 2.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "Base de la caja (y=2032)",
+     "problema": "La caja recorta la franja clara del suelo: la masa termina en y=1973, a 59 px del borde inferior (en la opción 2 son 187 px). La silueta queda casi apoyada en el canto.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4",
+     "donde": "Ilustración isométrica (bbox x 1914–3136, y 202–1957)",
+     "problema": "Sin problemas de posición. Queda centrada en (2525; 1080), con el centro de la zona libre en x=2525,5 y el del lienzo en y=1080. Márgenes de 202/203 px arriba y abajo, y de 576/577 px a los lados dentro de la zona libre. Queda a 611 px del texto y no toca las marcas.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "4",
+   "veredicto": "sirve",
+   "resumen": "Por posición, la 4 es la única con el objeto entero y centrado en la zona libre: centro en (2525; 1080) y márgenes parejos de 202/203 px arriba y abajo y 576/577 px a los lados, sin tocar marcas ni texto. En las opciones 1, 2 y 3 la foto ocupa la misma ventana. Su silueta se desplaza 447 px hacia el texto y el borde izquierdo la corta en unas 600 filas, aunque el bloque principal sigue entero. Además, en la 1 la masa pasa por detrás de las filas de datos. En la 3 el gutter mide 35 px frente a los 127 de margen exterior, y la base apenas tiene 59 px de suelo. De las fotos, la mejor es la 2. Serviría corriendo la imagen unos 400 a 450 px a la derecha."
+  },
+  {
+   "id": "G04-v1-costuras",
+   "galeria": "G04",
+   "version": "v1",
+   "lente": "costuras",
+   "puntajes": {
+    "1": 6,
+    "2": 7,
+    "3": 8.5,
+    "4": 9.5
+   },
+   "hallazgos": [
+    {
+     "opcion": "1",
+     "donde": "Borde del velo, x=669 de 1920, a toda la altura",
+     "problema": "El velo al 0,84 termina en un escalón duro: la luminancia media salta de unos 33 a unos 99, y abajo de unos 45 a unos 200 contra el piso blanco de la imagen. Además corta el lavado turquesa: oscuro a la izquierda, saturado a la derecha. A tamaño de feed se lee como un panel translúcido sucio y no como una imagen a sangre. No lo marco como veto porque es un panel de altura completa alineado a la grilla (zona de texto más el medianil), no un parche.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "Dentro del velo, franja inferior desde y≈980 de 1080, detrás del logo y del CTA",
+     "problema": "El piso blanco de la foto se transparenta bajo el velo y forma una banda horizontal más clara (mediana de luminancia de 41 a 58). Ese escalón cae a media altura del pie (zona de 962 a 1016) y no coincide con ninguna línea de la grilla.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1",
+     "donde": "Cruces de registro derechas, (1888,32) y (1888,1048)",
+     "problema": "Las cruces quedan sobre la pintura: sobre el gris claro (244) y sobre el piso blanco (255), con un contraste medido de unos 1,4:1. Chocan con el dibujo y casi desaparecen, mientras las dos de la izquierda se ven, así que el sistema de registro queda incompleto.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "Cruces de registro derechas, (1888,32) y (1888,1048)",
+     "problema": "Es el mismo problema que en la opción 1: las cruces turquesa están sobre la imagen clara, con un contraste de unos 1,39 a 1,43:1. Quedan encima del dibujo, se pierden, y las izquierdas sí se ven sobre el panel liso.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "Corte panel e imagen, x=669, en y≈450–630 de 1080",
+     "problema": "El lavado turquesa saturado (RGB medio de unos 54,197,205, más del 95 % de los píxeles del borde) toca el corte vertical y se ve rebanado contra el panel #111418. El núcleo brillante del haz queda más a la derecha y no se corta.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "Corte panel e imagen, x=669, en y≈700–950 de 1080",
+     "problema": "Las siluetas negras de la foto (luminancia de 5 a 25) se funden con el panel: la línea de división desaparece en ese tramo y reaparece arriba y abajo. Es tolerable en un sangrado, pero el corte no se lee igual en toda la altura.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "Borde izquierdo de la caja, tercio inferior (y≈760–940 de 1080), esquina inferior izquierda",
+     "problema": "En ese tramo, entre el 30 y el 97 % de los píxeles del borde están a menos de 30 (ΔRGB) del fondo. La caja pierde su arista y la esquina de radio 8 no se lee, así que a tamaño de feed el bloque parece mordido en esa esquina. Se arregla con un filete de 1 px o moviendo el foco.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "Borde izquierdo y superior de la caja",
+     "problema": "La caja corta el lavado turquesa y el haz contra el borde superior. Es esperable en una imagen enmarcada con margen y radio, y no molesta.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "4",
+   "veredicto": "sirve",
+   "resumen": "Ninguna opción extiende el fondo. La foto Midjourney ya viene en 16:9 y cada opción solo cambia la ventana, así que no hay parches ni veto. La 4 (ilustración) es la más limpia: fondo plano, cruces sobre fondo oscuro con buena separación y ningún turquesa cortado. Entre las que usan foto, la 3 (en caja) es la mejor: márgenes de 64 px alineados al chip, cruces en el margen sin tocar la imagen. Su único defecto es que la esquina inferior izquierda se funde con el fondo. La 2 y la 1 dejan las cruces derechas sobre la pintura clara, con un contraste de 1,4:1, y cortan el lavado turquesa en x=669. La 1 suma además el escalón duro del velo y una banda clara bajo el pie.",
+   "no_aplica": false
+  }
+ ]
+}

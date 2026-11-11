@@ -61,13 +61,26 @@ Antes de que David elija G28 quedaron sellados en `votos/`: el panel de 11 lente
 predictor con los 45 criterios (`G28-pred-crit-a` y `-b`) y dos con C46 (`G28-pred-crit2-a` y `-b`; el texto de C46 está en `rechazados`).
 La rúbrica y los criterios del panel y del predictor están en `historial/` con su hash. No se le muestran a David hasta que elija.
 
+## G28, la primera elección contra el voto sellado
+
+David eligió la 6 (piezas 36° a 42°, rescate R1) y valoró las demás. Para él, a la 1–3 (camino B) le falta la
+metáfora, la 4–5 se ve bien, la 7 tiene muy buena abstracción y la 8 queda en «casi». Todos los jueces eligieron el
+camino B (la 1 o la 2) y dejaron la 6 última o penúltima. La correlación con su valoración fue negativa: −0,4 a −0,7.
+La lente de marca había vetado la 6 por unas cotas que no se leen. Lo aprendido entró como C47–C50 y como rúbrica v3:
+la lente de contenido pregunta por la metáfora, y el veto de marca exige que el texto se lea a tamaño de feed.
+
+Probados en la misma sesión y no adoptados por defecto: los ejemplos de elecciones anteriores en el encargo del
+predictor (`--ejemplos`) acertaron 5 y 5 de 9 en G09–G25, contra 6 y 5 sin ellos.
+
 ## Archivos
 
 | Archivo | Qué es |
 |---|---|
 | `rubricas.yaml` | Las lentes por etapa (imagen, pieza, campaña), vetos, escala, agregación y el protocolo. La versión anterior está en `historial/` |
 | `criterios-david.yaml` | Lo que David valora, rechaza o pide, con cita literal y la galería desde la que vale. Cada juez recibe los que tocan su lente |
-| `elecciones.yaml` | Qué eligió David en cada galería, en números de opción |
+| `elecciones.yaml` | Qué eligió David en cada galería, en números de opción, con su valoración y comentario por opción |
+| `interacciones.jsonl` | Cada mensaje de David sobre una galería, literal |
+| `aprender.md` | El protocolo para aprender de cada interacción |
 | `votos/` | Votos sellados por galería y versión de rúbrica |
 | `pesos.yaml` | Acuerdo de cada lente con David (para ver qué lente lo representa mejor) |
 | `calibracion.csv`, `desacuerdos.json` | Salida de `jueces.py calibrar` |

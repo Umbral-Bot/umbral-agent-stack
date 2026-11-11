@@ -86,7 +86,7 @@ numero,codigo,pack,comentario_david,fecha
 6°,G18-T6,packs/T6-noticia-slide.yaml,,
 1°,G19-V1,packs/V1-noticia-1x1-bajada-blanca.yaml,,
 2°,G19-V2,packs/V2-noticia-1x1-bajada-90.yaml,,
-3°,G19-V3,packs/V3-noticia-1x1-bajada-80.yaml,"Con bajada · tono de la bajada (recorte del 1:1) = 3",2026-11-10
+3°,G19-V3,packs/V3-noticia-1x1-bajada-80.yaml,Con bajada · tono de la bajada (recorte del 1:1) = 3,2026-11-10
 4°,G19-V4,packs/V4-noticia-1x1-bajada-gris-marca.yaml,,
 5°,G19-W1,packs/W1-noticia-linkedin-centro.yaml,"Con bajada · LinkedIn, pensada para computador= 5 pero ajustando tamaño de ""lee el articulo.."" mas mpequeño y distribuye mejor los textos, ademsa que es lo que va en ""Ejemplo""?",2026-11-10
 6°,G19-W2,packs/W2-noticia-linkedin-arriba-abajo.yaml,,
@@ -97,7 +97,7 @@ numero,codigo,pack,comentario_david,fecha
 1°,G20-Y1,packs/Y1-noticia-linkedin-centro-aire.yaml,,
 2°,G20-Y2,packs/Y2-noticia-linkedin-columna-ancha.yaml,"1= 2, pero un poco mas separados los textos ""Articulo"" , ""la IA.."" , ""Que cam.."" y ""Lee.."" todos esos entre si con la mismasparación aumenta la un poco mas, haz variaciones  a partir de la alt2",2026-11-10
 3°,G20-Y3,packs/Y3-noticia-linkedin-bajada-menor.yaml,,
-4°,G20-Z1,packs/Z1-noticia-linkedin-logo-arriba-boton.yaml,"2= 4",2026-11-10
+4°,G20-Z1,packs/Z1-noticia-linkedin-logo-arriba-boton.yaml,2= 4,2026-11-10
 1°,G21-U1,packs/U1-noticia-linkedin-separacion-32.yaml,"2= 1 [aclaración elegida: «2° con bajada, 1° sin bajada»: la separación de la 1° en el LinkedIn sin bajada, G22]",2026-11-10
 2°,G21-U2,packs/U2-noticia-linkedin-separacion-36.yaml,"1= 2 [aclaración elegida: «2° con bajada, 1° sin bajada»]",2026-11-10
 3°,G21-U3,packs/U3-noticia-linkedin-separacion-40.yaml,,
@@ -177,59 +177,59 @@ numero,codigo,pack,comentario_david,fecha
 33°,G27-U2-a3,packs/U2-noticia-linkedin-separacion-36.yaml,,
 34°,G27-T2-a3,packs/T2-noticia-1x1-sin-bajada.yaml,,
 35°,G27-AB2-a3,packs/AB2-noticia-linkedin-sin-bajada-boton-65.yaml,,
-1°,G28-P02-mo,packs/P02-noticia-4x5.yaml,,
-2°,G28-T1-mo,packs/T1-noticia-1x1-banda.yaml,,
-3°,G28-T3-mo,packs/T3-noticia-historia.yaml,,
-4°,G28-T6-mo,packs/T6-noticia-slide.yaml,,
-5°,G28-U2-mo,packs/U2-noticia-linkedin-separacion-36.yaml,,
-6°,G28-T2-mo,packs/T2-noticia-1x1-sin-bajada.yaml,,
-7°,G28-AB2-mo,packs/AB2-noticia-linkedin-sin-bajada-boton-65.yaml,,
-8°,G28-P02-nb1,packs/P02-noticia-4x5.yaml,,
-9°,G28-T1-nb1,packs/T1-noticia-1x1-banda.yaml,,
-10°,G28-T3-nb1,packs/T3-noticia-historia.yaml,,
-11°,G28-T6-nb1,packs/T6-noticia-slide.yaml,,
-12°,G28-U2-nb1,packs/U2-noticia-linkedin-separacion-36.yaml,,
-13°,G28-T2-nb1,packs/T2-noticia-1x1-sin-bajada.yaml,,
-14°,G28-AB2-nb1,packs/AB2-noticia-linkedin-sin-bajada-boton-65.yaml,,
-15°,G28-P02-nb2,packs/P02-noticia-4x5.yaml,,
-16°,G28-T1-nb2,packs/T1-noticia-1x1-banda.yaml,,
-17°,G28-T3-nb2,packs/T3-noticia-historia.yaml,,
-18°,G28-T6-nb2,packs/T6-noticia-slide.yaml,,
-19°,G28-U2-nb2,packs/U2-noticia-linkedin-separacion-36.yaml,,
-20°,G28-T2-nb2,packs/T2-noticia-1x1-sin-bajada.yaml,,
-21°,G28-AB2-nb2,packs/AB2-noticia-linkedin-sin-bajada-boton-65.yaml,,
-22°,G28-P02-a1o,packs/P02-noticia-4x5.yaml,,
-23°,G28-T1-a1o,packs/T1-noticia-1x1-banda.yaml,,
-24°,G28-T3-a1o,packs/T3-noticia-historia.yaml,,
-25°,G28-T6-a1o,packs/T6-noticia-slide.yaml,,
-26°,G28-U2-a1o,packs/U2-noticia-linkedin-separacion-36.yaml,,
-27°,G28-T2-a1o,packs/T2-noticia-1x1-sin-bajada.yaml,,
-28°,G28-AB2-a1o,packs/AB2-noticia-linkedin-sin-bajada-boton-65.yaml,,
-29°,G28-P02-a3o,packs/P02-noticia-4x5.yaml,,
-30°,G28-T1-a3o,packs/T1-noticia-1x1-banda.yaml,,
-31°,G28-T3-a3o,packs/T3-noticia-historia.yaml,,
-32°,G28-T6-a3o,packs/T6-noticia-slide.yaml,,
-33°,G28-U2-a3o,packs/U2-noticia-linkedin-separacion-36.yaml,,
-34°,G28-T2-a3o,packs/T2-noticia-1x1-sin-bajada.yaml,,
-35°,G28-AB2-a3o,packs/AB2-noticia-linkedin-sin-bajada-boton-65.yaml,,
-36°,G28-P02-r1,packs/P02-noticia-4x5.yaml,,
-37°,G28-T1-r1,packs/T1-noticia-1x1-banda.yaml,,
-38°,G28-T3-r1,packs/T3-noticia-historia.yaml,,
-39°,G28-T6-r1,packs/T6-noticia-slide.yaml,,
-40°,G28-U2-r1,packs/U2-noticia-linkedin-separacion-36.yaml,,
-41°,G28-T2-r1,packs/T2-noticia-1x1-sin-bajada.yaml,,
-42°,G28-AB2-r1,packs/AB2-noticia-linkedin-sin-bajada-boton-65.yaml,,
-43°,G28-P02-r2,packs/P02-noticia-4x5.yaml,,
-44°,G28-T1-r2,packs/T1-noticia-1x1-banda.yaml,,
-45°,G28-T3-r2,packs/T3-noticia-historia.yaml,,
-46°,G28-T6-r2,packs/T6-noticia-slide.yaml,,
-47°,G28-U2-r2,packs/U2-noticia-linkedin-separacion-36.yaml,,
-48°,G28-T2-r2,packs/T2-noticia-1x1-sin-bajada.yaml,,
-49°,G28-AB2-r2,packs/AB2-noticia-linkedin-sin-bajada-boton-65.yaml,,
-50°,G28-P02-r3,packs/P02-noticia-4x5.yaml,,
-51°,G28-T1-r3,packs/T1-noticia-1x1-banda.yaml,,
-52°,G28-T3-r3,packs/T3-noticia-historia.yaml,,
-53°,G28-T6-r3,packs/T6-noticia-slide.yaml,,
-54°,G28-U2-r3,packs/U2-noticia-linkedin-separacion-36.yaml,,
-55°,G28-T2-r3,packs/T2-noticia-1x1-sin-bajada.yaml,,
-56°,G28-AB2-r3,packs/AB2-noticia-linkedin-sin-bajada-boton-65.yaml,,
+1°,G28-P02-mo,packs/P02-noticia-4x5.yaml,"de la 1 a la 21, cual sería la metrafora? como se relaciona el totulo con el dibujo? [...] creo que falta todo eso aca",2026-11-11
+2°,G28-T1-mo,packs/T1-noticia-1x1-banda.yaml,"de la 1 a la 21, cual sería la metrafora? como se relaciona el totulo con el dibujo? [...] creo que falta todo eso aca",2026-11-11
+3°,G28-T3-mo,packs/T3-noticia-historia.yaml,"de la 1 a la 21, cual sería la metrafora? como se relaciona el totulo con el dibujo? [...] creo que falta todo eso aca",2026-11-11
+4°,G28-T6-mo,packs/T6-noticia-slide.yaml,"de la 1 a la 21, cual sería la metrafora? como se relaciona el totulo con el dibujo? [...] creo que falta todo eso aca",2026-11-11
+5°,G28-U2-mo,packs/U2-noticia-linkedin-separacion-36.yaml,"de la 1 a la 21, cual sería la metrafora? como se relaciona el totulo con el dibujo? [...] creo que falta todo eso aca",2026-11-11
+6°,G28-T2-mo,packs/T2-noticia-1x1-sin-bajada.yaml,"de la 1 a la 21, cual sería la metrafora? como se relaciona el totulo con el dibujo? [...] creo que falta todo eso aca",2026-11-11
+7°,G28-AB2-mo,packs/AB2-noticia-linkedin-sin-bajada-boton-65.yaml,"de la 1 a la 21, cual sería la metrafora? como se relaciona el totulo con el dibujo? [...] creo que falta todo eso aca",2026-11-11
+8°,G28-P02-nb1,packs/P02-noticia-4x5.yaml,"de la 1 a la 21, cual sería la metrafora? como se relaciona el totulo con el dibujo? [...] creo que falta todo eso aca",2026-11-11
+9°,G28-T1-nb1,packs/T1-noticia-1x1-banda.yaml,"de la 1 a la 21, cual sería la metrafora? como se relaciona el totulo con el dibujo? [...] creo que falta todo eso aca",2026-11-11
+10°,G28-T3-nb1,packs/T3-noticia-historia.yaml,"de la 1 a la 21, cual sería la metrafora? como se relaciona el totulo con el dibujo? [...] creo que falta todo eso aca",2026-11-11
+11°,G28-T6-nb1,packs/T6-noticia-slide.yaml,"de la 1 a la 21, cual sería la metrafora? como se relaciona el totulo con el dibujo? [...] creo que falta todo eso aca",2026-11-11
+12°,G28-U2-nb1,packs/U2-noticia-linkedin-separacion-36.yaml,"de la 1 a la 21, cual sería la metrafora? como se relaciona el totulo con el dibujo? [...] creo que falta todo eso aca",2026-11-11
+13°,G28-T2-nb1,packs/T2-noticia-1x1-sin-bajada.yaml,"de la 1 a la 21, cual sería la metrafora? como se relaciona el totulo con el dibujo? [...] creo que falta todo eso aca",2026-11-11
+14°,G28-AB2-nb1,packs/AB2-noticia-linkedin-sin-bajada-boton-65.yaml,"de la 1 a la 21, cual sería la metrafora? como se relaciona el totulo con el dibujo? [...] creo que falta todo eso aca",2026-11-11
+15°,G28-P02-nb2,packs/P02-noticia-4x5.yaml,"de la 1 a la 21, cual sería la metrafora? como se relaciona el totulo con el dibujo? [...] creo que falta todo eso aca",2026-11-11
+16°,G28-T1-nb2,packs/T1-noticia-1x1-banda.yaml,"de la 1 a la 21, cual sería la metrafora? como se relaciona el totulo con el dibujo? [...] creo que falta todo eso aca",2026-11-11
+17°,G28-T3-nb2,packs/T3-noticia-historia.yaml,"de la 1 a la 21, cual sería la metrafora? como se relaciona el totulo con el dibujo? [...] creo que falta todo eso aca",2026-11-11
+18°,G28-T6-nb2,packs/T6-noticia-slide.yaml,"de la 1 a la 21, cual sería la metrafora? como se relaciona el totulo con el dibujo? [...] creo que falta todo eso aca",2026-11-11
+19°,G28-U2-nb2,packs/U2-noticia-linkedin-separacion-36.yaml,"de la 1 a la 21, cual sería la metrafora? como se relaciona el totulo con el dibujo? [...] creo que falta todo eso aca",2026-11-11
+20°,G28-T2-nb2,packs/T2-noticia-1x1-sin-bajada.yaml,"de la 1 a la 21, cual sería la metrafora? como se relaciona el totulo con el dibujo? [...] creo que falta todo eso aca",2026-11-11
+21°,G28-AB2-nb2,packs/AB2-noticia-linkedin-sin-bajada-boton-65.yaml,"de la 1 a la 21, cual sería la metrafora? como se relaciona el totulo con el dibujo? [...] creo que falta todo eso aca",2026-11-11
+22°,G28-P02-a1o,packs/P02-noticia-4x5.yaml,de la 22 a la 35 se ve bien,2026-11-11
+23°,G28-T1-a1o,packs/T1-noticia-1x1-banda.yaml,de la 22 a la 35 se ve bien,2026-11-11
+24°,G28-T3-a1o,packs/T3-noticia-historia.yaml,de la 22 a la 35 se ve bien,2026-11-11
+25°,G28-T6-a1o,packs/T6-noticia-slide.yaml,de la 22 a la 35 se ve bien,2026-11-11
+26°,G28-U2-a1o,packs/U2-noticia-linkedin-separacion-36.yaml,de la 22 a la 35 se ve bien,2026-11-11
+27°,G28-T2-a1o,packs/T2-noticia-1x1-sin-bajada.yaml,de la 22 a la 35 se ve bien,2026-11-11
+28°,G28-AB2-a1o,packs/AB2-noticia-linkedin-sin-bajada-boton-65.yaml,de la 22 a la 35 se ve bien,2026-11-11
+29°,G28-P02-a3o,packs/P02-noticia-4x5.yaml,de la 22 a la 35 se ve bien,2026-11-11
+30°,G28-T1-a3o,packs/T1-noticia-1x1-banda.yaml,de la 22 a la 35 se ve bien,2026-11-11
+31°,G28-T3-a3o,packs/T3-noticia-historia.yaml,de la 22 a la 35 se ve bien,2026-11-11
+32°,G28-T6-a3o,packs/T6-noticia-slide.yaml,de la 22 a la 35 se ve bien,2026-11-11
+33°,G28-U2-a3o,packs/U2-noticia-linkedin-separacion-36.yaml,de la 22 a la 35 se ve bien,2026-11-11
+34°,G28-T2-a3o,packs/T2-noticia-1x1-sin-bajada.yaml,de la 22 a la 35 se ve bien,2026-11-11
+35°,G28-AB2-a3o,packs/AB2-noticia-linkedin-sin-bajada-boton-65.yaml,de la 22 a la 35 se ve bien,2026-11-11
+36°,G28-P02-r1,packs/P02-noticia-4x5.yaml,la mejor fue de la 36 a la 42 · de la 36 a la 42 tambien,2026-11-11
+37°,G28-T1-r1,packs/T1-noticia-1x1-banda.yaml,la mejor fue de la 36 a la 42 · de la 36 a la 42 tambien,2026-11-11
+38°,G28-T3-r1,packs/T3-noticia-historia.yaml,la mejor fue de la 36 a la 42 · de la 36 a la 42 tambien,2026-11-11
+39°,G28-T6-r1,packs/T6-noticia-slide.yaml,la mejor fue de la 36 a la 42 · de la 36 a la 42 tambien,2026-11-11
+40°,G28-U2-r1,packs/U2-noticia-linkedin-separacion-36.yaml,la mejor fue de la 36 a la 42 · de la 36 a la 42 tambien,2026-11-11
+41°,G28-T2-r1,packs/T2-noticia-1x1-sin-bajada.yaml,la mejor fue de la 36 a la 42 · de la 36 a la 42 tambien,2026-11-11
+42°,G28-AB2-r1,packs/AB2-noticia-linkedin-sin-bajada-boton-65.yaml,la mejor fue de la 36 a la 42 · de la 36 a la 42 tambien,2026-11-11
+43°,G28-P02-r2,packs/P02-noticia-4x5.yaml,"la 43 a 49muy buena la abstración y la idea representada en la imagen, ese arnes que usaste esta bueno",2026-11-11
+44°,G28-T1-r2,packs/T1-noticia-1x1-banda.yaml,"la 43 a 49muy buena la abstración y la idea representada en la imagen, ese arnes que usaste esta bueno",2026-11-11
+45°,G28-T3-r2,packs/T3-noticia-historia.yaml,"la 43 a 49muy buena la abstración y la idea representada en la imagen, ese arnes que usaste esta bueno",2026-11-11
+46°,G28-T6-r2,packs/T6-noticia-slide.yaml,"la 43 a 49muy buena la abstración y la idea representada en la imagen, ese arnes que usaste esta bueno",2026-11-11
+47°,G28-U2-r2,packs/U2-noticia-linkedin-separacion-36.yaml,"la 43 a 49muy buena la abstración y la idea representada en la imagen, ese arnes que usaste esta bueno",2026-11-11
+48°,G28-T2-r2,packs/T2-noticia-1x1-sin-bajada.yaml,"la 43 a 49muy buena la abstración y la idea representada en la imagen, ese arnes que usaste esta bueno",2026-11-11
+49°,G28-AB2-r2,packs/AB2-noticia-linkedin-sin-bajada-boton-65.yaml,"la 43 a 49muy buena la abstración y la idea representada en la imagen, ese arnes que usaste esta bueno",2026-11-11
+50°,G28-P02-r3,packs/P02-noticia-4x5.yaml,las de mas adelante casi buen intento,2026-11-11
+51°,G28-T1-r3,packs/T1-noticia-1x1-banda.yaml,las de mas adelante casi buen intento,2026-11-11
+52°,G28-T3-r3,packs/T3-noticia-historia.yaml,las de mas adelante casi buen intento,2026-11-11
+53°,G28-T6-r3,packs/T6-noticia-slide.yaml,las de mas adelante casi buen intento,2026-11-11
+54°,G28-U2-r3,packs/U2-noticia-linkedin-separacion-36.yaml,las de mas adelante casi buen intento,2026-11-11
+55°,G28-T2-r3,packs/T2-noticia-1x1-sin-bajada.yaml,las de mas adelante casi buen intento,2026-11-11
+56°,G28-AB2-r3,packs/AB2-noticia-linkedin-sin-bajada-boton-65.yaml,las de mas adelante casi buen intento,2026-11-11

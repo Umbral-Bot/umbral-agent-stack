@@ -353,6 +353,18 @@
  },
  {
   "galeria": "G13",
+  "rubrica": "pred-ej-b",
+  "jueces": "3",
+  "david": [
+   "1"
+  ],
+  "cita": "1° Base",
+  "resumenes": {
+   "prediccion": "Predigo la 3, con la 1 muy cerca. En G03 David eligió que la información secundaria creciera para leerse en el celular («Datos fuertes»). La 3 hace eso con la bajada: sube a 17,6 px CSS, llena la banda sin vacíos y el titular sigue mandando (36 %). La 1 es sólida y tiene el titular más potente, pero su bajada de 14 px en gris queda chica en el feed. La 2 y la 4 dejan vacíos sin función en la banda, y la 2 además pierde la bajada. Los defectos comunes a todas son el logotipo chico del pie y la falta de metáfora en la imagen. No cambian la elección."
+  }
+ },
+ {
+  "galeria": "G13",
   "rubrica": "pred-sin-a",
   "jueces": "3",
   "david": [
@@ -491,6 +503,30 @@
  },
  {
   "galeria": "G15",
+  "rubrica": "pred-ej-a",
+  "jueces": "1",
+  "david": [
+   "2"
+  ],
+  "cita": "2° Bajada blanca",
+  "resumenes": {
+   "prediccion": "Predigo que David elige la 1. Ya prefirió en G05 el gris de marca con acento turquesa frente al blanco. Con el gris, la bajada queda claramente debajo del titular, como en G13, y la pieza sigue la familia oscura del Preset 01. La 2 sirve, aunque la bajada blanca le compite algo al titular. La 3 no sirve tal cual: la bajada mide 4,6:1, un valor que ya se vio flojo, y el panel claro se funde con el crema de la imagen."
+  }
+ },
+ {
+  "galeria": "G15",
+  "rubrica": "pred-ej-b",
+  "jueces": "1",
+  "david": [
+   "2"
+  ],
+  "cita": "2° Bajada blanca",
+  "resumenes": {
+   "prediccion": "Predigo la 1° (base). David ya prefirió el gris de marca con acento turquesa frente al blanco en el Preset 01 (G05). El gris mide 7,2:1 sobre fondo liso y mantiene la bajada claramente secundaria (G13). Suele quedarse con la base cuando el cambio no mejora algo que él haya pedido. La 2° queda cerca: es más legible, pero iguala el color del titular y rompe la coherencia entre presets. La 3° no sirve tal cual: la bajada a 4,6:1 cae en el rango que ya vio flojo, el panel claro se funde con el borde crema de la imagen y el logo pierde contraste."
+  }
+ },
+ {
+  "galeria": "G15",
   "rubrica": "pred-sin-a",
   "jueces": "1",
   "david": [
@@ -597,6 +633,32 @@
  },
  {
   "galeria": "G16",
+  "rubrica": "pred-ej-a",
+  "jueces": "1",
+  "david": [
+   "3",
+   "4"
+  ],
+  "cita": "3 y 4",
+  "resumenes": {
+   "prediccion": "Predigo la 1 (base). Repite lo que David eligió en el paso 5 del Preset 01: cruces y trama de puntos, con el llamado en texto. En G06 no eligió quitar las cruces ni el llamado como botón, y eligió agregar la trama. La 4 deshace esa elección y la 2 rompe la coherencia de familia sin ganar nada visible en el feed. La 3 es la única que cambia la pieza en el celular, pero el bloque turquesa grande saca al turquesa de su papel de acento y le resta protagonismo al titular. La lectura y el contraste (9,9:1) son iguales en las cuatro."
+  }
+ },
+ {
+  "galeria": "G16",
+  "rubrica": "pred-ej-b",
+  "jueces": "1",
+  "david": [
+   "3",
+   "4"
+  ],
+  "cita": "3 y 4",
+  "resumenes": {
+   "prediccion": "Predigo la 1 (Base). Repite el pie y los detalles que David ya eligió para el Preset 01 en G06: cruces y trama de puntos, con logo y llamado en texto. Además, en el Preset 02 David se ha quedado con la base en casi todos los pasos. La 3 es la única que cambia algo visible en el celular y podría atraerle por el peso del llamado. Pero convierte el turquesa en superficie, y en G06 David no eligió el botón. La 2 y la 4 casi no se distinguen de la 1 a tamaño de feed, y cada una quita algo que David conservó o eligió en G06; la 4 queda última porque quita la trama, que él eligió expresamente. Hay dos defectos comunes menores: las cruces superiores caen sobre la imagen y la de la derecha se pierde en el turquesa, y el texto del logotipo queda justo en 11 px CSS."
+  }
+ },
+ {
+  "galeria": "G16",
   "rubrica": "v1",
   "jueces": "2",
   "david": [
@@ -637,6 +699,18 @@
   "cita": "Sin bajada · LinkedIn, piezas completas: 1 peor el boton mas pequeño",
   "resumenes": {
    "prediccion": "La galería solo cambia la posición vertical del bloque de texto. La 3 es la única que cumple a la vez dos cosas: «Artículo», titular y botón quedan a 32 px parejos, como pidió David en G20, y el botón sigue cerrando la columna al pie, con el margen inferior igual al superior, que es lo que pesa en el LinkedIn sin bajada. A cambio deja aire entre el logo y el kicker, pero arriba y con intención. La 1 es la base de G20 4° con un ritmo correcto, pero del titular al botón quedan 68 px y no aplica la separación pareja. La 2 centra el bloque, deja un vacío bajo el botón y saca el botón del pie, así que queda como «sirve con ajustes». Común a las tres y sin efecto en la elección: el texto del botón mide 9,3 px CSS (aviso, no veto) y el contraste mínimo es de 9,92:1."
+  }
+ },
+ {
+  "galeria": "G22",
+  "rubrica": "pred-ej-a",
+  "jueces": "3",
+  "david": [
+   "1"
+  ],
+  "cita": "Sin bajada · LinkedIn, piezas completas: 1 peor el boton mas pequeño",
+  "resumenes": {
+   "prediccion": "La 3 es la única que cumple a la vez dos cosas que David pidió. Mantiene el botón al pie, cerrando la columna, en la misma posición que la 1 y con los márgenes de arriba y abajo simétricos (128 px). Y deja «Artículo», el titular y el botón a la misma distancia, 32 px, como pidió en G20. Su riesgo es el aire entre el logo y el bloque. La 1 es la alternativa cercana: es la base que ya conocía (G20 4°) y reparte el texto en tres zonas, pero la distancia del titular al botón no es pareja. La 2 se aleja: el botón flota y deja un vacío abajo. Predicción con confianza moderada: 3 por sobre 1."
   }
  },
  {
@@ -743,6 +817,30 @@
  },
  {
   "galeria": "G25",
+  "rubrica": "pred-ej-a",
+  "jueces": "3",
+  "david": [
+   "2"
+  ],
+  "cita": "2°, 85 y 75",
+  "resumenes": {
+   "prediccion": "Las tres opciones arreglan lo que David reclamó en G24: el edificio queda entero y centrado en su máscara en los siete formatos, sin cortes ni desplazamientos. Lo que cambia entre ellas es el tamaño. Al 75 % (opción 1), las bandas y la diapositiva quedan con el objeto chico y mucho aire sin función. Al 85 % en todo (opción 3), la imagen gana presencia sin quedar apretada, ni siquiera en la columna angosta del LinkedIn con bajada. Además aplica una sola regla en todos los formatos, que se lee mejor como sistema. Predigo que David elige la 3, con la 2 cerca. El defecto común es el fondo liso a los lados en el 16:9 y en las bandas 1:1."
+  }
+ },
+ {
+  "galeria": "G25",
+  "rubrica": "pred-ej-b",
+  "jueces": "3",
+  "david": [
+   "2"
+  ],
+  "cita": "2°, 85 y 75",
+  "resumenes": {
+   "prediccion": "Las tres opciones corrigen la queja de G24: el edificio va entero y centrado en su máscara en todos los formatos. La diferencia es solo de tamaño. Al 85 % en todo (opción 3), el objeto tiene la presencia que David suele preferir. La imagen cubre la máscara y llega limpia al borde, sin la retícula desvanecida, y aun así conserva margen en las columnas. La mezcla (opción 2) queda cerca, pero en las columnas pierde fuerza y vuelve el borde difuso. Con el 75 % en todo (opción 1), el objeto queda chico en las bandas bajas. Defecto común a todas: la 16:9 sigue con grandes vacíos laterales."
+  }
+ },
+ {
+  "galeria": "G25",
   "rubrica": "pred-sin-a",
   "jueces": "3",
   "david": [
@@ -767,6 +865,75 @@
    "posicion": "Las tres opciones corrigen lo que David señaló en G24. Según la medición, el edificio sale entero y centrado con ±1 px en la máscara de los siete formatos, y no hay cortes ni corrimientos. La única diferencia está en la escala. Al 75 % en todos los formatos (opción 1), el objeto queda dentro del marco de las cruces, con al menos 99 px de aire en cada pieza y los márgenes más parejos. Al 85 % en las bandas (opciones 2 y 3), el vértice llega a la fila de cruces o la pasa: en T1 queda a 58 px, frente a los 64 px de las cruces. Además, la opción 3 aprieta las columnas de LinkedIn. Mi lente elige la 1. Un defecto común a las tres, que no desempata: en las bandas anchas (16:9 y T1) el objeto queda chico y aislado. Eso corresponde a la lente de composición.",
    "composicion": "Las tres opciones resuelven la queja de G24: el edificio va entero y centrado en todas las máscaras, sin cortes ni corrimientos. La diferencia está en el tamaño. En las bandas (4:5, 1:1 y 16:9), el 85 % gana: la trama llega al borde de la banda, la imagen se lee a sangre y el objeto tiene más presencia. En las columnas de LinkedIn, el 75 % deja un aire parejo, cercano al margen del texto, mientras el 85 % aprieta el objeto contra los bordes y las cruces. Por eso elijo la opción 2, que decide el tamaño según la forma de la máscara. Ajuste: tratar el 9:16 como banda y pasarlo al 85 %. Defectos comunes a las tres, anotados aparte: en el 16:9, y en menor medida en el 1:1, quedan vacíos laterales grandes porque el objeto es alto y la banda ancha.",
    "costuras": "Ninguna opción tiene escalón de color ni parche rectangular, así que no hay vetos. El fondo propio de la imagen ya es #F9F7F5 exacto (80–95 % de la máscara) y el borde difuso desvanece la trama en unos 40–100 px, sin corte recto. Ningún acento turquesa queda a menos de 148 px del borde de la máscara. Para mi lente, la diferencia está en las cruces de registro. Al 75 % siempre quedan sobre fondo extendido limpio. Al 85 %, en las piezas donde la imagen llena la máscara, la trama tenue roza las cruces: P02, T3 y AB2 (U2 casi). Son roces leves, solo visibles de cerca; propongo mover la cruz o dejarle unos 25 px de fondo limpio. La opción 2 es una mezcla exacta de las otras dos (P02, T1, T2 y T6 de la opción 3; T3, U2 y AB2 de la opción 1), así que hereda solo el roce del P02. Elijo la opción 1."
+  }
+ },
+ {
+  "galeria": "G28",
+  "rubrica": "pred-crit-a",
+  "jueces": "2",
+  "david": [
+   "6"
+  ],
+  "cita": "la mejor fue de la 36 a la 42",
+  "resumenes": {
+   "prediccion": "David elegiría la opción 2, B con Nano Banana 2.1, variante 1. Es la única en que el objeto queda entero y centrado en todas las máscaras, y su apaisada baja y ancha llena la banda del 16:9 (cerca del 85 % del ancho). La línea es limpia, con fondo claro, y el choque marcado en turquesa cuenta el hallazgo del artículo. Como ajustes, la apaisada usa una vista frontal distinta de la principal isométrica y el trazo es algo más grueso que el de Magnific One.\n\nLa opción 1 (Magnific One) tiene la principal más fina, pero su apaisada es abocetada y en el 16:9 llena solo la mitad de la banda. La opción 3 corre el objeto hacia un lado por el anclaje.\n\nEn el camino A, la mejor es la opción 4 (A1): fondo coherente y a sangre, aunque carga demasiado turquesa en las bandas. Se puede proponer como variante del camino A junto a la 2 (criterio 41). La opción 5 mezcla dos líneas y corta acentos en el borde. Los rescates (6, 7 y 8) no sirven: recortes que se leen como objeto cortado, composición de afiche y cifras dentro de la imagen.\n\nEl veredicto va por formato. La opción 2 sirve en todos. La opción 1 sirve en vertical, historia y LinkedIn, pero no en el 16:9."
+  }
+ },
+ {
+  "galeria": "G28",
+  "rubrica": "pred-crit-b",
+  "jueces": "2",
+  "david": [
+   "6"
+  ],
+  "cita": "la mejor fue de la 36 a la 42",
+  "resumenes": {
+   "prediccion": "Predigo que David elige la opción 2 (Nano Banana 2.1, variante 1). Es la única del camino B que cumple en todos los formatos. La principal es isométrica, limpia y queda centrada en vertical, historia y LinkedIn. La apaisada es baja y ancha, y llena las bandas de 2,05, 2,66 y 3,64:1 con cerca del 85 % del ancho. Ajustes que se anotan: el choque se lee menos directo porque el turquesa va en la viga y no en el tubo, y la apaisada tiene vista frontal frente a la isométrica de la principal. La opción 1 (Magnific One) cuenta mejor el choque en la principal, pero su apaisada oblicua y de boceto deja vacía la banda del 16:9 (≈52 % del ancho). La opción 3 cuenta bien la historia, pero el anclaje por acento corre el objeto a la izquierda en el vertical y la historia, que es el defecto de G24. En el camino A, la opción 5 es la mejor como variante de fondo (trazo coherente entre principal y apaisada), aunque corta un acento en el borde del 16:9. Igual que la 4, pierde las cruces de las esquinas superiores. Los rescates 6 a 8 no sirven: traen números en la imagen, composición de afiche o un tercio vacío con turquesa cortado. Si se quiere un fondo además del gráfico, propondría la 2 y la 5 como variantes."
+  }
+ },
+ {
+  "galeria": "G28",
+  "rubrica": "pred-crit2-a",
+  "jueces": "2",
+  "david": [
+   "6"
+  ],
+  "cita": "la mejor fue de la 36 a la 42",
+  "resumenes": {
+   "prediccion": "David elegiría la opción 2 (Nano Banana 2.1, variante 1). El cubo es isométrico, limpio y legible en el celular, y el choque tubo-viga queda marcado en turquesa. Queda bien centrado en todas las máscaras, y la apaisada llena cerca del 85 % de cada banda (vertical, cuadrados, historia, slide y LinkedIn). Hay que anotar que la apaisada se ve en elevación frontal y no en isometría, y que su trazo es más grueso. Magnific One (1) tiene la principal más fina, pero su apaisada abocetada no llena la banda 16:9. NB2 (3) corre el objeto a la izquierda y su apaisada tiene un error de dibujo. En el camino A, A1 (4) es un fondo correcto que funciona en todos los formatos y sirve como variante de ese camino; A3 (5) es parecido, con una apaisada de trazo más gris. Los rescates (6, 7 y 8) no sirven: traen fragmentos de objeto cargados de turquesa, composición de afiche o números dentro de la imagen. Todo el camino A pierde las cruces de registro sobre la imagen."
+  }
+ },
+ {
+  "galeria": "G28",
+  "rubrica": "pred-crit2-b",
+  "jueces": "2",
+  "david": [
+   "6"
+  ],
+  "cita": "la mejor fue de la 36 a la 42",
+  "resumenes": {
+   "prediccion": "David elegiría la opción 2, Nano Banana 2.1 v1: es la única donde el objeto queda entero y centrado en las 7 máscaras. Su apaisada es baja y ancha, llena el 85 % de la banda en la slide y los cuadrados, y el dibujo es isométrico, plano, de trazo limpio, con el choque del tubo marcado en turquesa, que cuenta el artículo. Ajuste anotado: la apaisada tiene vista casi frontal y la principal es isométrica.\n\nMagnific One (opción 1) sirve en el vertical, la historia y LinkedIn, pero falla en la slide y queda floja en los cuadrados: su apaisada es oblicua, de boceto, y en la slide solo cubre el 52 % del ancho de la banda.\n\nLa NB v2 (opción 3) queda corrida a la izquierda en el 4:5 y en el 9:16 por el anclaje, y su apaisada tiene errores de dibujo.\n\nDel camino A, A1 (opción 4) es un fondo válido, pero la apaisada carga turquesa. En A3 (opción 5), el recorte corta acentos en el borde. Los rescates (opciones 6 a 8) no sirven: tienen números en la planta, turquesa masivo cortado y composición de afiche."
+  }
+ },
+ {
+  "galeria": "G28",
+  "rubrica": "v2",
+  "jueces": "1",
+  "david": [
+   "6"
+  ],
+  "cita": "la mejor fue de la 36 a la 42",
+  "resumenes": {
+   "jerarquia": "Mi lente (jerarquía) no ve diferencias entre las 8 opciones, así que no elijo ninguna. La galería solo cambia la imagen y cómo se encuadra en la máscara. El bloque de texto es idéntico formato por formato: mismo kicker, titular, bajada, botón y logo, con las mismas medidas. En ninguna pieza la imagen tapa, cruza ni disputa la zona del titular, porque el texto va siempre en su panel oscuro liso. Por eso la fuerza o el tamaño de la imagen no restan, según G14. Esto incluye las losas turquesa de R1/R3 y la trama densa de A1/A3. Por formato, sirven el vertical 4:5, los dos cuadrados, la historia, LinkedIn con bajada y LinkedIn sin bajada. El slide 16:9 sirve con ajustes, porque el titular queda mediano y deja aire de sobra en la banda. Esos defectos son comunes a todas las opciones y van aparte. El orden entre opciones lo deben decidir otras lentes, como posición en la máscara y calidad de imagen.",
+   "marca": "Por marca, gana la opción 1 (Magnific One): la principal es la más fiel a la línea aprobada, isométrica, plana, de trazo fino y con un solo acento turquesa. Sirve en los 7 formatos. En T1, T6 y T2 se anota un ajuste: la apaisada tiene trazo de boceto y vista oblicua. Nano Banana engruesa el trazo hacia el ícono de diagrama. La apaisada de la variante 2 tiene geometría rota y caras casi negras: sirve con ajustes en los formatos verticales (P02, T3, U2 y AB2) y queda en el límite en T1, T6 y T2. En el camino A, A1 es más coherente que A3. A3 mezcla un fondo de alambre con ruido. Rescates: R1 no sirve en T1, T6 ni T2 por los seudonúmeros de las cotas de h063. En P02, T3, U2 y AB2 sirve con ajustes, porque el recorte de G-AFI-04 llena la máscara de turquesa. R3 tiene la apaisada más de marca (h023), pero la ampliación le deja halos. Conviene pedirla otra vez en alta resolución, no aceptarla así. R2 tiene sombreado tonal y aire de stock. No hay defectos de imagen comunes a todas las opciones.",
+   "serie": "Para una serie solo funciona el camino B: cada artículo tendría su propio gráfico con el hallazgo en turquesa. La opción 1 (Magnific One) es la que mejor cuenta el choque en las dos imágenes y mantiene la isométrica en todos los formatos. Por formato, sirve tal cual en vertical (1°), historia (3°) y LinkedIn (5° y 7°), y sirve con ajustes en los formatos que usan la apaisada (2°, 4° y 6°), que sale en boceto con otra mano. Para esos, conviene pedir otra apaisada con 2 o 3 variantes en el estilo de la p1. Nano Banana 2.1 da un estilo más parejo, pero pierde el hallazgo (opción 2) o rompe la geometría (opción 3) y cambia a alzado en las apaisadas. El camino A (opciones 4 y 5) es un patrón genérico que haría que todos los artículos se vieran iguales. Los rescates (6 a 8) no son repetibles, y R2 es el lugar común de la IA. Las piezas con fondo a sangre del camino A pierden las cruces de registro de arriba: hay que reponerlas.",
+   "composicion": "La maquetación de texto es igual en las 8 opciones; mi lente solo ve diferencias en cómo la imagen ocupa su máscara. Gana la opción 2, la variante 1 de Nano Banana. El cubo queda centrado y al 85 % en la banda y al 75 % en la columna, como pide G25. El estante apaisado, bajo y ancho, llena el 85 % del ancho en el 2.66:1 y en el 16:9 (3.64:1), con aire parejo arriba y abajo: es el caso que David pidió en G25. Por formato, sirve en el vertical, la historia, el 1:1 de 5/8, el slide y los dos LinkedIn. Necesita ajuste en el 1:1 de banda 2.05:1, donde el estante deja vacío el 60 % del alto de la máscara. Para esa máscara conviene una imagen de ~2–2,5:1 o subir el umbral de imagen ancha; es un defecto de la imagen, no de la maquetación. La opción 1 (Magnific One) falla en las bandas anchas (16:9 al 52 % del ancho) y la opción 3 descentra el cubo con el anclaje. Las opciones 4 y 5 llenan sin vacíos, pero son textura sin foco. La opción 6 tiene la mejor banda de la galería (la planta en V), pero sus piezas en columna quedan cargadas al borde. La opción 7 carga toda la pieza a la izquierda. La opción 8 no llega a llenar sus bandas.",
+   "forma": "Lente de forma. En el camino B gana la opción 2 (Nano Banana 2.1, variante 1). El cubo es compacto y queda centrado en la máscara: el anclaje lo corre solo 22 a 28 px. El estante apaisado mide unos 4,3:1 y llena el 85 % del ancho en el slide (3,64:1) y en el cuadrado de 2,66:1, igual que la referencia que aprobó David.\n\nFormato por formato, la opción 2 sirve en el vertical, el cuadrado de 2,66:1, la historia, el slide y los dos LinkedIn. En el cuadrado de 2,05:1 sirve con un ajuste menor: el estante ocupa solo el 40 % del alto.\n\nLa opción 1 (Magnific One) falla en el slide: su banca de 2,1:1 llena solo el 52 % de la banda. La opción 3 corre el cubo a la izquierda en la historia (7,5 %) y en el vertical (5,3 %), y su estante apaisado está inconcluso.\n\nEn el camino A, la opción 4 (A1) es un fondo válido: densidad pareja, recortable en cualquier parte y del mismo trazo en todos los formatos. La 5 cumple, pero mezcla trazo grueso y fino entre formatos. Los tres rescates (6, 7 y 8) no sirven: tienen composición de afiche o son fragmentos de objeto cortados, no fondos.\n\nSi David quiere conservar los dos caminos, propongo como variantes la opción 2 para el camino B y la opción 4 para el camino A.",
+   "contenido": "Mi lente elige la opción 1 (Magnific One), la única en que la imagen cuenta la misma comparación que el texto: la tubería y la viga del choque van marcadas en turquesa, hay alternativas sin ruta elegida y no aparece el remedio. Por formato, sirve en los que usan la imagen principal (1° vertical, 3° historia, 5° y 7° LinkedIn). En los apaisados (2°, 4° y 6°) sirve con ajustes: el trazo es de boceto, la tubería cruza otros pilares sin marcar y las alternativas no se ven. Conviene pedir otra apaisada con variantes, no aceptarla tal cual.\n\nNano Banana 2.1 dibuja más limpio, pero pierde el hallazgo. En la variante 1, la principal marca solo la viga y la apaisada no muestra choque. En la variante 2, la principal pinta una viga paralela que no cruza la tubería (falla en el 9:16) y su apaisada puede leerse como pase resuelto.\n\nEl camino A lo juzgo solo por si sus elementos son del tema, porque a un fondo no le corresponde contar el titular. A1 y A3 están bien, y A3 un poco mejor porque su apaisada trae tuberías. R2 trae una ciudad y una red de nodos, ajenas a la obra. R1 arrastra un resto de la plantilla de webinar y números falsos en las cotas. R3 sirve con su cliché de nodos.\n\nPara ampliar la losa de nb2 hice dos recortes temporales en el scratchpad y ya los borré. No gasté créditos.",
+   "posicion": "Mi lente elige la Opción 2 (Nano Banana 2.1, variante 1). Sirve en los 7 formatos: el objeto está entero y casi centrado en todas las máscaras, y su apaisada baja y ancha llena las bandas al 85 % (T1, T6 y T2). Solo T3, U2 y AB2 quedan un 4 % altos. La Opción 1 sirve con ajustes: en el slide el objeto ocupa la mitad del ancho y en U2 queda corrido a la derecha. La Opción 3 falla en T3 (alta) y en P02 (media): el anclaje por acento corre el cubo a la izquierda, y ahí se ve el problema común del método, que descentra el objeto cuando el acento no está al centro; conviene limitarlo con una tolerancia de márgenes. En el camino A, los rescates R1, R2 y R3 no sirven: cortan el sujeto o los acentos turquesa en el borde y dejan composición de afiche. A1 y A3 no tienen objeto que posicionar, así que su puntaje refleja solo el recorte. A todo el camino A le faltan las cruces sobre la imagen.",
+   "unidad": "Lente UNIDAD. La 7 (H021 en las dos máscaras) es la más unida, porque repite la misma imagen: la unidad se mantiene en los 7 formatos. Solo pierde nota por el sombreado gris y porque el acento se reduce a puntos.\n\nEntre las parejas de imágenes distintas gana la 4 (A1): trazo idéntico, vista isométrica y mismo tono. Sirve tal cual en P02, T3, U2 y AB2, y con ajustes en T1, T6 y T2, por los muros en U y la retícula gris.\n\nLa 1 (MO) mantiene los objetos, el grosor medido y el acento, pero su apaisada es oblicua y abocetada: es un ajuste, no un veto. La 2 (NB1) cambia a alzado frontal y su principal se ve más gruesa (4,8 px contra 2,9 px). La 5 (A3) es más pálida y transparente.\n\nNo sirven la 3, por la geometría imposible y los rellenos negros, ni las parejas cruzadas 6 y 8, que unen familias distintas: planos turquesa grandes contra planta o red de nodos.\n\nNo llamé a Magnific, no gasté créditos y no escribí archivos.",
+   "oficio": "Por oficio gana la opción 4 (A1, fondos p1 y a1): isometría coherente, uniones limpias, sin artefactos y el mismo trazo fino en la principal y la apaisada. Sirve en los 7 formatos; en el 9:16 la trama no tiene protagonista, pero como es un tipo de pieza nuevo eso cuenta como señal, no como veto.\n\nLa opción 5 comparte la principal, pero su apaisada (a2) es de línea capilar con la retícula pasando por dentro de los objetos. Sirve con ajustes en T1, T6 y T2.\n\nEn el camino B, la mejor es la 1 (Magnific One). La principal está a la altura del 9:16 y sirve en P02, T3, U2 y AB2, aunque al pilar del fondo le falta el tramo inferior. La apaisada es un boceto (líneas dobles, extremo sin resolver, ejes que no son paralelos), así que T1, T6 y T2 sirven con ajustes; conviene pedir otra apaisada con variantes.\n\nNano Banana 2.1 dibuja más nítido pero con trazo más grueso, y su acento no muestra el choque:\n- Opción 2: su apaisada mezcla proyecciones y corta la tubería en tramos. Sirve con ajustes en todos los formatos.\n- Opción 3: sirve con ajustes en P02, T3, U2 y AB2, y no sirve en T1, T6 ni T2 porque su apaisada tiene un error de proyección: la losa se fuga hacia ambos lados.\n\nLos rescates no sirven tal cual:\n- Opciones 6 y 8: el recorte de G-AFI-04 arrastra la línea divisoria turquesa del original y halos de la ampliación.\n- Opción 6: además, la planta de H063 trae cotas ilegibles generadas por la IA.\n- Opción 7: H021 está fuera de la familia de trazo fino.",
+   "costuras": "Lente de costuras. En las tres opciones B (1, 2 y 3) el fondo extendido no tiene escalón (0 niveles en la costura) ni rectángulo, ningún acento turquesa toca el borde y las 4 cruces no chocan con el dibujo. Sirven en los 7 formatos. Entre ellas mi lente casi no ve diferencia: elijo la 1 porque solo extiende el fondo en T6, y la 2 queda empatada.\n\nEl camino A pierde las cruces sobre la imagen en todos los formatos (motor 0.3o, contra el criterio de David). A1 (4) y R2 (7) sirven con ajustes en los 7 formatos: devolver las cruces. A3 (5) sirve con ajustes, y en T2 y T6 además corta vigas turquesa.\n\nR1 (6) y R3 (8) no sirven en vertical, historia ni en los dos LinkedIn: hay planos turquesa cortados, la máscara queda 9 a 12 % turquesa y un filete turquesa vertical se lee como costura. En cuadrados y slide sirven con ajustes.\n\nEl método de recorte óptimo, que David aún no valida, funcionó en A1 pero no evitó los cortes en A3 ni en R1/R3. No escribí archivos ni gasté créditos."
   }
  }
 ]

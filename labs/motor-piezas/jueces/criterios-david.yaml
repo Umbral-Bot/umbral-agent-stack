@@ -7,6 +7,8 @@
 # «proceso» con lentes [todas] los recibe cada juez.
 # `rechazados`: criterios que se probaron sobre galerías pasadas y no mejoraron el acierto. No se le
 # pasan a los jueces; quedan para no volver a probarlos igual.
+# `estado`: activo (lo dijo David o ya pasó la prueba) o «a prueba» (inferido: se mide en la próxima galería y
+# sale si baja el acierto). Lo que David dice con sus palabras entra activo; lo que se infiere, a prueba.
 version: 1
 criterios:
 - id: C01
@@ -32,6 +34,7 @@ criterios:
     cita: El texto chico ya medía 7:1 o más, pero el llamado y el logo quedaban sobre la parte más clara y con más
       textura de la imagen.
     fuente: labs/motor-piezas/README.md
+  estado: activo
 - id: C02
   regla: 'Medido bajo cada texto, el texto chico sobre una imagen con textura necesita bastante más que el mínimo
     de 4,5:1: con valores de 4,6 a 6,3:1 se vio flojo. El logotipo cuenta como texto chico en esta medida. El llamado
@@ -61,6 +64,7 @@ criterios:
   - galeria: G02
     cita: El logotipo ahora cuenta para el velo como texto chico.
     fuente: labs/motor-piezas/README.md
+  estado: activo
 - id: C03
   regla: 'Valora la composición compleja y bien resuelta por sobre la simple. Júzgala por separado de los defectos
     de lectura corregibles: una pieza con gran composición y contraste flojo puntúa alto en composición y bajo en
@@ -79,6 +83,7 @@ criterios:
   - galeria: G07
     cita: 'Punto de partida: G01 12°, «la que destaco por la complejidad'
     fuente: labs/motor-piezas/galerias/G07.yaml
+  estado: activo
 - id: C04
   regla: 'Una distribución correcta y clara (los textos caben y cada bloque tiene su zona) no basta para aprobar.
     La pieza tiene que mostrar decisiones de diseño gráfico visibles: proporciones afinadas y una posición y un
@@ -101,6 +106,7 @@ criterios:
     cita: Con bajada · LinkedIn, pensada para computador= 5 pero ajustando tamaño de "lee el articulo.." mas mpequeño
       y distribuye mejor los textos, ademsa que es lo que va en "Ejemplo"?
     fuente: labs/motor-piezas/decisiones.csv
+  estado: activo
 - id: C05
   regla: 'Hipótesis del laboratorio, no dicha por David: la imagen o la ilustración no flota en coordenadas sueltas,
     y sus bordes se alinean con la grilla, con las líneas del texto o con el borde del lienzo. La composición no
@@ -123,6 +129,7 @@ criterios:
   - galeria: chat
     cita: Bajo las filas queda un vacío del 38 % del alto.
     fuente: labs/motor-piezas/analisis/01_piezas-elegidas.md
+  estado: activo
 - id: C06
   regla: La imagen llega al borde del lienzo (a sangre o con sangrado lateral). Se prefiere esto a una imagen encerrada
     en una caja con margen sobre el lienzo o a una ilustración vectorial aislada, aunque la caja o la ilustración
@@ -143,6 +150,7 @@ criterios:
   - galeria: chat
     cita: En 20° la imagen está pegada como caja; en 22° y 24° funciona mejor a lienzo completo
     fuente: labs/motor-piezas/README.md
+  estado: activo
 - id: C07
   regla: El texto va en un panel o una banda de fondo liso, separado de la imagen. Se prefiere esto a poner el texto
     encima de la imagen bajo un velo.
@@ -163,6 +171,7 @@ criterios:
   - galeria: G14
     cita: La imagen a sangre bajo un velo ya se comparó en G12 (4°) y David prefirió la banda.
     fuente: labs/motor-piezas/galerias/G14.yaml
+  estado: activo
 - id: C08
   regla: La división del lienzo se decide por formato, no con una proporción fija. En la diapositiva 16:9 de evento,
     el texto va en un tercio lateral y la imagen manda en el resto; se prefiere a la mitad, a la banda y a la ele.
@@ -185,6 +194,7 @@ criterios:
   - galeria: G12
     cita: 'Banda abajo: imagen arriba a sangre, titular y bajada abajo sobre fondo liso'
     fuente: labs/motor-piezas/galerias/G12.yaml
+  estado: activo
 - id: C09
   regla: En piezas de evento, los datos prácticos (fecha, hora y lugar) tienen peso propio y se leen en el celular.
     No quedan como letra chica subordinada; si hace falta, el subtítulo baja al tamaño del kicker para no competir
@@ -209,6 +219,7 @@ criterios:
   - galeria: chat
     cita: las filas de fecha, hora y lugar quedan demasiado chicas para leerse en el celular.
     fuente: labs/motor-piezas/README.md
+  estado: activo
 - id: C10
   regla: El titular manda siempre. Aunque un titular largo obligue a achicarlo, el kicker y el subtítulo no pasan
     de cerca del 45 % de su tamaño. Si le compiten en tamaño, es un defecto de jerarquía.
@@ -229,6 +240,7 @@ criterios:
   - galeria: G10
     cita: '**Hallazgo:** con un título largo, en 1:1 y 4:5 el kicker y el subtítulo le compiten al título.'
     fuente: C:/Users/david/.claude/projects/C--GitHub-umbral-agent-stack/memory/motor-piezas-lab.md
+  estado: activo
 - id: C11
   regla: En un post de noticia domina un titular grande que llena su banda, con la bajada claramente secundaria.
     Se rechazan tanto la bajada protagonista que achica el titular como el titular mediano que deja aire de sobra
@@ -246,6 +258,7 @@ criterios:
   - galeria: G13
     cita: 'Base: titular de 156 px que llena la banda, bajada de 14 px CSS en tres líneas'
     fuente: labs/motor-piezas/galerias/G13.yaml
+  estado: activo
 - id: C12
   regla: 'Sobre fondo oscuro, la bajada se distingue del titular con un tono apenas más gris, del orden del blanco
     al 80 % (unos 10:1). El blanco idéntico al del titular no la separa y el gris de texto de la marca la deja demasiado
@@ -277,6 +290,7 @@ criterios:
   - galeria: G19
     cita: 'mide el contraste con el color ya mezclado: 15,8 / 12,9 / 10,3 / 7,2:1'
     fuente: labs/motor-piezas/README.md
+  estado: activo
 - id: C13
   regla: 'En el panel oscuro, el color de marca se usa con sobriedad: etiquetas en el gris de marca y el turquesa
     principal saturado (#2DD4BF) solo como acento. No el turquesa claro en los textos de acento ni las etiquetas
@@ -303,6 +317,7 @@ criterios:
     cita: 'Panel claro: la banda en el tema claro de la marca; la bajada gris queda en 4,6:1, la más baja de las
       tres'
     fuente: labs/motor-piezas/galerias/G15.yaml
+  estado: activo
 - id: C14
   regla: 'El llamado en forma de botón («Lee el artículo…») es secundario: tiene que verse claramente más chico
     que el titular y la bajada, y no robar atención. Si compite en tamaño o peso, se pide achicarlo. Vale con bajada
@@ -328,6 +343,7 @@ criterios:
   - galeria: G23
     cita: 'Sin bajada · LinkedIn, piezas completas : 2'
     fuente: labs/motor-piezas/decisiones.csv
+  estado: activo
 - id: C15
   regla: 'Para achicar el botón se reduce su texto, no su relleno. Se aceptó el texto cerca de un 24 % más chico
     que el de base, con el mismo relleno, y unos 7 px CSS a ancho de celular. La lente de lectura no veta el botón
@@ -360,6 +376,7 @@ criterios:
   - galeria: G20
     cita: La verificación lo marca como aviso de calidad.
     fuente: labs/motor-piezas/README.md
+  estado: activo
 - id: C16
   regla: 'En una columna de texto seguido (kicker, titular, bajada y botón), las separaciones entre textos son iguales
     y se miden siempre de la misma manera. Son algo más amplias que un bloque apretado, sin irse al extremo. Las
@@ -377,6 +394,7 @@ criterios:
     cita: 1= 2, pero un poco mas separados los textos "Articulo" , "la IA.." , "Que cam.." y "Lee.." todos esos
       entre si con la mismasparación aumenta la un poco mas, haz variaciones  a partir de la alt2
     fuente: labs/motor-piezas/decisiones.csv
+  estado: activo
 - id: C17
   regla: En la imagen de enlace de LinkedIn (1200×627), la separación pareja entre textos que David eligió es de
     unos 36 px con bajada y unos 32 px sin bajada. Una separación mayor, de 40 px, no la eligió.
@@ -401,6 +419,7 @@ criterios:
   - galeria: G21
     cita: 40 px; el titular baja a 86 px para caber
     fuente: labs/motor-piezas/galerias/G21.yaml
+  estado: activo
 - id: C18
   regla: 'En formatos apaisados y bajos, como la imagen de enlace de LinkedIn, el texto no queda como un bloque
     apretado en una mitad. Se reparte con intención: columna de texto más ancha, titular más grande y bajada en
@@ -418,6 +437,7 @@ criterios:
   - galeria: G20
     cita: 'Igual, con la columna de texto más ancha (7 de 12): la bajada en 3 líneas y el titular más grande'
     fuente: labs/motor-piezas/galerias/G20.yaml
+  estado: activo
 - id: C19
   regla: En una pieza apaisada sin bajada se prefiere la marca arriba, el kicker y el titular al medio y el botón
     cerrando abajo, al pie de la columna. Se prefiere esto a juntar todo el texto en un bloque centrado o apoyado
@@ -445,6 +465,7 @@ criterios:
     cita: 'Sin bajada · LinkedIn, piezas completas: 1 peor el boton mas pequeño [«peor» leído como «pero»: el botón
       más chico va en G23]'
     fuente: labs/motor-piezas/decisiones.csv
+  estado: activo
 - id: C20
   regla: En la imagen de LinkedIn (1200×627) es válido pensar la pieza para verse en computador, con el texto más
     chico y más aire, aunque en el celular quede bajo el mínimo; no se castiga. En el save the date, David eligió
@@ -472,6 +493,7 @@ criterios:
   - galeria: G19
     cita: Sin bajada · LinkedIn, pensada para celular= 10 pero mas pequeño el "lee el ..
     fuente: labs/motor-piezas/decisiones.csv
+  estado: activo
 - id: C21
   regla: 'En los formatos de feed 1:1 y 4:5 de un evento, se prefiere conservar todos los datos aunque la imagen
     quede reducida a una franja lateral, antes que agrandar la imagen y dejar solo la fecha. No vale para LinkedIn:
@@ -490,6 +512,7 @@ criterios:
   - galeria: G08
     cita: 'Columna ancha: texto en 7 de 12 columnas con todos los datos; la imagen en una franja a la derecha'
     fuente: labs/motor-piezas/galerias/G08.yaml
+  estado: activo
 - id: C22
   regla: 'Referencia del laboratorio, no dicha por David: visto como feed en un celular, el texto de lectura apunta
     a no bajar de unos 11 px CSS; en una diapositiva vista en un notebook, a no bajar de unos 14 px CSS. Hay dos
@@ -509,6 +532,7 @@ criterios:
   - galeria: chat
     cita: Es la hipótesis del brief, confirmada en las cinco piezas con datos.
     fuente: labs/motor-piezas/analisis/01_piezas-elegidas.md
+  estado: activo
 - id: C23
   regla: 'El objeto de la imagen se juzga contra la máscara que le toca en cada formato (la zona que ese formato
     deja para la imagen), no contra el lienzo entero. Tiene que verse entero y centrado en ella, sin correrse hacia
@@ -531,6 +555,7 @@ criterios:
     cita: 'Medido: el edificio quedaba cortado arriba en el 1:1 del Preset 02 (32 %) y en el 16:9 (71 %), y corrido
       a la derecha en los LinkedIn y el 9:16.'
     fuente: labs/motor-piezas/README.md
+  estado: activo
 - id: C24
   regla: Entero y centrado, el objeto ocupa cerca del 85 % de su máscara (en la dimensión más justa) cuando la máscara
     es una banda, y cerca del 75 % cuando es una columna, más angosta que 1,3:1 (por ejemplo, LinkedIn o la historia
@@ -556,6 +581,7 @@ criterios:
   - galeria: G25
     cita: 'las máscaras más angostas que 1,3:1: los dos LinkedIn y el 9:16.'
     fuente: labs/motor-piezas/galerias/G25.yaml
+  estado: activo
 - id: C25
   regla: Si la máscara es mucho más apaisada que el objeto (la banda de un cuadrado o de una diapositiva), achicar
     el objeto no basta. Hace falta otra imagen pensada para esa proporción, con un objeto bajo y ancho que llene
@@ -580,6 +606,7 @@ criterios:
   - galeria: G26
     cita: 'Llena las bandas: 85 % del ancho en los 1:1 y 81 % en el 16:9, antes 17–23 %.'
     fuente: labs/motor-piezas/README.md
+  estado: activo
 - id: C26
   regla: 'Cuando la máscara es muy apaisada se usa una imagen apaisada propia, con un objeto bajo y ancho que llene
     la banda. La única que David aprobó tenía el objeto en 3,45:1 y ocupaba del 81 al 85 % del ancho de la banda.
@@ -603,6 +630,7 @@ criterios:
   - galeria: G26
     cita: 'Llena las bandas: 85 % del ancho en los 1:1 y 81 % en el 16:9, antes 17–23 %.'
     fuente: labs/motor-piezas/README.md
+  estado: activo
 - id: C27
   regla: 'Cuando el formato deja el objeto grande y en primer plano, como la historia vertical 9:16, sube la exigencia:
     el dibujo tiene que estar muy bien trabajado y contar el contenido del texto. Un objeto genérico, o con defectos
@@ -623,6 +651,7 @@ criterios:
     cita: 'Para el 9:16 el objeto queda en primer plano: la imagen tiene que estar muy trabajada y contar el contenido.
       Es un criterio del pedido.'
     fuente: labs/motor-piezas/README.md
+  estado: activo
 - id: C28
   regla: 'Una imagen de fondo es un tipo válido: un adorno gráfico abstracto, sin sujeto protagonista, de densidad
     pareja y recortable en cualquier parte. Sus elementos tienen que estar relacionados con el tema de la pieza,
@@ -643,6 +672,7 @@ criterios:
   - galeria: G27
     cita: va bien encaminado
     fuente: labs/motor-piezas/README.md
+  estado: activo
 - id: C29
   regla: En el camino del gráfico relacionado, la imagen cuenta lo mismo que el artículo, con un gráfico ligado
     a su hallazgo (por ejemplo, el hallazgo marcado en turquesa), y sale de una fórmula repetible que sirva para
@@ -666,6 +696,7 @@ criterios:
   - galeria: G27
     cita: regla ROLE.md «la metáfora cuenta la misma comparación
     fuente: C:/Users/david/.claude/projects/C--GitHub-umbral-agent-stack/memory/motor-piezas-lab.md
+  estado: activo
 - id: C30
   regla: La parte de la imagen que entra en cada máscara, y dónde queda el objeto dentro de ella, responden a un
     método explícito y comprobable, no al azar ni a un centrado por defecto. En un fondo, el método del laboratorio
@@ -686,6 +717,7 @@ criterios:
     cita: 'Posición, camino A: `imagen_recorte_fondo: optimo` prueba 441 recortes por máscara y elige el que no
       corta acentos turquesa, no carga turquesa de más y no cae en una zona vacía (motor 0.3p y 0.3q).'
     fuente: labs/motor-piezas/README.md
+  estado: activo
 - id: C31
   regla: 'Vetos de marca en la imagen: brillo o resplandor; luz y sombras dramáticas; degradados; turquesa como
     fondo; foto de stock, fotorrealismo o render 3D; y cualquier texto, letra, número o logotipo dentro de la imagen.
@@ -710,6 +742,7 @@ criterios:
   - galeria: chat
     cita: Magnific One + kit hacen la imagen; el motor hace la pieza.
     fuente: labs/motor-piezas/magnific-marca.md
+  estado: activo
 - id: C32
   regla: 'La imagen tiene fondo claro y plano, neutros dominantes y turquesa solo como acento en uno o dos elementos.
     Así salió la imagen que pasó sin objeciones de estilo: a esa imagen solo se le objetó la posición.'
@@ -731,6 +764,7 @@ criterios:
     cita: algunos de los formatos quedaron bueni , otros no tanto, el objeto no quedó bien posicionado respecto
       del lienzo disponible para la imagen, es decir respecto de la mascara usadal, se entiende?
     fuente: labs/motor-piezas/decisiones.csv
+  estado: activo
 - id: C33
   regla: 'La línea visual aprobada es una sola: isométrica, plana y clara, de trazo fino. Las imágenes de una campaña
     (principal y apaisada) apuntan a compartir grosor de trazo, tipo de vista y tratamiento de los acentos, y no
@@ -761,6 +795,7 @@ criterios:
   - galeria: G26
     cita: Dime si la imagen apaisada sirve en el 1:1 y el 16:9, y si la campaña se lee como una sola.
     fuente: labs/motor-piezas/galerias/G26.yaml
+  estado: activo
 - id: C34
   regla: 'Requisito técnico del motor, que se deriva de la queja de David por el objeto mal posicionado en la máscara:
     la imagen trae el sujeto al centro y no tiene composición de afiche (sujeto a un lado y la otra mitad vacía).
@@ -782,6 +817,7 @@ criterios:
   - galeria: chat
     cita: Respectode kitlo e maginfic one y la marca estoytotalmente de acuerdo con lo que proopones
     fuente: labs/motor-piezas/magnific-marca.md
+  estado: activo
 - id: C35
   regla: 'Los detalles del pie dependen del tipo de pieza. En el post de noticia, la banda de texto va lisa, sin
     trama, y el llamado va como botón turquesa con texto oscuro: junto al logo en el 4:5 y cerrando la columna de
@@ -807,6 +843,7 @@ criterios:
   - galeria: G06
     cita: 'Trama de puntos: la retícula de puntos de la v2, solo en el panel de texto'
     fuente: labs/motor-piezas/galerias/G06.yaml
+  estado: activo
 - id: C36
   regla: Lo que David eligió para un preset o un formato vale solo para ese preset o formato. El juez no exige ni
     premia en otra pieza un rasgo elegido para una (botón, trama, LinkedIn pensado para computador), ni la castiga
@@ -833,6 +870,7 @@ criterios:
   - galeria: G16
     cita: Lo que David elige en un preset vale solo para ese preset; no se extiende a otros sin preguntarle.
     fuente: C:/Users/david/.claude/projects/C--GitHub-umbral-agent-stack/memory/feedback-exploracion-paso-a-paso.md
+  estado: activo
 - id: C37
   regla: Si dos alternativas resuelven bien usos distintos (por ejemplo, con bajada y sin bajada), el juez puede
     proponer las dos como variantes en vez de forzar una sola ganadora.
@@ -846,6 +884,7 @@ criterios:
   - galeria: G18
     cita: me gusta que esten ambas alternativas, hariuia un prset sin bajada y uno con bajada
     fuente: labs/motor-piezas/decisiones.csv
+  estado: activo
 - id: C38
   regla: El veredicto se da formato por formato, no uno solo por campaña. La misma imagen puede funcionar en unos
     formatos y fallar en otros; la campaña no se aprueba en bloque si alguno falla, y cada juez dice en qué formatos
@@ -867,6 +906,7 @@ criterios:
   - galeria: G25
     cita: el de linkedin sev e bine
     fuente: labs/motor-piezas/README.md
+  estado: activo
 - id: C39
   regla: El chip EJEMPLO es una marca de laboratorio que desaparece en la pieza real. El juez no lo evalúa como
     parte del diseño, pero sí avisa si le quita espacio al texto o si choca con otras marcas.
@@ -885,6 +925,7 @@ criterios:
     cita: 'El chip EJEMPLO es una marca de laboratorio: sale porque el contenido de prueba trae `ejemplo: true`
       y desaparece en una pieza real.'
     fuente: labs/motor-piezas/README.md
+  estado: activo
 - id: C40
   regla: 'El costo en créditos no es un criterio de calidad: una imagen más barata no gana ni desempata frente a
     una mejor. Si el defecto está en la imagen, el juez recomienda pedir otra imagen, con variantes, en vez de aceptarla
@@ -900,6 +941,7 @@ criterios:
     cita: tan pocos creditos? no estás siendom muy mesquino con os creditos de magnific? esa versión que hiciste
       quedó mucho meojr, ahora haz 2 versiones de cada una
     fuente: labs/motor-piezas/README.md
+  estado: activo
 - id: C41
   regla: Los jueces se calibran contra las elecciones y correcciones de David. Cada vez que su ganador difiere de
     lo que él eligió, se ajusta la rúbrica, la configuración o el flujo del juez, nunca la elección, y cada corrección
@@ -914,6 +956,7 @@ criterios:
     cita: la diea es que los jhuueces cada vez adopten mas mis creiterios y tu busque sla forma d elqeu lo hagan,
       editando sus configuraciones y/o flujos
     fuente: chat
+  estado: activo
 - id: C42
   regla: Que la imagen sea grande, llegue al borde o sea la masa visual más fuerte de la pieza no significa por
     sí solo que compita con el titular. Si el titular va en su propio panel o banda sobre fondo liso y manda dentro
@@ -933,6 +976,7 @@ criterios:
   - galeria: G04
     cita: 2° Sangrado lateral
     fuente: labs/motor-piezas/decisiones.csv
+  estado: activo
 - id: C43
   regla: 'Las cruces de registro de las esquinas son parte de la identidad de las dos series: quitarlas no es una
     mejora. El juez no premia una versión sin cruces por verse más limpia; si una cruz choca con el dibujo, propone
@@ -955,6 +999,7 @@ criterios:
   - galeria: G16
     cita: 3 y 4
     fuente: labs/motor-piezas/decisiones.csv
+  estado: activo
 - id: C44
   regla: Para juzgar marca y oficio, las referencias de estilo son las imágenes que David ya aprobó como dirección
     y que siguen la línea isométrica plana de Magnific One. Una imagen nueva se compara con ellas. Los íconos de
@@ -978,6 +1023,7 @@ criterios:
   - galeria: chat
     cita: Respectode kitlo e maginfic one y la marca estoytotalmente de acuerdo con lo que proopones
     fuente: labs/motor-piezas/magnific-marca.md
+  estado: activo
 - id: C45
   regla: Cada galería cambia una sola cosa sobre una base que David ya eligió. El juez puntúa la diferencia entre
     las opciones y anota aparte los defectos comunes a todas. No desempata por lo que todas comparten ni vuelve
@@ -999,6 +1045,87 @@ criterios:
   - galeria: chat
     cita: una galería que cambia proceso, formato, modo e imagen a la vez no deja saber qué gustó de una pieza
     fuente: C:/Users/david/.claude/projects/C--GitHub-umbral-agent-stack/memory/feedback-exploracion-paso-a-paso.md
+  estado: activo
+- id: C47
+  regla: 'La imagen relacionada (camino B) necesita una metáfora: la premisa del titular convertida en una idea
+    abstracta y esa idea en imagen. Dibujar literalmente un hecho técnico (un choque en una viga) no basta. El juez
+    tiene que poder decir cuál es la metáfora y cómo se relaciona el titular con el dibujo; si no puede, la opción
+    no sirve tal cual.'
+  tipo: rechazo
+  lentes:
+  - imagen.contenido
+  - imagen.forma
+  - campana.serie
+  confianza: alta
+  estado: activo
+  desde: G28
+  hasta: G28
+  origen: dicho por David
+  evidencia:
+  - galeria: G28
+    cita: de la 1 a la 21, cual sería la metrafora? como se relaciona el totulo con el dibujo? [...] creo que falta
+      todo eso aca
+    fuente: jueces/elecciones.yaml (G28) · mensaje de David del 2026-11-11
+- id: C48
+  regla: 'Se valora la abstracción que representa una idea: un concepto contado como transformación visual (por
+    ejemplo, manzanas de ciudad que pasan a modelo, a puntos de datos y a una red de nodos), por sobre un objeto
+    técnico bien dibujado pero literal. La idea tiene que leerse sin texto.'
+  tipo: preferencia
+  lentes:
+  - imagen.contenido
+  - imagen.forma
+  - campana.serie
+  confianza: alta
+  estado: activo
+  desde: G28
+  hasta: G28
+  origen: dicho por David
+  evidencia:
+  - galeria: G28
+    cita: la 43 a 49muy buena la abstración y la idea representada en la imagen, ese arnes que usaste esta bueno
+    fuente: jueces/elecciones.yaml (G28) · mensaje de David del 2026-11-11
+- id: C49
+  regla: 'Un fondo de la línea de marca (patrón de elementos BIM, retícula estructural con losas turquesa, planta
+    isométrica) se acepta aunque en el recorte el turquesa ocupe superficies más grandes que un acento, o aunque
+    el dibujo traiga detalles menores (cotas o marcas) que no se leen a tamaño de feed. Eso no es veto: se anota
+    como ajuste.'
+  tipo: umbral
+  lentes:
+  - imagen.marca
+  - imagen.forma
+  - pieza.costuras
+  confianza: media
+  estado: a prueba
+  desde: G28
+  hasta: G28
+  origen: 'inferido: David puso como la mejor la opción que la lente de marca había vetado por las cotas de H063
+    y por el turquesa de G-AFI-04'
+  evidencia:
+  - galeria: G28
+    cita: de la 36 a la 42 tambien
+    fuente: jueces/elecciones.yaml (G28) · mensaje de David del 2026-11-11
+  - galeria: G28
+    cita: la mejor fue de la 36 a la 42
+    fuente: jueces/elecciones.yaml (G28) · mensaje de David del 2026-11-11
+- id: C50
+  regla: 'Una imagen relacionada sin idea pierde contra un buen fondo abstracto: si la opción del camino B no tiene
+    metáfora, el fondo de la línea de marca gana aunque cuente menos del artículo.'
+  tipo: preferencia
+  lentes:
+  - imagen.contenido
+  - campana.serie
+  confianza: media
+  estado: a prueba
+  desde: G28
+  hasta: G28
+  origen: 'inferido de la valoración de G28: fondos 1 y 2, imagen relacionada −1'
+  evidencia:
+  - galeria: G28
+    cita: de la 22 a la 35 se ve bien
+    fuente: jueces/elecciones.yaml (G28) · mensaje de David del 2026-11-11
+  - galeria: G28
+    cita: de la 1 a la 21, cual sería la metrafora?
+    fuente: jueces/elecciones.yaml (G28) · mensaje de David del 2026-11-11
 rechazados:
 - id: C46
   regla: 'Cuando todas las opciones ya cumplen el contraste y el tamaño mínimo, la más legible no gana por eso.

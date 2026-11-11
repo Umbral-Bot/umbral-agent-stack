@@ -1,4 +1,6 @@
-# Rúbricas de los jueces del motor de piezas · versión 2 (2026-11-11).
+# Rúbricas de los jueces del motor de piezas · versión 3 (2026-11-11).
+# v3: tras G28 la lente contenido pregunta por la metáfora y el veto de marca exige que el texto se lea a tamaño
+# de feed (la lente de marca vetó la opción que David puso como la mejor por unas cotas que no se leen).
 # Cada lente es un juez independiente (un agente) que mira las piezas con un solo criterio. El código
 # mide antes (UB-3, contraste, objeto en la máscara, turquesa en el recorte) y el juez usa esas medidas.
 #
@@ -10,7 +12,7 @@
 # - Una lente que no aplica a la galería lo dice (no_aplica) y no cuenta en la suma.
 # - La suma se pondera con pesos.yaml: cada lente pesa según cuánto coincidió con David.
 # - Protocolo ciego: los jueces votan antes que David, el voto se sella y David elige sin verlo.
-version: 2
+version: 3
 
 escala: "0 a 10 por opción; 7 o más = sirve; 5 a 7 = sirve con ajustes; menos de 5 = no sirve"
 gravedad:
@@ -30,13 +32,13 @@ etapas:
     lentes:
       marca:
         mira: "plano, trazo fino y parejo, fondo claro, turquesa solo como acento (B: 2 piezas como máximo), sin brillo, sombra, degradado, 3D ni foto"
-        veto: ["texto, letras, números o glifos legibles", "logo o algo que lo imite", "turquesa como fondo"]
+        veto: ["texto, letras, números o glifos que se leen a tamaño de feed", "logo o algo que lo imite", "turquesa como fondo plano de toda la imagen"]
       oficio:
         mira: "proyección coherente (isometría o la elegida), uniones resueltas, sin artefactos (tapas dobles, líneas sueltas), el trazo de la familia aprobada"
         veto: ["un error que el público BIM nota a tamaño de feed"]
       contenido:      # solo camino B
-        mira: "se lee el hallazgo; la imagen cuenta la misma comparación que el texto; no muestra el remedio que el texto niega"
-        veto: ["cuenta otra historia (caso CAND-WLCA-01 del repo)"]
+        mira: "cuál es la metáfora y cómo se relaciona el titular con el dibujo. Hace falta una idea (premisa → mensaje → metáfora), no la ilustración literal de un sustantivo del titular; la imagen cuenta lo mismo que la premisa y no muestra el remedio que el texto niega. En un fondo (camino A): sus elementos son del tema, aunque no ilustren la frase"
+        veto: ["cuenta otra historia (caso CAND-WLCA-01 del repo)", "imagen relacionada sin metáfora: no se puede decir cuál es la idea ni cómo se relaciona con el título"]
       forma:
         mira: "B: objeto entero y de una pieza, compacto en 16:9 y bajo y ancho en 21:9 (2,5:1 o más). A: sin sujeto, densidad pareja, recortable en cualquier parte"
         veto: []

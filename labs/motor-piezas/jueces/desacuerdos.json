@@ -976,5 +976,35 @@
    "alineacion": "1: FAIL; 2: FAIL; 3: OK; 4: OK",
    "lectura_ciega": "1: acierta; 2: acierta; 3: falla; 4: acierta"
   }
+ },
+ {
+  "galeria": "M02",
+  "rubrica": "imagenes-lectura-ciega",
+  "jueces": "4",
+  "david": [],
+  "cita": "me gustó la propuesta artistica, pero aun le falta a las ideas  y la conexion de la iddeas y los graficos",
+  "resumenes": {
+   "lectura_ciega": "1: acierta; 2: falla; 3: falla; 4: acierta"
+  }
+ },
+ {
+  "galeria": "M02",
+  "rubrica": "imagenes-pred-crit-a",
+  "jueces": "4",
+  "david": [],
+  "cita": "me gustó la propuesta artistica, pero aun le falta a las ideas  y la conexion de la iddeas y los graficos",
+  "resumenes": {
+   "prediccion": "Predigo que David elige la 4 (retícula tejida), porque retoma los dos rasgos que sí le engancharon: el campo denso con losas turquesa y la idea de red. Antes de aprobarla hay que reforzar los hilos para que la metáfora se lea en el celular y aplanar las losas claras con aire de resplandor. Le sigue la 1 (bandada): es la más poética, pero su composición de afiche se rompe en los recortes y las aves salen borrosas. La 3 tiene buen oficio, pero queda gris y lavada y repite las placas levantadas. La 2 es literal y no engancha. Hay riesgo de un nuevo «ninguna» si siente que la 4 es solo el fondo de G28 con garabatos."
+  }
+ },
+ {
+  "galeria": "M02",
+  "rubrica": "imagenes-pred-crit-b",
+  "jueces": "1",
+  "david": [],
+  "cita": "me gustó la propuesta artistica, pero aun le falta a las ideas  y la conexion de la iddeas y los graficos",
+  "resumenes": {
+   "prediccion": "Predigo que David elegirá la 1, la bandada que se posa en la obra, y no «ninguna». Es la única idea nueva que engancha: convierte un campo disperso en orden sobre la estructura, se lee sin texto y calza con «la IA entra a la obra». Hay que anotarle dos ajustes: los pájaros borroneados y la composición de afiche, que complica los recortes fuera del 16:9. La 4 queda segunda, porque gusta, pero por ser la retícula ya vista y no por su idea. La 3 es compleja, pero gris y sin IA. La 2 es literal y no sirve."
+  }
  }
 ]

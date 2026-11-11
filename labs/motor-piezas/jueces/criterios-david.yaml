@@ -1167,6 +1167,26 @@ criterios:
   - galeria: M01
     cita: n9o me gistó ninguna
     fuente: jueces/elecciones.yaml (M01) · respuesta de David del 2026-11-11
+- id: C53
+  regla: 'La dirección de arte de M02 funciona: ilustración densa, a escala, con una transformación o un campo gráfico
+    con presencia. Lo que falta está antes del dibujo: la idea y su conexión con el gráfico. Una imagen bien resuelta
+    no compensa una idea débil, y la idea no sale de la metáfora: sale de una fábrica de ideas alineada con el trabajo,
+    el estilo y los principios de David.'
+  tipo: proceso
+  lentes:
+  - todas
+  confianza: alta
+  estado: activo
+  desde: G30
+  hasta: G30
+  origen: dicho por David (M02)
+  evidencia:
+  - galeria: M02
+    cita: me gustó la propuesta artistica, pero aun le falta a las ideas  y la conexion de la iddeas y los graficos
+    fuente: jueces/elecciones.yaml (M02) · mensaje de David del 2026-11-11
+  - galeria: M02
+    cita: Partamos en la producción de ideas primero como se origina la idea
+    fuente: jueces/elecciones.yaml (M02) · mensaje de David del 2026-11-11
 rechazados:
 - id: C46
   regla: 'Cuando todas las opciones ya cumplen el contraste y el tamaño mínimo, la más legible no gana por eso.

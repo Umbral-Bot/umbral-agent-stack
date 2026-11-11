@@ -1,0 +1,159 @@
+{
+ "id": "M02",
+ "titular": "La IA entra a la obra",
+ "motivo": "M01 no enganchó («la idea no engancha»): seis estrategias buscando escala, transformación y campo denso; un editor eligió cuatro",
+ "opciones": {
+  "1": {
+   "titulo": "La bandada que se posa en la obra",
+   "idea": "La revisión deja de pasar por muestras: llega a todos los encuentros del proyecto a la vez, y el edificio sigue siendo obra del equipo.",
+   "gancho": "Miles de puntos vivos pasan de una nube orgánica a la retícula exacta de un edificio. La imagen junta las dos cosas que engancharon a David: una transformación que se lee de izquierda a derecha a escala de toda la obra y un campo denso con presencia. El cruce con la naturaleza no tiene nada de tecnológico y se entiende al primer vistazo: algo llega en masa y se posa en cada nudo sin saltarse ninguno. No hay una pieza suelta ni una anomalía señalada. Lo que cambia de estado es la escena entera.",
+   "metafora": {
+    "inicial": "Una bandada de estorninos entra por la izquierda como una nube fluida, sin forma fija.",
+    "cambia": "Al llegar a la estructura de la obra, la nube se ordena y cada pájaro se posa en un nudo viga-columna, donde se cruzan los sistemas y donde antes se escapaban los conflictos.",
+    "termina": "Los pájaros posados dibujan la retícula completa del edificio. La obra entera queda recorrida, nudo por nudo."
+   },
+   "relacion_titulo": "«Entra a la obra» se lee literal: la bandada llega desde fuera, cruza el borde de la estructura y se queda en todos sus nudos. Los pájaros se posan pero no construyen, y el edificio en línea neutra sigue siendo trabajo del equipo. Se quita el piso superior vacío del original, porque era un detalle didáctico que competía con la escala.",
+   "turquesa": "Solo la bandada: cada estornino, en vuelo y posado. La estructura, las losas y el fondo van sin acento. El turquesa pasa de nube suelta a puntos alineados sobre la retícula.",
+   "prompt_16x9": "An unfinished concrete structure seen from a high angle fills the right two thirds of the frame: a deep grid of columns, beams and open slabs, floor after floor. From the upper left, a murmuration of thousands of tiny turquoise starlings flows in as one soft cloud and settles into exact order, one bird perched with folded wings on every beam-column joint, the flock tracing the entire structure. Only the birds are turquoise. No text, no markers, no logo.",
+   "riesgo": "Los pájaros en vuelo pueden salir como chevrones en V y leerse como flechas, y los posados pueden verse como puntos-marcador o como ruido. El generador puede dibujarlos fotorrealistas, de caricatura o tan grandes que tapen la estructura. También pueden leerse como palomas en un edificio abandonado o como drones de inspección, o volar en formación de rejilla en vez de posarse. Puede teñir las losas de turquesa o perder la isometría al fundir la nube con el edificio. Revisar primero que la nube sea suave y que haya un pájaro por nudo."
+  },
+  "2": {
+   "titulo": "Cota a cota",
+   "idea": "Con la IA, la revisión deja de hacerse por muestras y cubre toda la obra: cada relación entre las partes queda medida y a la vista. Qué hacer con esas medidas lo decide el equipo.",
+   "gancho": "Hay muchas más cotas de las que un equipo dibujaría jamás, colgadas de un edificio real. A la izquierda la obra está casi desnuda y a la derecha queda envuelta en sus propias medidas. El contraste muestra de un golpe una escala de revisión imposible a mano, con el lenguaje del propio oficio y sin ningún símbolo tecnológico. La densidad le da presencia de campo gráfico, como la retícula que enganchó.",
+   "metafora": {
+    "inicial": "Una obra completa en construcción: estructura de hormigón, losas abiertas, ductos, tuberías y bandejas en cada piso, con una grúa torre a la izquierda.",
+    "cambia": "De izquierda a derecha, una trama de cotas turquesa se multiplica sobre el edificio y mide cada distancia entre viga, ducto, tubería y muro.",
+    "termina": "En el tercio derecho el edificio queda envuelto en sus medidas, tan denso que ya no se lee como objetos sino como una red de holguras verificadas."
+   },
+   "relacion_titulo": "«La obra» se lee literal: un edificio en construcción con su grúa. «La IA entra» es el avance de las cotas de izquierda a derecha: donde llegan, ninguna distancia queda sin medir. Lo que se haga con esas medidas no está dibujado, porque esa parte le queda al equipo.",
+   "turquesa": "Solo las cotas: líneas de cota, líneas de extensión y sus marcas oblicuas. El edificio, las redes y la grúa van en línea neutra. Así el turquesa crece en densidad de izquierda a derecha y cuenta por sí solo la entrada.",
+   "prompt_16x9": "A mid-rise building under construction fills the frame edge to edge: open slabs, columns, ducts, pipes and cable trays on every floor, a tower crane at left. Blank turquoise dimension lines with oblique ticks multiply from left to right: a few near the crane, dozens at the center, hundreds across the right third, a tight web measuring every gap between beam, duct, pipe and wall. Only the dimension lines are turquoise. No text, no markers, no logo.",
+   "riesgo": "El generador tiende a poner números o letras sobre las cotas y a cambiar las marcas oblicuas por puntas de flecha. La trama puede volverse un garabato o leerse como rayos de escaneo. Si reparte la misma densidad en todo el cuadro, la entrada no se lee. El turquesa puede pasarse a la estructura, pueden aparecer obreros o el conjunto puede quedar como un plano técnico frío. Revisar primero la progresión de densidad y que no haya cifras."
+  },
+  "3": {
+   "titulo": "La obra se abre",
+   "idea": "Cuando llega la revisión, lo que estaba superpuesto se vuelve legible y los puntos de contacto entre disciplinas quedan a la vista, sin resolver, esperando que alguien decida.",
+   "gancho": "Un edificio entero, de borde a borde, está cerrado en un extremo y abierto en el otro en el mismo instante. Sus disciplinas quedan suspendidas en estratos parejos, con calma de plano técnico, y entre ellos cientos de hilos turquesa tensos forman un campo parecido a un telar. Es una transformación a escala de obra contada en el espacio, como la ciudad que enganchó. Además absorbe la mejor idea de «Entre capas»: lo que se escapaba no estaba en ninguna capa, sino entre ellas.",
+   "metafora": {
+    "inicial": "Un edificio largo en obra, compacto: estructura, losas, ductos, cañerías y fachada apretados en un solo bloque denso donde nada se distingue de nada.",
+    "cambia": "Desde un extremo, el mismo edificio se separa por disciplinas. Cada sistema sube a su propio nivel, la separación entre niveles crece de forma pareja y entre ellos aparecen hilos que unen los puntos exactos donde un sistema tocaba a otro.",
+    "termina": "La obra se lee por estratos, con todos sus cruces tendidos como hilos. Nada está corregido todavía: lo que se toca quedó expuesto, y qué hacer con eso queda abierto."
+   },
+   "relacion_titulo": "«La obra» es el edificio en construcción que ocupa todo el cuadro. «Entra» es el frente donde el bloque empieza a abrirse: la IA no se dibuja, se lee en lo que ya entró por un extremo y va separando la obra mientras avanza. Los hilos son hallazgos, no soluciones, y la decisión sigue siendo del equipo.",
+   "turquesa": "Solo los hilos verticales, finos y tensos, que unen los estratos. Aparecen únicamente en el tramo abierto y son más densos donde la separación es mayor. El edificio, en todas sus capas, va en línea neutra.",
+   "prompt_16x9": "One long building under construction spans the whole frame. At the left end it stands compact, every system packed into one dense block. Toward the right, the same building lifts apart into calm, level strata, the gaps widening steadily: structure, slabs, ducts, pipes and façade each on its own level. Hundreds of thin, taut turquoise threads run straight up between the strata, linking every point where two systems touched. Only the threads are turquoise. No text, no markers, no logo.",
+   "riesgo": "El despiece puede leerse como derrumbe o demolición, con capas fundidas o piezas flotando al azar. Los hilos pueden salir como rayos luminosos, flechas o líneas de cota, o perderse en la densidad del dibujo. El tramo compacto puede leerse como otro edificio y no como el mismo en su estado anterior. El generador puede agregar rótulos a cada estrato o caer en la infografía genérica del edificio explotado. Revisar primero que sea un solo volumen continuo y que los hilos sean mate y verticales."
+  },
+  "4": {
+   "titulo": "La retícula tejida",
+   "idea": "La IA atraviesa el proyecto en todas las direcciones y relaciona lo que antes se revisaba por partes, mientras la estructura que sostiene las decisiones sigue siendo la del equipo.",
+   "gancho": "Dos geometrías chocan a la escala de toda la planta. La retícula ortogonal del oficio llena el cuadro, y una trama triangulada la cruza en diagonal y la va tomando. Es la más cercana a las dos imágenes que engancharon, la retícula estructural densa y la ciudad que termina en red, pero aquí la red no flota: cada línea nace y termina en una cabeza de columna. La entrada en diagonal desde la esquina inferior izquierda le da una composición distinta de las otras tres.",
+   "metafora": {
+    "inicial": "Una retícula estructural enorme de columnas y vigas que se repiten en bahías limpias: el proyecto revisado por ejes, por partes.",
+    "cambia": "Desde la esquina inferior izquierda, unas líneas turquesa finas cruzan las bahías en diagonal y unen cabezas de columna lejanas que la retícula no relacionaba. Se multiplican a medida que avanzan.",
+    "termina": "Hacia la esquina superior derecha, la planta queda tejida en una malla triangulada densa que se aprieta en unos pocos nudos, que son lo que se encontró. Debajo, la retícula sigue entera y portante."
+   },
+   "relacion_titulo": "«Entra»: la malla entra por una esquina y avanza sobre la planta hasta tejerla. «La obra»: la retícula estructural de un edificio, que llena el cuadro. Lo que sigue dependiendo del equipo es la retícula misma, que atraviesa todo el cuadro sin cambiar debajo de la malla.",
+   "turquesa": "Solo la malla triangulada: las diagonales entre cabezas de columna y los nudos donde se aprieta. La retícula de columnas y vigas va en línea neutra. La esquina de entrada lleva muy poco turquesa, para que el acento crezca con el avance.",
+   "prompt_16x9": "A vast structural grid seen from a high angle fills the frame, hundreds of columns and beams repeating in even bays. Entering at the lower left corner, thin turquoise lines cross the bays diagonally, each linking two distant column heads; they multiply toward the upper right, where they weave a dense triangulated mesh gathered into a few tight knots. Only the mesh is turquoise; the column grid runs whole beneath it. No text, no markers, no logo.",
+   "riesgo": "La malla puede verse como la red de nodos de «IA» de banco de imágenes, con puntos flotantes, o como arriostramiento estructural literal. Si el generador la hace pareja en todo el cuadro, se pierde el avance diagonal. El turquesa puede inundar el cuadro, o los nudos pueden quedar como manchas o halos brillantes. La retícula puede deformarse con perspectiva cónica o bahías irregulares, y en miniatura la zona densa puede volverse ruido. Revisar primero que cada línea termine en una columna."
+  }
+ },
+ "descartadas": [
+  {
+   "titulo": "Bajo la obra",
+   "motivo": "Repite el problema de M01. Toda la idea descansa en una sola punta turquesa a punto de tocar un ducto, un casi-choque del mismo tipo que la canica ante la compuerta o el desagüe fuera de la grilla. El subsuelo enorme queda como decorado gris y el hallazgo es un punto que desaparece en miniatura."
+  },
+  {
+   "titulo": "Entre capas",
+   "motivo": "Tiene el mismo mecanismo que «La obra se abre», en espejo: el edificio separado por disciplinas en capas a lo largo del cuadro. Se queda «La obra se abre» porque ahí la IA se lee como el frente que entra y el turquesa forma un campo continuo de hilos. En «Entre capas», los bloques turquesa en los cruces pueden volver a la anomalía chica salpicada. Su mejor idea, que lo que se escapaba vivía entre las capas, ya la cuentan los hilos."
+  }
+ ],
+ "todas_las_ideas": [
+  {
+   "titulo": "Cota a cota",
+   "idea": "Cuando la IA entra, la revisión deja de hacerse por muestras y cubre toda la obra: cada relación entre las partes queda medida y a la vista. Qué hacer con esas medidas sigue siendo decisión del equipo.",
+   "gancho": "A la derecha hay muchas más cotas de las que un equipo dibujaría jamás, colgadas de un edificio real. A la izquierda el edificio está casi desnudo. Ese contraste muestra de un golpe una escala de revisión imposible a mano. La densidad le da presencia de campo gráfico, como la retícula que enganchó, y el edificio se termina leyendo por sus relaciones más que por sus piezas.",
+   "metafora": {
+    "inicial": "Una obra completa en construcción: estructura de hormigón, losas abiertas y ductos, tuberías y bandejas en cada piso, con una grúa torre a la izquierda.",
+    "cambia": "De izquierda a derecha una trama de cotas turquesa se va multiplicando sobre el edificio y lo atraviesa. Mide cada distancia entre viga, ducto, tubería y muro.",
+    "termina": "En el extremo derecho el edificio queda envuelto en sus propias medidas, tan denso que ya no se lee como objetos sino como una red de holguras verificadas."
+   },
+   "relacion_titulo": "«La obra» se lee literal: un edificio en construcción con su grúa. «La IA entra» es el avance de las cotas turquesa de izquierda a derecha: donde llegan, ninguna distancia queda sin medir y lo que antes se escapaba queda medido. Lo que se haga con esas medidas no está dibujado, porque esa parte le queda al equipo.",
+   "turquesa": "Solo las cotas: líneas de cota, líneas de extensión y sus marcas oblicuas. El edificio, las redes y la grúa van en línea neutra, así el turquesa crece en densidad de izquierda a derecha y cuenta por sí solo la entrada.",
+   "prompt_16x9": "A complete mid-rise building under construction spans the full width: concrete frame, open slabs, ducts, pipes and cable trays on every floor, a tower crane at left. Turquoise numberless dimension lines with oblique ticks grow from left to right: sparse near the crane, denser at the center, and at the right a tight web measuring every gap between beam, duct, pipe and wall, wrapping the whole volume. No text, no markers, no logo.",
+   "riesgo": "El modelo tiende a poner números o letras sobre las cotas y a cambiar las marcas oblicuas por puntas de flecha. La trama puede volverse un garabato o leerse como rayos de escaneo. También puede salir con la misma densidad en todo el cuadro, y entonces la entrada de izquierda a derecha no se lee. El turquesa puede pasarse a la estructura, pueden aparecer obreros en la obra o el conjunto puede quedar como un plano técnico frío. Revisar primero la progresión de densidad y la ausencia de cifras."
+  },
+  {
+   "titulo": "La retícula tejida",
+   "idea": "La IA atraviesa el proyecto en todas las direcciones y relaciona lo que antes se revisaba por partes, mientras la estructura que sostiene las decisiones sigue siendo la del equipo.",
+   "gancho": "El choque entre dos geometrías a la escala de toda la planta. La retícula ortogonal del oficio llena el cuadro de borde a borde y una trama triangulada la cruza en diagonal y la va tomando. No hay una pieza que se mueva: cambia la forma de mirar la obra entera. El avance de izquierda a derecha cuenta la entrada en el espacio, como la ciudad que te gustó. En miniatura funciona como un campo gráfico fuerte, con una mitad de líneas sobrias y la otra tejida en turquesa.",
+   "metafora": {
+    "inicial": "Una retícula estructural ortogonal enorme: columnas y vigas que se repiten por todo el cuadro, con bahías limpias. Es el proyecto revisado por ejes, por partes.",
+    "cambia": "De izquierda a derecha, unas líneas turquesa finas empiezan a cruzar las bahías en diagonal y unen cabezas de columna lejanas, que la retícula no relacionaba. Se multiplican a medida que avanzan.",
+    "termina": "La mitad derecha queda tejida en una malla triangulada densa, que se aprieta en cúmulos sobre unas pocas bahías (lo que se encontró). Debajo, la retícula oscura sigue entera y portante en todo el cuadro."
+   },
+   "relacion_titulo": "«Entra»: la malla turquesa entra por el borde izquierdo y avanza sobre la planta hasta tejerla. «La obra»: la retícula estructural de un edificio que llena el cuadro. La segunda mitad de la bajada, lo que sigue dependiendo del equipo, está en la retícula oscura: atraviesa todo el cuadro sin cambiar, debajo de la malla.",
+   "turquesa": "Va solo en la malla triangulada: las diagonales que cruzan las bahías y los cúmulos donde se aprieta. La retícula ortogonal de columnas y vigas queda en línea oscura neutra. El lado izquierdo va casi sin turquesa, para que el acento crezca con la entrada.",
+   "prompt_16x9": "A vast structural floor grid seen from a high isometric angle, columns and beams repeating edge to edge across the whole frame. Moving left to right, thin turquoise diagonal lines start crossing the bays, linking distant column heads, multiplying until the right half becomes a dense triangulated mesh that gathers into tight clusters over a few bays. The dark orthogonal grid continues, whole and steady, beneath the mesh. No text, no markers, no logo.",
+   "riesgo": "Pueden salir mal cinco cosas. (1) La malla puede verse como la típica red de nodos de «IA» de banco de imágenes, o como arriostramiento estructural literal, y no como revisión. (2) El generador puede hacer la malla pareja en todo el cuadro, sin el avance de izquierda a derecha, que es lo que cuenta la entrada. (3) El turquesa puede inundar el cuadro y romper el acento único. (4) Los cúmulos pueden quedar como manchas o halos brillantes. (5) La retícula puede deformarse, con perspectiva cónica o bahías irregulares, y en miniatura la densidad de la derecha puede volverse ruido."
+  },
+  {
+   "titulo": "La bandada que se posa en la obra",
+   "idea": "La revisión deja de ser una vuelta parcial: llega a todos los encuentros del proyecto a la vez, y lo que falta construir y decidir sigue siendo del equipo.",
+   "gancho": "Miles de puntos vivos pasan de una nube orgánica a la retícula exacta de un edificio. Recoge las dos cosas que le engancharon a David. Por un lado, una transformación contada de izquierda a derecha, como la ciudad que pasaba a red. Por otro, un campo denso con presencia, como la retícula estructural. El cruce con la naturaleza, una murmuración de estorninos, no tiene nada de tecnológico y se entiende al primer vistazo: llega algo en masa y se posa en cada nudo sin saltarse ninguno. No hay una pieza suelta ni una anomalía señalada. Lo que cambia de estado es toda la escena.",
+   "metafora": {
+    "inicial": "Una bandada de estorninos entra desde el cielo por la izquierda como una nube fluida, sin forma fija.",
+    "cambia": "Al alcanzar la estructura de la obra, la nube se ordena y cada pájaro se posa en un nudo viga-columna, justo donde se cruzan los sistemas y donde antes se escapaban los conflictos.",
+    "termina": "Los pájaros posados dibujan la retícula completa del edificio. El último piso, que solo tiene columnas sin vigas, queda vacío: esa parte todavía la construye el equipo."
+   },
+   "relacion_titulo": "«Entra a la obra» se lee de forma literal: la bandada llega desde fuera, cruza el borde del edificio en construcción y se queda en todos sus nudos. El edificio sigue dibujado en línea y es obra del equipo. El piso superior abierto muestra lo que la IA no hace por ellos.",
+   "turquesa": "Solo la bandada: cada estornino, tanto en vuelo como posado. La estructura, las losas y el fondo van sin acento.",
+   "prompt_16x9": "A vast unfinished building frame seen from above at an angle, a dense grid of columns, beams and floor slabs filling the right two thirds. From the upper left, a murmuration of thousands of tiny turquoise starlings pours in as one fluid cloud and settles into order: a single bird perched on every beam-column joint, the flock tracing the entire grid. The uppermost floor remains bare columns, still open. No text, no markers, no logo.",
+   "riesgo": "Los pájaros a escala diminuta pueden salir como chevrones en V que se leen como flechas, o como puntos que parecen marcadores y ruido. Puede que dibuje pájaros fotorrealistas o de dibujo animado, fuera de la línea fina, o que los ponga demasiado grandes y tapen la estructura. También puede leerse como palomas en un edificio abandonado o como drones de inspección. Otros fallos posibles: que los pájaros vuelen en formación de rejilla en vez de posarse, que tiña de turquesa también las losas, o que pierda la isometría al mezclar la nube con el edificio."
+  },
+  {
+   "titulo": "Entre capas",
+   "idea": "Lo que antes se escapaba no estaba en ninguna capa del modelo, sino entre ellas, y solo aparece cuando la revisión las junta sobre la obra.",
+   "gancho": "Un edificio entero abierto como un libro en hojas flotantes, que se va cerrando a lo ancho de la imagen hasta asentarse en su propia obra. La tensión está en que cada capa suelta se ve en orden y la trama turquesa no existe en ninguna de ellas: aparece de golpe, densa, recién cuando se juntan. No es una pieza anómala dentro de un campo. Es una transformación a escala de edificio, contada en el espacio, que termina en un campo gráfico cargado.",
+   "metafora": {
+    "inicial": "A la izquierda, un edificio largo está abierto en seis capas horizontales que flotan muy separadas sobre su obra: pilares, vigas, ductos, cañerías, muros y fachada, cada una en línea gris y cada una ordenada por sí sola.",
+    "cambia": "Hacia la derecha, las capas bajan y se acercan una a una; el espacio entre ellas se achica hasta desaparecer.",
+    "termina": "En el borde derecho, todas las capas descansan juntas sobre la obra y forman un solo edificio denso. En cada cruce entre sistemas hay un bloque turquesa, y todos esos bloques tejen una malla que no estaba en ninguna capa."
+   },
+   "relacion_titulo": "El modelo baja y se posa sobre la obra: es la entrada literal. Justo en ese contacto, la revisión deja ver lo que había entre las disciplinas. La segunda mitad de la premisa, decidir qué hacer, no se dibuja: la malla turquesa son hallazgos, no soluciones, y eso lo dice la bajada.",
+   "turquesa": "Solo en el tramo derecho, donde las capas ya están juntas: bloques en cada cruce entre sistemas, cada vez más densos hacia el borde, hasta formar una malla continua. Las capas sueltas de la izquierda no llevan nada de turquesa.",
+   "prompt_16x9": "A long building stretches across the frame over its construction site. At left it opens into six thin horizontal layers floating far apart, drawn in grey: columns, beams, ducts, pipes, walls, façade. Moving right, the gaps shrink layer by layer until, at the right edge, all layers rest flush on the site as one dense building, its system crossings filled with turquoise blocks woven into a single turquoise mesh. No text, no markers, no logo.",
+   "riesgo": "Que el generador reparta las capas igual a lo ancho y se pierda el cierre progresivo de izquierda a derecha. Que ponga turquesa en las capas flotantes o lo salpique en manchas sueltas, lo que nos devuelve a la anomalía chica que David rechazó. Que el despiece se lea como una lámina técnica fría y no como una imagen. Que la cuña que forman las capas al cerrarse se lea como flecha. Y que el tramo fundido salga como una maraña sin presencia en lugar de una malla clara."
+  },
+  {
+   "titulo": "Bajo la obra",
+   "idea": "La revisión llega hasta donde nadie mira. Lo que encuentra es mínimo frente a todo lo construido, pero cambia cómo se lee el conjunto. Qué hacer con eso se sigue decidiendo arriba.",
+   "gancho": "Es un iceberg. Lo que se construye ocupa apenas el tercio superior y el resto es subsuelo, mucho más grande y denso: cientos de pilotes, túneles, ductos y una línea de metro. El ojo baja buscando algo y, muy al fondo, encuentra una sola punta turquesa casi tocando un ducto antiguo. La tensión es un roce que todavía no ocurre, y el contraste entre lo enorme y lo minúsculo es lo que detiene el scroll. No es un mecanismo armado: es un corte del oficio a escala real que muestra un mundo oculto.",
+   "metafora": {
+    "inicial": "Un bloque enorme de obra urbana visto desde arriba: el edificio a medio levantar, con grúas y andamios, se lee como 'la obra'.",
+    "cambia": "El corte abre el suelo y deja ver que lo construido es la parte chica. Debajo hay un subsuelo inmenso y apretado de pilotes, alcantarillas, ductos y un túnel de metro.",
+    "termina": "Muy al fondo, un solo pilote tiene la punta turquesa a un pelo de un ducto antiguo. Está encontrado antes de hincarlo, y moverlo, rediseñar o seguir queda abierto para el equipo de arriba."
+   },
+   "relacion_titulo": "«Entra a la obra» se lee como entrar hasta donde la obra no se ve. La IA llegó al fondo del corte, debajo del edificio y de las grúas, y ahí está su hallazgo. Arriba la obra sigue en marcha y espera la decisión del equipo.",
+   "turquesa": "Solo la punta de un pilote, en el tercio inferior derecho, casi tocando un ducto antiguo. Es lo único con color en toda la escena: ni el pilote entero ni el ducto, solo la punta.",
+   "prompt_16x9": "A vast cutaway block of a city construction site, seen from above. A building rising with tower cranes and scaffolding occupies only the top third; the underground fills the rest, deep soil layers crowded with hundreds of foundation piles, sewer tunnels, utility pipes and a metro tube. Near the bottom, one pile tip nearly touches an old pipe, and only that small tip is turquoise. No text, no markers, no logo.",
+   "riesgo": "Que tiña de turquesa el pilote entero, varios pilotes o el ducto. Que la punta quede tan chica que desaparezca en miniatura, o que la rodee con un círculo marcador. Que el subsuelo se vuelva ruido sin capas legibles y la imagen se lea como lámina geológica en vez de coordinación. Que el edificio crezca y le quite al subsuelo el peso del iceberg, o que pierda el isométrico y caiga en perspectiva. Si el campo queda pobre, se parece al rechazado «detenido antes del choque» (la canica)."
+  },
+  {
+   "titulo": "La obra se abre",
+   "idea": "Cuando llega la revisión, lo que estaba superpuesto se vuelve legible y los puntos de contacto quedan a la vista, sin resolver, esperando que alguien decida.",
+   "gancho": "Es un edificio entero, de borde a borde del cuadro, que en un mismo instante está cerrado en un extremo y desarmado en el otro. Sus disciplinas quedan suspendidas en estratos ordenados, sin derrumbarse. La sorpresa es que un edificio flote abierto en el aire con calma de plano técnico. La escala es la de toda la obra y no la de una pieza suelta. La tensión está en el tramo izquierdo, que sigue compacto mientras el frente avanza hacia él. Los hilos turquesa, tensos como cuerdas entre las capas, forman un campo gráfico denso con presencia, en la línea de la retícula estructural que enganchó.",
+   "metafora": {
+    "inicial": "Un edificio largo en obra, compacto: estructura, losas, ductos, cañerías y fachada apretados en un solo bloque denso donde nada se distingue de nada.",
+    "cambia": "Desde un extremo, el mismo edificio se va separando por disciplinas. Cada sistema sube a su propio nivel, a distancias parejas, y entre niveles aparecen hilos finos que unen los puntos exactos donde un sistema tocaba a otro.",
+    "termina": "La misma obra se lee por estratos, con todos sus cruces a la vista como hilos tendidos. Nada está corregido todavía: lo que se toca quedó expuesto, y qué hacer con eso queda abierto."
+   },
+   "relacion_titulo": "«La obra» es el edificio real en construcción, que ocupa todo el cuadro. «Entra» es el frente donde el bloque empieza a abrirse: la IA no se dibuja, se lee como lo que ya entró por un extremo y va separando la obra capa por capa mientras avanza. El tramo todavía cerrado es el antes, y el tramo abierto, con sus hilos, es el ahora.",
+   "turquesa": "Solo los hilos verticales, finos y tensos, que unen entre estratos los puntos donde los sistemas se tocaban. Son unas pocas decenas y solo existen en el tramo ya abierto. El edificio, en todas sus capas, queda en la línea neutra.",
+   "prompt_16x9": "A long building under construction stretches across the whole frame. At the left end it stands compact, every system packed into one dense block: columns, slabs, ducts, pipes, façade. Toward the right, the same building gradually lifts apart into calm horizontal strata floating one above another, evenly spaced, each discipline on its own level. Dozens of thin taut turquoise threads run vertically between the strata, linking the exact points where systems touched. No text, no markers, no logo.",
+   "riesgo": "El despiece puede salir confuso: capas fundidas entre sí, piezas flotando al azar o un edificio que parece derrumbarse o demolerse, que es justo la lectura contraria. Los hilos turquesa pueden volverse rayos luminosos, flechas o líneas de cota, o perderse en la densidad del dibujo. El tramo compacto puede leerse como otro edificio en vez de como el mismo en su estado anterior. Además, el modelo puede agregar rótulos a cada estrato o caer en la infografía genérica de un «edificio explotado». Para evitarlo, hay que insistir en que es un solo volumen continuo, en la separación progresiva y pareja, y en hilos mate y verticales."
+  }
+ ]
+}

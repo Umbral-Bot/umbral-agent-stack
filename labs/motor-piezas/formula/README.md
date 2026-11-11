@@ -6,6 +6,11 @@ rutear, seleccionar según tipo o categporia de grafico».
 
 Ninguna orden de `formula.py` llama a Magnific ni gasta créditos. El pedido sale como archivo y lo aprueba David.
 
+> **v2 en piloto (2026-11-11).** David sobre G28: «cual sería la metrafora? como se relaciona el totulo con el
+> dibujo?». La cadena de abajo va del titular a un objeto y no pasa por una tesis ni por una metáfora. La v2 agrega
+> premisa, propuesta visual (Mensaje, Escena y metáfora, Emoción, Estrategia comunicacional, Evitar), elección de la
+> metáfora en texto y lectura a ciegas: `narrativa.md` y `metaforas.md`.
+
 ## El recorrido
 
 ```

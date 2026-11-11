@@ -1,0 +1,92 @@
+{
+ "galeria": "M01",
+ "seccion": null,
+ "rubrica": "metaforas-v1",
+ "retro": false,
+ "criterios_hasta": null,
+ "sellado": "2026-11-11T01:39:14",
+ "hash_rubrica": "f7751a21e759",
+ "hash_criterios": "-",
+ "votos": [
+  {
+   "lente": "alineacion",
+   "puntajes": {
+    "1": 3,
+    "2": 3,
+    "3": 8,
+    "4": 8
+   },
+   "mejor": "3,4",
+   "hallazgos": [
+    {
+     "opcion": "1",
+     "donde": "metáfora",
+     "problema": "La primera parte sí calza: masa opaca a la izquierda, estructura legible a la derecha, y eso cuenta que la revisión encuentra lo que antes se escapaba. La consecuencia no calza. El marco no se limita a dejar ver: saca tres piezas del modelo y las deja aparte, y apartar ya es decidir qué hacer con el hallazgo, que es justo lo que la premisa reserva al equipo. Además, en el dibujo no se puede distinguir «apartadas, esperando decisión» de «rechazadas»: un marco seguido de piezas en el suelo se lee como la estación de control de calidad que descarta lo defectuoso, o sea, la revisión que también decide.",
+     "gravedad": "media",
+     "ajuste": "Dejar las tres piezas en su sitio, dentro de la estructura de la derecha, pero visiblemente fuera de línea (giradas o desplazadas, sobresaliendo de la retícula de losas y pilares), en turquesa. Nada en el suelo ni huecos vacíos. Además, dibujar la derecha como el mismo volumen con la fachada en línea fina transparente que deja ver losas, pilares y vigas: el mismo edificio visto por dentro, no desarmado. Así la revisión solo deja a la vista y lo encontrado sigue sin resolver, a la espera del equipo. Habría que reescribir «terminal», las invariantes 4 y 5 y los dos prompts de forma acorde (por ejemplo: «three pieces inside the structure sit visibly out of alignment, highlighted in turquoise, untouched»), y agregar a «evitar» piezas caídas, escombros, grietas y cualquier parte separada del edificio."
+    },
+    {
+     "opcion": "2",
+     "donde": "metáfora",
+     "problema": "El momento y la consecuencia coinciden: algo llegó solo y la decisión sigue pendiente, sin que la imagen la resuelva. Lo que falla es el primer término de la premisa. La IA «encuentra lo que antes se escapaba», y en la imagen nada se encuentra ni se recupera: una canica baja rápido, que es velocidad y autonomía, no detección. Además, la estrategia cambia el papel de la canica a mitad de camino. Primero es la revisión y después es «lo encontrado», así que lo que espera en la compuerta es el revisor y no el hallazgo. El resultado es una historia genérica de «la automatización llega hasta donde necesita a una persona», no la de esta premisa.",
+     "gravedad": "media",
+     "ajuste": "Fijar un solo papel: la canica es el hallazgo y el circuito es la revisión que lo trae. Mostrar «lo que antes se escapaba» con un detalle neutro: en una rampa alta, un tramo abierto donde antes caían las canicas ahora tiene una baranda que devuelve esta canica al recorrido. Poner al final de cada ramal un destino distinto y vacío, por ejemplo un vaso y una caja. Así la compuerta se lee como una elección entre qué hacer con el hallazgo, y no como un tope. Reescribir la estrategia con esa equivalencia de principio a fin. En ambos prompts agregar «isometric thin-line illustration, light background», «gate perfectly centered and upright, not tilted», «no other marbles» y «no hands, people, text or arrows»."
+    },
+    {
+     "opcion": "3",
+     "donde": "metáfora",
+     "problema": "La escena separa los dos tiempos que plantea la premisa. El desagüe en turquesa es lo que ya se encontró, y el cuadro de radier desnudo es lo que falta decidir. El estado final es el mismo momento: el hallazgo ya ocurrió y la resolución está pendiente. No muestra el remedio, porque nada está cortado, movido ni rellenado, y la decisión queda en manos del equipo. Tampoco se limita a ilustrar «obra»: cuenta la división entre encontrar y decidir. Hay un punto flojo: que el hallazgo vino de la revisión y no de la cuadrilla al llegar al desagüe solo se lee por el turquesa y por el borde limpio del cuadro reservado.",
+     "gravedad": "baja",
+     "ajuste": "Sacar el desagüe del centro del cuadro. En el estado final, cambiar «en su centro» por «descentrado, cerca de una esquina del cuadro, justo donde pasaría la prolongación de una junta». En los dos prompts, cambiar «Inside it sits a round floor drain, offset from the tile joints» por «Inside it, off-centre near one corner, sits a round floor drain that straddles where a joint line would run, so it matches neither a tile nor a joint; the bare square is plain concrete with no joints or cut pieces»."
+    },
+    {
+     "opcion": "4",
+     "donde": "metáfora",
+     "problema": "La metáfora sigue la premisa en orden y sin saltos. Primero, las desviaciones que antes se perdían en la trama (las placas giradas); después, la revisión las saca a la vista; al final, todo queda encontrado y nada resuelto. Ninguna placa vuelve, se reemplaza ni se descarta, así que no muestra el remedio que la premisa niega. Tampoco se queda en ilustrar «la IA llega»: muestra lo que hace y lo que deja abierto para el equipo. El único desvío posible de términos es «modelos» frente a «piso de obra», y lo resuelve la línea fina isométrica, que se lee como dibujo o modelo y no como baldosa construida.",
+     "gravedad": "baja",
+     "ajuste": "Añadir a prompt_16x9 y a prompt_21x9: «isometric thin-line drawing on a light background, high oblique view»; «each empty slot drawn as a pale outlined rectangle, not a dark hole, no heavy shadows»; «panels lifted only a little above their slots, each rotated about 10–15 degrees so the misalignment reads at small size»; «exactly five turquoise panels». Además, cambiar «seen from above» por «seen from a high isometric angle»."
+    }
+   ],
+   "veredicto": "",
+   "resumen": "1: FAIL; 2: FAIL; 3: OK; 4: OK"
+  },
+  {
+   "lente": "lectura_ciega",
+   "puntajes": {
+    "1": 8.1,
+    "2": 7.5,
+    "3": 2.8,
+    "4": 8.0
+   },
+   "mejor": "1",
+   "hallazgos": [
+    {
+     "opcion": "1",
+     "donde": "lectura a ciegas",
+     "problema": "eligió a (la real era a), confianza 0.62: El marco funciona como un escáner: al pasar por él, el edificio opaco deja ver su estructura y aparecen tres piezas que no encajan, apartadas en turquesa a la espera de que alguien decida qué hacer con ellas. Encaja con la idea de que la IA encuentra problemas en el modelo y el equipo decide qué hacer. La segunda opción más probable es la (b), si el marco se lee como el paso del plano al modelo.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "lectura a ciegas",
+     "problema": "eligió d (la real era d), confianza 0.5: El mecanismo ya llevó la canica hasta la bifurcación, pero hacia dónde sigue depende de una compuerta que nadie ha accionado todavía: la máquina entrega el hallazgo y la decisión sigue pendiente. La lectura (c), una consulta detenida porque no tiene responsable, también encaja y le resta confianza.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "lectura a ciegas",
+     "problema": "eligió b (la real era c), confianza 0.45: Un piso casi terminado conserva un hueco sin cerrar alrededor de un desagüe que no calza con la grilla: es un problema puntual pendiente que nadie resuelve, y por eso la obra no termina de cerrarse. Como la imagen no muestra que algo se detecte, la opción c es la segunda lectura posible.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "4",
+     "donde": "lectura a ciegas",
+     "problema": "eligió b (la real era b), confianza 0.6: En un campo grande y uniforme, alguien marcó unas pocas piezas fuera de lugar y las levantó para que se vean, pero ninguna ha vuelto a su sitio: lo detectado queda en suspenso, esperando que alguien decida qué hacer con cada una.",
+     "gravedad": "baja"
+    }
+   ],
+   "veredicto": "",
+   "resumen": "1: acierta; 2: acierta; 3: falla; 4: acierta"
+  }
+ ]
+}

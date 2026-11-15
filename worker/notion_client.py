@@ -1915,6 +1915,52 @@ def query_database(
     return results
 
 
+def query_database_with_coverage(database_id: str) -> dict[str, Any]:
+    """Strict read for Granola only; never represent partial coverage as absence.
+
+    Existing query_database callers retain their contract. No payload/error bodies
+    are returned on failure. Duplicate page IDs, malformed pagination and a bounded
+    scan all require review rather than a potentially duplicate creation.
+    """
+    if not config.NOTION_API_KEY:
+        return {"complete": False, "results": [], "reason": "read_unavailable"}
+    results: list[dict[str, Any]] = []
+    seen_cursors: set[str] = set()
+    seen_pages: set[str] = set()
+    cursor: str | None = None
+    try:
+        with httpx.Client(timeout=TIMEOUT) as client:
+            for _ in range(1000):
+                body = {"start_cursor": cursor} if cursor else {}
+                response = client.post(
+                    f"{NOTION_BASE_URL}/databases/{database_id}/query",
+                    headers=_headers(),
+                    json=body,
+                )
+                data = _check_response(response, "query_database_with_coverage")
+                if not isinstance(data, dict) or not isinstance(data.get("results"), list):
+                    return {"complete": False, "results": [], "reason": "invalid_page"}
+                for page in data["results"]:
+                    page_id = page.get("id") if isinstance(page, dict) else None
+                    if not isinstance(page_id, str) or not page_id.strip() or page_id in seen_pages:
+                        return {"complete": False, "results": [], "reason": "invalid_or_duplicate_page"}
+                    seen_pages.add(page_id)
+                    results.append(page)
+                has_more = data.get("has_more")
+                next_cursor = data.get("next_cursor")
+                if has_more is False and next_cursor is None:
+                    return {"complete": True, "results": results, "reason": ""}
+                if has_more is not True or not isinstance(next_cursor, str) or not next_cursor.strip():
+                    return {"complete": False, "results": [], "reason": "incomplete_pagination"}
+                if next_cursor in seen_cursors:
+                    return {"complete": False, "results": [], "reason": "repeated_cursor"}
+                seen_cursors.add(next_cursor)
+                cursor = next_cursor
+    except Exception:
+        return {"complete": False, "results": [], "reason": "read_failed"}
+    return {"complete": False, "results": [], "reason": "scan_limit"}
+
+
 def append_blocks_to_page(
     page_id: str,
     blocks: list[dict[str, Any]],

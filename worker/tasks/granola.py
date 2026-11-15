@@ -1140,11 +1140,6 @@ def _upsert_raw_transcript_page(
     read so the preview is realistic). The return dict always contains the full
     ``reconciliation`` summary so callers can audit what would happen.
     """
-    db_snapshot = notion_client.read_database(config.NOTION_GRANOLA_DB_ID, max_items=1)
-    schema = db_snapshot.get("schema") or {}
-    if not isinstance(schema, dict):
-        raise RuntimeError("Could not read Granola raw DB schema")
-
     coverage = notion_client.query_database_with_coverage(config.NOTION_GRANOLA_DB_ID)
     if not isinstance(coverage, dict) or coverage.get("complete") is not True:
         return {
@@ -1156,12 +1151,28 @@ def _upsert_raw_transcript_page(
                 "review_required": True,
             },
         }
+    schema = coverage["schema"]
     existing_pages = coverage["results"]
     candidates = [
         _build_existing_raw_candidate(page)
         for page in existing_pages
         if isinstance(page, dict)
     ]
+
+    if any(
+        not candidate.get("title")
+        or not (candidate.get("granola_document_id") or candidate.get("source_url") or candidate.get("date"))
+        for candidate in candidates
+    ):
+        return {
+            "page_id": "", "url": "", "created": False, "updated": False,
+            "matched_existing": False, "match_strategy": "", "resolved_title": title,
+            "schema_fields_used": [], "dry_run": bool(dry_run),
+            "reconciliation": {
+                "action": "defer", "reason": "raw_identity_incomplete",
+                "review_required": True,
+            },
+        }
 
     existing_match, match_strategy = _find_existing_raw_candidate(
         candidates,
@@ -3851,3 +3862,4 @@ def _create_proposal(
                 "transcript_page_id": transcript_page_id,
             },
         }
+

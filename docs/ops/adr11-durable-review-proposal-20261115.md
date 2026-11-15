@@ -27,3 +27,14 @@ Need tests for incomplete pagination, repeated cursor, duplicate IDs, ambiguous 
 
 ## Boundary
 No new durable store, runtime writer, notification, permission change, merge or deployment implemented. review_required remains returned metadata, not a persisted review request. Main and live Notion untouched.
+
+## Review-branch update: strict lookup implemented (not deployed)
+This section supersedes the earlier matching/pagination and historical-test gaps.
+- New query_database_with_coverage returns explicit complete/results/reason. Missing/inconsistent pagination, repeated cursors, malformed/duplicate page IDs, read failures and 1000-page bound return incomplete with no partial results.
+- Existing query_database implementation and its callers remain unchanged; only raw ingestion uses the new API.
+- Raw caller returns defer/raw_lookup_incomplete without writes or notifications on incomplete coverage.
+- Multiple candidates at a matching tier return ambiguous rather than a ranked winner or absence; raw caller returns defer/raw_match_ambiguous. Distinct document IDs still do not match through title/date fallback.
+- Historical reconciliation tests now expect preserved existing pages and explicit review.
+- Offline checks: 20 historical methods pass with external imports stubbed; 7 preservation tests and 8 detection/caller tests pass. New tests wire exact strict-query and matching functions through the real handler with fake transport; no network/live data.
+- Full pytest/import/config integration and all other consumers' test fixtures still require regression review. No claim of full suite green.
+- A complete query is not a snapshot or a distributed creation lock: concurrent creates, changes after query and unmatched identity variants remain unresolved. No durable review queue or automatic correction implemented.

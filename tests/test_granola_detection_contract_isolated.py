@@ -131,7 +131,7 @@ class DetectionContract(TestCase):
             candidate = {"page_id": "a", "title": "Synthetic", "normalized_title": "synthetic",
                          "date": "2026-11-15", "granola_document_id": doc_id}
             client.query_database_with_coverage.return_value = {
-                "complete": True, "schema": {}, "results": [candidate, {**candidate, "page_id": "b"}]}
+                "complete": True, "schema": {"Title": "title", "Date": "date"}, "results": [candidate, {**candidate, "page_id": "b"}]}
             g["_build_existing_raw_candidate"].side_effect = lambda page: page
             result = harness.run_handler(g, force_reconcile=True)
             self.assertTrue(result["deferred"])
@@ -156,7 +156,7 @@ class DetectionContract(TestCase):
         ):
             g, client = harness.harness("create", existing=False)
             client.query_database_with_coverage.return_value = {
-                "complete": True, "schema": {}, "results": [{"id": "synthetic-page"}]}
+                "complete": True, "schema": {"Title": "title", "Date": "date"}, "results": [{"id": "synthetic-page"}]}
             g["_build_existing_raw_candidate"].return_value = candidate
             result = harness.run_handler(g)
             self.assertEqual(result["reconciliation"]["reason"], "raw_identity_incomplete")
@@ -186,6 +186,70 @@ class DetectionContract(TestCase):
             if stage != "decode":
                 response.json.assert_not_called()
             harness.assert_no_writes(g, client)
+
+    def test_real_extraction_schema_and_handler_legacy_and_invalid(self):
+        import re
+        from datetime import datetime, timezone
+        from typing import List, Optional
+        from test_granola_raw_preservation_isolated import RawPreservation
+        harness = RawPreservation()
+        tree = ast.parse((ROOT / "worker/tasks/granola.py").read_text())
+        definitions = {n.name: n for n in tree.body if isinstance(n, ast.FunctionDef)}
+        needed = {"_build_existing_raw_candidate", "_build_raw_transcript_properties"}
+        while True:
+            dependencies = {n.id for name in needed for n in ast.walk(definitions[name])
+                            if isinstance(n, ast.Name) and n.id in definitions}
+            expanded = needed | dependencies
+            if expanded == needed:
+                break
+            needed = expanded
+        for date_value, expected in (("2026-11-15", "raw_existing_reconciliation_requires_review"),
+                                      (123, "raw_lookup_incomplete")):
+            g, client = harness.harness()
+            g.update(re=re, unicodedata=unicodedata, datetime=datetime, timezone=timezone,
+                     List=List, Optional=Optional)
+            functions(ROOT / "worker/tasks/granola.py", needed, g)
+            functions(ROOT / "worker/tasks/granola.py",
+                      {"_normalize_lookup_text", "_select_preferred_raw_candidate", "_find_existing_raw_candidate"}, g)
+            page = {"id": "legacy", "properties": {
+                "Title": {"type": "title", "title": [{"plain_text": "Synthetic", "text": {"content": "Synthetic"}}]},
+                "Fecha de transcripción": {"type": "date", "date": {"start": date_value}},
+            }}
+            strict, transport = self.query([{"results": [page], "has_more": False, "next_cursor": None}])
+            transport.get.return_value.json.return_value = {"properties": {
+                "Title": {"type": "title"}, "Fecha de transcripción": {"type": "date"}}}
+            client.query_database_with_coverage.side_effect = strict
+            result = harness.run_handler(g)
+            self.assertEqual(result["reconciliation"]["reason"], expected)
+            self.assertFalse(result["traceability_written"])
+            self.assertEqual(result["action_items_created"], 0)
+            self.assertFalse(result["notification_sent"])
+            client.create_database_page.assert_not_called()
+            client.update_page_properties.assert_not_called()
+            client.replace_blocks_in_page.assert_not_called()
+
+        # Real property builder: an empty DB with only a title is not creatable;
+        # title + accented date persists the identity required for later matching.
+        for has_date in (False, True):
+            g, client = harness.harness("create", existing=False)
+            g.update(re=re, unicodedata=unicodedata, datetime=datetime, timezone=timezone,
+                     List=List, Optional=Optional)
+            functions(ROOT / "worker/tasks/granola.py", needed, g)
+            schema = {"Title": "title"}
+            if has_date:
+                schema["Fecha de transcripción"] = "date"
+            client.query_database_with_coverage.return_value = {"complete": True, "results": [], "schema": schema}
+            result = harness.run_handler(g)
+            if has_date:
+                client.create_database_page.assert_called_once()
+                props = client.create_database_page.call_args.kwargs["properties"]
+                self.assertEqual(props["Fecha de transcripción"]["date"]["start"], "2026-11-15")
+                self.assertTrue(props["Title"]["title"])
+            else:
+                self.assertEqual(result["reconciliation"]["reason"], "raw_identity_schema_insufficient")
+                client.create_database_page.assert_not_called()
+                self.assertEqual(result["action_items_created"], 0)
+                self.assertFalse(result["notification_sent"])
 
 if __name__ == "__main__":
     main()

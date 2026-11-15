@@ -664,6 +664,8 @@ def _find_existing_raw_candidate(
             for item in candidates
             if item.get("granola_document_id") == granola_document_id
         ]
+        if len(exact_matches) > 1:
+            return None, "ambiguous"
         selected = _select_preferred_raw_candidate(
             exact_matches,
             title=title,
@@ -677,6 +679,8 @@ def _find_existing_raw_candidate(
         exact_matches = [
             item for item in candidates if item.get("source_url") == source_url
         ]
+        if len(exact_matches) > 1:
+            return None, "ambiguous"
         selected = _select_preferred_raw_candidate(
             exact_matches,
             title=title,
@@ -692,6 +696,8 @@ def _find_existing_raw_candidate(
             for item in candidates
             if item.get("export_signature") == export_signature
         ]
+        if len(exact_matches) > 1:
+            return None, "ambiguous"
         selected = _select_preferred_raw_candidate(
             exact_matches,
             title=title,
@@ -708,6 +714,8 @@ def _find_existing_raw_candidate(
             if item.get("content_hash") == content_hash
             and item.get("source_updated_at") == source_updated_at
         ]
+        if len(exact_matches) > 1:
+            return None, "ambiguous"
         selected = _select_preferred_raw_candidate(
             exact_matches,
             title=title,
@@ -724,6 +732,8 @@ def _find_existing_raw_candidate(
             if item.get("shared_folder_path") == shared_folder_path
             and item.get("sha1") == sha1
         ]
+        if len(exact_matches) > 1:
+            return None, "ambiguous"
         selected = _select_preferred_raw_candidate(
             exact_matches,
             title=title,
@@ -740,6 +750,8 @@ def _find_existing_raw_candidate(
             if item.get("shared_folder_path") == shared_folder_path
             and item.get("source_updated_at") == source_updated_at
         ]
+        if len(exact_matches) > 1:
+            return None, "ambiguous"
         selected = _select_preferred_raw_candidate(
             exact_matches,
             title=title,
@@ -773,6 +785,8 @@ def _find_existing_raw_candidate(
             and item.get("title") == title
             and _fallback_allows(item)
         ]
+        if len(exact_title_matches) > 1:
+            return None, "ambiguous"
         if len(exact_title_matches) == 1:
             return exact_title_matches[0], "exact_title_date"
 
@@ -784,6 +798,8 @@ def _find_existing_raw_candidate(
             and item.get("normalized_title") == normalized_title
             and _fallback_allows(item)
         ]
+        if len(normalized_matches) > 1:
+            return None, "ambiguous"
         if len(normalized_matches) == 1:
             return normalized_matches[0], "normalized_title_date"
 
@@ -1129,7 +1145,18 @@ def _upsert_raw_transcript_page(
     if not isinstance(schema, dict):
         raise RuntimeError("Could not read Granola raw DB schema")
 
-    existing_pages = notion_client.query_database(config.NOTION_GRANOLA_DB_ID)
+    coverage = notion_client.query_database_with_coverage(config.NOTION_GRANOLA_DB_ID)
+    if not isinstance(coverage, dict) or coverage.get("complete") is not True:
+        return {
+            "page_id": "", "url": "", "created": False, "updated": False,
+            "matched_existing": False, "match_strategy": "", "resolved_title": title,
+            "schema_fields_used": [], "dry_run": bool(dry_run),
+            "reconciliation": {
+                "action": "defer", "reason": "raw_lookup_incomplete",
+                "review_required": True,
+            },
+        }
+    existing_pages = coverage["results"]
     candidates = [
         _build_existing_raw_candidate(page)
         for page in existing_pages
@@ -1148,6 +1175,17 @@ def _upsert_raw_transcript_page(
         shared_folder_path=str(extra_traceability.get("shared_folder_path") or "").strip(),
         sha1=str(extra_traceability.get("sha1") or "").strip(),
     )
+
+    if match_strategy == "ambiguous":
+        return {
+            "page_id": "", "url": "", "created": False, "updated": False,
+            "matched_existing": True, "match_strategy": "ambiguous",
+            "resolved_title": title, "schema_fields_used": [], "dry_run": bool(dry_run),
+            "reconciliation": {
+                "action": "defer", "reason": "raw_match_ambiguous",
+                "review_required": True,
+            },
+        }
 
     decision = decide_reconciliation(
         existing=existing_match,

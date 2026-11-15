@@ -3,8 +3,8 @@
 Covers:
 
 - truncation detector (the "Comgrap Dynamo" tail ending in a comma)
-- partial -> complete reconciliation (same granola_document_id should update,
-  not duplicate, the existing Notion page)
+- partial -> complete reconciliation (same granola_document_id requires review,
+  never overwrites or duplicates the existing Notion page)
 - dry-run / audit mode (no Notion writes)
 - content hash unchanged -> noop
 - repeated title with a different granola_document_id -> new page is created
@@ -353,19 +353,14 @@ class TestProcessTranscriptReconciliation:
         assert result["matched_existing"] is True
         assert result["match_strategy"] == "granola_document_id"
         assert result["page_id"] == "page-comgrap"
-        assert result["reconciliation_action"] == "reconcile"
+        assert result["reconciliation_action"] == "defer"
+        assert result["reconciliation"]["review_required"] is True
+        assert result["reconciliation"]["reason"] == "raw_existing_reconciliation_requires_review"
+        assert result["traceability_written"] is False
         mock_nc.create_database_page.assert_not_called()
-        mock_nc.update_page_properties.assert_called_once()
-        mock_nc.replace_blocks_in_page.assert_called_once()
-
-        update_args = mock_nc.update_page_properties.call_args
-        assert update_args.args[0] == "page-comgrap"
-        traceability_written = update_args.kwargs["properties"]["Trazabilidad"][
-            "rich_text"
-        ][0]["text"]["content"]
-        assert "content_hash=" in traceability_written
-        assert "reconciled_at=" in traceability_written
-        assert "truncation_detected=false" in traceability_written
+        mock_nc.update_page_properties.assert_not_called()
+        mock_nc.replace_blocks_in_page.assert_not_called()
+        mock_nc.add_comment.assert_not_called()
 
     @patch("worker.tasks.granola.notion_client")
     def test_dry_run_does_not_write_to_notion(self, mock_nc):
@@ -549,7 +544,7 @@ class TestProcessTranscriptReconciliation:
     ):
         """Control test: the title/date fallback must keep working against
         legacy rows that have no granola_document_id stored yet, so those can
-        be reconciled/backfilled rather than duplicated.
+        be identified for explicit review rather than overwritten or duplicated.
         """
         existing_page = _existing_page(
             page_id="page-legacy",
@@ -586,7 +581,11 @@ class TestProcessTranscriptReconciliation:
             "normalized_title_date",
         }
         mock_nc.create_database_page.assert_not_called()
-        mock_nc.update_page_properties.assert_called_once()
+        mock_nc.update_page_properties.assert_not_called()
+        mock_nc.replace_blocks_in_page.assert_not_called()
+        assert result["reconciliation_action"] == "defer"
+        assert result["reconciliation"]["review_required"] is True
+        assert result["traceability_written"] is False
 
     @patch("worker.tasks.granola.notion_client")
     def test_stability_window_defers_fresh_documents(self, mock_nc):

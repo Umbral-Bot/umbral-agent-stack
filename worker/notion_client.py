@@ -1980,6 +1980,16 @@ def query_database_with_coverage(database_id: str) -> dict[str, Any]:
                                 ) for part in parts
                             ):
                                 return {"complete": False, "results": [], "reason": "incomplete_properties"}
+                        if kind == "date" and value[kind] is not None:
+                            dates = value[kind]
+                            if not isinstance(dates, dict) or not isinstance(dates.get("start"), str):
+                                return {"complete": False, "results": [], "reason": "incomplete_properties"}
+                            try:
+                                # Parse format only; do not normalize or log source values.
+                                from datetime import datetime
+                                datetime.fromisoformat(dates["start"].replace("Z", "+00:00"))
+                            except ValueError:
+                                return {"complete": False, "results": [], "reason": "incomplete_properties"}
                     seen_pages.add(page_id)
                     results.append(page)
                 has_more = data.get("has_more")

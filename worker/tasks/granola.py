@@ -1165,7 +1165,19 @@ def _upsert_raw_transcript_page(
         else _resolve_new_raw_title(title, candidates)
     ) or title
 
-    if decision.action in {"defer", "noop"}:
+    # ADR11: existing raw may include human annotations or Notion AI work.
+    # Never reconcile it in-place, even when force_reconcile was requested.
+    # Preserve the evaluator's no-op/defer decisions and all creation behavior.
+    if existing_match is not None and decision.action not in {"defer", "noop"}:
+        decision_dict = {
+            **decision_dict,
+            "proposed_action": decision.action,
+            "action": "defer",
+            "reason": "raw_existing_reconciliation_requires_review",
+            "review_required": True,
+        }
+
+    if decision_dict["action"] in {"defer", "noop"}:
         return {
             "page_id": str((existing_match or {}).get("page_id") or ""),
             "url": str((existing_match or {}).get("url") or ""),

@@ -38,3 +38,8 @@ This section supersedes the earlier matching/pagination and historical-test gaps
 - Offline checks: 20 historical methods pass with external imports stubbed; 7 preservation tests and 8 detection/caller tests pass. New tests wire exact strict-query and matching functions through the real handler with fake transport; no network/live data.
 - Full pytest/import/config integration and all other consumers' test fixtures still require regression review. No claim of full suite green.
 - A complete query is not a snapshot or a distributed creation lock: concurrent creates, changes after query and unmatched identity variants remain unresolved. No durable review queue or automatic correction implemented.
+
+## Round-trip and conservative no-op review
+Latest isolated regression: 22 historical methods (includes schema overrides and create/query/detect/no-op round-trip), 7 preservation tests and 11 detection/caller tests pass. External imports/transports remain substituted; no full pytest/config integration claim.
+The historical mock now honors schema=None versus an explicit empty schema. Round-trip uses the actual write payload to construct the subsequent queried page, adding only server property-type annotations; identity and metrics are not independently fabricated. The second ingest identifies the same page and returns noop with zero writes.
+A malformed neighboring row or insufficient schema can defer the whole scan BEFORE a valid existing page's no-op is evaluated. This is intentional fail-closed behavior: no-op is preserved only after complete trustworthy coverage and usable schema/identities. It may stop otherwise harmless ingests until data is reviewed. No automatic repair/delete, widening of permissions, or silent exception for legacy rows.

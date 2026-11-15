@@ -1,11 +1,12 @@
 """Offline characterization of matching and query coverage. No runtime imports."""
 import ast
+import logging
 import unicodedata
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any, Dict
 from unittest import TestCase, main
-from unittest.mock import Mock
+from unittest.mock import Mock, PropertyMock
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -36,19 +37,41 @@ class DetectionContract(TestCase):
         client = Mock()
         client.__enter__ = Mock(return_value=client)
         client.__exit__ = Mock(return_value=False)
-        response = Mock(side_effect=replies)
+        # Real status/json behavior, with bodies that must never be logged/read.
+        metadata = Mock(status_code=200)
+        metadata.json.return_value = {"properties": {"Title": {"type": "title"}}}
+        client.get.return_value = metadata
+        responses = []
+        for reply in replies:
+            if isinstance(reply, Exception):
+                responses.append(reply)
+                continue
+            reply = dict(reply)
+            reply["results"] = [
+                {**row, "properties": {"Title": {"type": "title", "title": [{"plain_text": "Synthetic"}]}}}
+                if isinstance(row, dict) and "id" in row and "properties" not in row else row
+                for row in reply.get("results", [])
+            ]
+            response = Mock(status_code=200)
+            response.json.return_value = reply
+            response.text = "SENSITIVE_SENTINEL"
+            responses.append(response)
+        client.post.side_effect = responses
         g = functions(ROOT / "worker/notion_client.py", {"query_database_with_coverage"},
                       {"Any": Any, "config": SimpleNamespace(NOTION_API_KEY="synthetic"),
                        "httpx": SimpleNamespace(Client=Mock(return_value=client)), "TIMEOUT": 1,
                        "NOTION_BASE_URL": "https://synthetic.invalid", "_headers": lambda: {},
-                       "_check_response": response, "logger": Mock()})
+                       "_check_response": Mock(side_effect=AssertionError("unsafe shared response helper")),
+                       "logger": logging.getLogger("adr11.strict.lookup")})
         return g["query_database_with_coverage"], client
 
     def test_complete_pagination(self):
         query, client = self.query([
             {"results": [{"id": "a"}], "has_more": True, "next_cursor": "next"},
             {"results": [{"id": "b"}], "has_more": False, "next_cursor": None}])
-        self.assertEqual(query("synthetic"), {"complete": True, "results": [{"id": "a"}, {"id": "b"}], "reason": ""})
+        result = query("synthetic")
+        self.assertTrue(result["complete"])
+        self.assertEqual([p["id"] for p in result["results"]], ["a", "b"])
         self.assertEqual(client.post.call_args_list[1].kwargs["json"], {"start_cursor": "next"})
 
     def test_second_page_failure_does_not_return_partial_result(self):
@@ -108,7 +131,7 @@ class DetectionContract(TestCase):
             candidate = {"page_id": "a", "title": "Synthetic", "normalized_title": "synthetic",
                          "date": "2026-11-15", "granola_document_id": doc_id}
             client.query_database_with_coverage.return_value = {
-                "complete": True, "results": [candidate, {**candidate, "page_id": "b"}]}
+                "complete": True, "schema": {}, "results": [candidate, {**candidate, "page_id": "b"}]}
             g["_build_existing_raw_candidate"].side_effect = lambda page: page
             result = harness.run_handler(g, force_reconcile=True)
             self.assertTrue(result["deferred"])
@@ -116,6 +139,53 @@ class DetectionContract(TestCase):
             self.assertEqual(result["action_items_created"], 0)
             harness.assert_no_writes(g, client)
             g["decide_reconciliation"].assert_not_called()
+
+    def test_empty_properties_and_missing_identity_defer_caller(self):
+        from test_granola_raw_preservation_isolated import RawPreservation
+        harness = RawPreservation()
+        g, client = harness.harness("create", existing=False)
+        strict, _ = self.query([{"results": [{"id": "synthetic-page", "properties": {}}],
+                                 "has_more": False, "next_cursor": None}])
+        client.query_database_with_coverage.side_effect = strict
+        result = harness.run_handler(g)
+        self.assertEqual(result["reconciliation"]["reason"], "raw_lookup_incomplete")
+        harness.assert_no_writes(g, client)
+        for candidate in (
+            {"title": "", "granola_document_id": "", "source_url": "", "date": ""},
+            {"title": "Synthetic", "granola_document_id": "", "source_url": "", "date": ""},
+        ):
+            g, client = harness.harness("create", existing=False)
+            client.query_database_with_coverage.return_value = {
+                "complete": True, "schema": {}, "results": [{"id": "synthetic-page"}]}
+            g["_build_existing_raw_candidate"].return_value = candidate
+            result = harness.run_handler(g)
+            self.assertEqual(result["reconciliation"]["reason"], "raw_identity_incomplete")
+            harness.assert_no_writes(g, client)
+            g["decide_reconciliation"].assert_not_called()
+
+    def test_error_response_body_never_read_logged_or_returned(self):
+        from test_granola_raw_preservation_isolated import RawPreservation
+        harness = RawPreservation()
+        for stage in ("metadata", "query", "decode"):
+            g, client = harness.harness("create", existing=False)
+            strict, transport = self.query([{"results": [], "has_more": False, "next_cursor": None}])
+            response = Mock(status_code=200 if stage == "decode" else 403)
+            body = PropertyMock(side_effect=AssertionError("response body must not be read"))
+            type(response).text = body
+            response.json.side_effect = ValueError("SENSITIVE_SENTINEL")
+            if stage == "metadata":
+                transport.get.return_value = response
+            else:
+                transport.post.side_effect = [response]
+            client.query_database_with_coverage.side_effect = strict
+            with self.assertNoLogs("adr11.strict.lookup", level="DEBUG"):
+                result = harness.run_handler(g)
+            self.assertTrue(result["deferred"])
+            self.assertNotIn("SENSITIVE_SENTINEL", repr(result))
+            body.assert_not_called()
+            if stage != "decode":
+                response.json.assert_not_called()
+            harness.assert_no_writes(g, client)
 
 if __name__ == "__main__":
     main()

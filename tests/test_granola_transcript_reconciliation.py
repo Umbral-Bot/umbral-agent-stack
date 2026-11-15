@@ -55,7 +55,7 @@ _BASE_SCHEMA = {
 
 def _mock_db(mock_nc, *, existing_pages=None, schema=None):
     mock_nc.read_database.return_value = {"schema": schema or dict(_BASE_SCHEMA)}
-    mock_nc.query_database_with_coverage.return_value = {"complete": True, "results": existing_pages or [], "reason": ""}
+    mock_nc.query_database_with_coverage.return_value = {"complete": True, "results": existing_pages or [], "schema": _BASE_SCHEMA, "reason": ""}
     mock_nc.create_database_page.return_value = {
         "page_id": "page-new",
         "url": "https://notion.so/page-new",

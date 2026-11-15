@@ -15,7 +15,7 @@ class RawPreservation(TestCase):
         subset = ast.Module(body=[n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name in names], type_ignores=[])
         client = Mock()
         client.read_database.return_value = {"schema": {}}
-        client.query_database_with_coverage.return_value = {"complete": True, "results": [], "reason": ""}
+        client.query_database_with_coverage.return_value = {"complete": True, "results": [], "schema": {}, "reason": ""}
         client.create_database_page.return_value = {"page_id": "new", "created": True}
         candidate = {"page_id": "original", "title": "Synthetic", "url": "synthetic"} if existing else None
         decision = SimpleNamespace(action=action, as_dict=lambda: {"action": action, "reason": "test", "new_metrics": {}})
@@ -49,7 +49,7 @@ class RawPreservation(TestCase):
             "action_items": [{"text": "synthetic task"}], **extra})
 
     def assert_no_writes(self, g, client):
-        self.assertEqual([c[0] for c in client.mock_calls], ["read_database", "query_database_with_coverage"])
+        self.assertEqual([c[0] for c in client.mock_calls], ["query_database_with_coverage"])
         for name in ("_sync_visible_notion_page_id", "_verify_raw_page_persistence",
                      "_alert_raw_integrity_failure", "handle_notion_upsert_task",
                      "_build_raw_transcript_properties", "_build_transcript_paragraph_blocks"):
@@ -93,7 +93,7 @@ class RawPreservation(TestCase):
         g, client = self.harness("create", existing=False)
         r = self.run_handler(g, dry_run=True)
         self.assertFalse(r["traceability_written"])
-        self.assertEqual([c[0] for c in client.mock_calls], ["read_database", "query_database_with_coverage"])
+        self.assertEqual([c[0] for c in client.mock_calls], ["query_database_with_coverage"])
         g["handle_notion_upsert_task"].assert_not_called()
         self.assertFalse(r["notification_sent"])
 

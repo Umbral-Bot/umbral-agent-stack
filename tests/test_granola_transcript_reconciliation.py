@@ -704,6 +704,44 @@ class TestIdentityRoundTrip:
         mock_nc.create_database_page.assert_not_called()
         mock_nc.update_page_properties.assert_not_called()
 
+    @patch("worker.tasks.granola.notion_client")
+    @patch("worker.tasks.granola.handle_notion_upsert_task")
+    def test_legacy_title_date_round_trip_without_doc_id_or_url(self, mock_task, mock_nc):
+        schema = {"Título": "title", "Fecha de transcripción": "date",
+                  "Trazabilidad": "rich_text"}
+        payload = {
+            "title": "Synthetic round trip", "content": _FULL_CONTENT, "date": "2026-04-01",
+            "granola_document_id": "", "source_url": "", "source_updated_at": "2026-04-01T08:00:00Z",
+            "stability_window_seconds": 0, "notify_enlace": True,
+            "allow_legacy_raw_task_writes": True, "action_items": [{"text": "synthetic follow-up"}],
+        }
+        _mock_db(mock_nc, schema=schema)
+        _mock_read_page_full_snapshot(mock_nc, _FULL_CONTENT, page_id="page-new")
+        first = handle_granola_process_transcript(payload)
+        assert first["reconciliation_action"] == "create"
+        written = mock_nc.create_database_page.call_args.kwargs["properties"]
+        # Emulate only the server's property type annotation, not identities/metrics.
+        returned_properties = {name: {"type": schema[name], **value} for name, value in written.items()}
+        page = {"id": "page-new", "url": "https://notion.so/page-new",
+                "properties": returned_properties}
+        mock_nc.reset_mock()
+        mock_task.reset_mock()
+        _mock_db(mock_nc, schema=schema, existing_pages=[page])
+        second = handle_granola_process_transcript(payload)
+        assert second["matched_existing"] is True
+        assert second["page_id"] == first["page_id"] == "page-new"
+        assert second["match_strategy"] == "exact_title_date"
+        assert second["reconciliation_action"] == "noop"
+        assert second["traceability_written"] is False
+        mock_nc.create_database_page.assert_not_called()
+        mock_nc.update_page_properties.assert_not_called()
+        mock_nc.replace_blocks_in_page.assert_not_called()
+        mock_nc.add_comment.assert_not_called()
+
+        assert second["action_items_created"] == 0
+        assert second["notification_sent"] is False
+        mock_task.assert_not_called()
+
 if __name__ == "__main__":  # pragma: no cover
     pytest.main([__file__, "-v"])
 

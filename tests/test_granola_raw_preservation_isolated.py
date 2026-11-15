@@ -14,8 +14,8 @@ class RawPreservation(TestCase):
         names = {"_upsert_raw_transcript_page", "handle_granola_process_transcript"}
         subset = ast.Module(body=[n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name in names], type_ignores=[])
         client = Mock()
-        client.read_database.return_value = {"schema": {}}
-        client.query_database_with_coverage.return_value = {"complete": True, "results": [], "schema": {}, "reason": ""}
+        client.read_database.return_value = {"schema": {"Title": "title", "Date": "date"}}
+        client.query_database_with_coverage.return_value = {"complete": True, "results": [], "schema": {"Title": "title", "Date": "date"}, "reason": ""}
         client.create_database_page.return_value = {"page_id": "new", "created": True}
         candidate = {"page_id": "original", "title": "Synthetic", "url": "synthetic"} if existing else None
         decision = SimpleNamespace(action=action, as_dict=lambda: {"action": action, "reason": "test", "new_metrics": {}})

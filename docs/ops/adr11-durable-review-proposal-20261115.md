@@ -43,3 +43,19 @@ This section supersedes the earlier matching/pagination and historical-test gaps
 Latest isolated regression: 22 historical methods (includes schema overrides and create/query/detect/no-op round-trip), 7 preservation tests and 11 detection/caller tests pass. External imports/transports remain substituted; no full pytest/config integration claim.
 The historical mock now honors schema=None versus an explicit empty schema. Round-trip uses the actual write payload to construct the subsequent queried page, adding only server property-type annotations; identity and metrics are not independently fabricated. The second ingest identifies the same page and returns noop with zero writes.
 A malformed neighboring row or insufficient schema can defer the whole scan BEFORE a valid existing page's no-op is evaluated. This is intentional fail-closed behavior: no-op is preserved only after complete trustworthy coverage and usable schema/identities. It may stop otherwise harmless ingests until data is reviewed. No automatic repair/delete, widening of permissions, or silent exception for legacy rows.
+
+## Legacy fallback regression and full-suite route
+23 historical methods now pass in the isolated harness. New legacy round-trip omits document ID and source URL, persists title + accented date + trace metrics, then detects exact_title_date/noop on repeat with task-writing and notification flags enabled: zero downstream task/comment calls.
+Local full suite is NOT complete: this workspace has selected source files, no full checkout/test dependencies and no pytest installation. Official .github/workflows/test.yml runs pytest tests/ on Python 3.11/3.12, triggered only by push main or a PR targeting main. It has no deployment step or workflow_dispatch. Do not push main to trigger it; a reviewed PR is the appropriate route. No PR/CI dispatch was initiated by this change.
+
+## Persistence/concurrency recommendation (proposal only)
+Inspected existing infra:
+- dispatcher/notion_poller.py uses Redis SET NX with expiry for processed comments. Useful claim pattern, but expiry alone cannot guard an uncertain Notion creation or durable human review.
+- Editorial SQLite is explicitly scoped to sequential discovery stages; docs/editorial-pipeline/sqlite-policy.md and scripts/discovery/lib/sqlite_utils.py document commits/migrations and busy_timeout. Do not reuse its production DB/schema for Granola.
+- OpsLogger and feeder per-run JSON remain evidence breadcrumbs, not acknowledged review storage.
+
+Recommend one canonical ingestion writer with an explicitly approved durable registry location and owner. For a single host, an isolated SQLite registry using unique source keys and committed transactions is the smallest option; multiple hosts require a shared transactional authority, not per-host SQLite files. Do not claim the existing Redis deployment has proven persistence/backup guarantees without operator evidence.
+
+Two separate records: (1) source reservation keyed by stable upstream document identity, (2) review item keyed by source identity + incoming content hash + reason. Store IDs/hashes/status/timestamps only, no transcript/title body. Legacy title/date is a matching aid, not a globally unique reservation key; ambiguous/no stable identity goes to review.
+States: prepared -> attempting -> verified, or uncertain/review_required. Commit attempting before sending a creation; after a lost response, leave uncertain and reconcile read-only, never auto-expire into a second create. A unique registry row coordinates our writers but cannot stop unrelated Notion writers. Operator must define backup, restore, retention, ownership and outage behavior before integration.
+Before activation, test two processes claiming the same identity, crash before/after request, successful Notion write plus lost response, registry unavailable/full disk, restart and restore. No store, migration, lease, notification or live writer was created here.

@@ -1930,6 +1930,23 @@ def query_database_with_coverage(database_id: str) -> dict[str, Any]:
     cursor: str | None = None
     try:
         with httpx.Client(timeout=TIMEOUT) as client:
+            # Do not use _check_response: it logs response bodies on errors.
+            metadata = client.get(
+                f"{NOTION_BASE_URL}/databases/{database_id}", headers=_headers()
+            )
+            if metadata.status_code != 200:
+                return {"complete": False, "results": [], "reason": "schema_read_failed"}
+            meta = metadata.json()
+            props = meta.get("properties") if isinstance(meta, dict) else None
+            if not isinstance(props, dict) or not props:
+                return {"complete": False, "results": [], "reason": "invalid_schema"}
+            schema = {}
+            for name, prop in props.items():
+                if not isinstance(prop, dict) or not isinstance(prop.get("type"), str) or not prop["type"]:
+                    return {"complete": False, "results": [], "reason": "invalid_schema"}
+                schema[name] = prop["type"]
+            if "title" not in schema.values():
+                return {"complete": False, "results": [], "reason": "invalid_schema"}
             for _ in range(1000):
                 body = {"start_cursor": cursor} if cursor else {}
                 response = client.post(
@@ -1937,19 +1954,38 @@ def query_database_with_coverage(database_id: str) -> dict[str, Any]:
                     headers=_headers(),
                     json=body,
                 )
-                data = _check_response(response, "query_database_with_coverage")
+                if response.status_code != 200:
+                    return {"complete": False, "results": [], "reason": "query_read_failed"}
+                data = response.json()
                 if not isinstance(data, dict) or not isinstance(data.get("results"), list):
                     return {"complete": False, "results": [], "reason": "invalid_page"}
                 for page in data["results"]:
                     page_id = page.get("id") if isinstance(page, dict) else None
                     if not isinstance(page_id, str) or not page_id.strip() or page_id in seen_pages:
                         return {"complete": False, "results": [], "reason": "invalid_or_duplicate_page"}
+                    row_properties = page.get("properties")
+                    if not isinstance(row_properties, dict):
+                        return {"complete": False, "results": [], "reason": "incomplete_properties"}
+                    for name, kind in schema.items():
+                        value = row_properties.get(name)
+                        if not isinstance(value, dict) or value.get("type") != kind or kind not in value:
+                            return {"complete": False, "results": [], "reason": "incomplete_properties"}
+                        if kind in {"title", "rich_text"}:
+                            parts = value[kind]
+                            if not isinstance(parts, list) or any(
+                                not isinstance(part, dict) or not (
+                                    isinstance(part.get("plain_text"), str)
+                                    or isinstance(part.get("text"), dict)
+                                    and isinstance(part["text"].get("content"), str)
+                                ) for part in parts
+                            ):
+                                return {"complete": False, "results": [], "reason": "incomplete_properties"}
                     seen_pages.add(page_id)
                     results.append(page)
                 has_more = data.get("has_more")
                 next_cursor = data.get("next_cursor")
                 if has_more is False and next_cursor is None:
-                    return {"complete": True, "results": results, "reason": ""}
+                    return {"complete": True, "results": results, "schema": schema, "reason": ""}
                 if has_more is not True or not isinstance(next_cursor, str) or not next_cursor.strip():
                     return {"complete": False, "results": [], "reason": "incomplete_pagination"}
                 if next_cursor in seen_cursors:
@@ -2200,3 +2236,4 @@ def prepend_blocks_to_page(
         "blocks_preserved": len(old_write_blocks),
         "page_id": page_id,
     }
+

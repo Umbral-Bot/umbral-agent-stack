@@ -103,6 +103,8 @@ def _extract_date_from_page(page_data: Dict[str, Any]) -> str:
         "Fecha",
         "Date",
         "Fecha de transcripcion",
+        "Fecha de transcripción",
+        "Fecha de reunion",
         "Meeting Date",
     )
 
@@ -1152,12 +1154,43 @@ def _upsert_raw_transcript_page(
             },
         }
     schema = coverage["schema"]
+    title_writable = any(
+        schema.get(name) == "title" for name in ("Name", "Nombre", "Título", "Title")
+    )
+    identity_writable = (
+        bool(date) and any(schema.get(name) == "date" for name in
+                          ("Date", "Fecha", "Fecha de transcripción", "Fecha de reunion", "Meeting Date"))
+        or bool(granola_document_id) and any(schema.get(name) in {"rich_text", "title", "url"}
+            for name in ("Granola Document ID", "Document ID", "ID documento Granola", "ID documento"))
+        or bool(source_url) and any(schema.get(name) in {"url", "rich_text", "title"}
+            for name in ("Source URL", "URL fuente", "URL Fuente", "Meeting URL"))
+        or bool(granola_document_id or source_url) and any(schema.get(name) in {"rich_text", "url", "title"}
+            for name in ("Trazabilidad", "Traceability"))
+    )
+    if not title_writable or not identity_writable:
+        return {
+            "page_id": "", "url": "", "created": False, "updated": False,
+            "matched_existing": False, "match_strategy": "", "resolved_title": title,
+            "schema_fields_used": [], "dry_run": bool(dry_run),
+            "reconciliation": {
+                "action": "defer", "reason": "raw_identity_schema_insufficient",
+                "review_required": True,
+            },
+        }
     existing_pages = coverage["results"]
-    candidates = [
-        _build_existing_raw_candidate(page)
-        for page in existing_pages
-        if isinstance(page, dict)
-    ]
+    try:
+        candidates = [_build_existing_raw_candidate(page) for page in existing_pages]
+    except (TypeError, ValueError, AttributeError, KeyError):
+        # Malformed identities must never become a "no match" or leak payloads.
+        return {
+            "page_id": "", "url": "", "created": False, "updated": False,
+            "matched_existing": False, "match_strategy": "", "resolved_title": title,
+            "schema_fields_used": [], "dry_run": bool(dry_run),
+            "reconciliation": {
+                "action": "defer", "reason": "raw_identity_invalid",
+                "review_required": True,
+            },
+        }
 
     if any(
         not candidate.get("title")

@@ -15,7 +15,7 @@ class RawPreservation(TestCase):
         subset = ast.Module(body=[n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name in names], type_ignores=[])
         client = Mock()
         client.read_database.return_value = {"schema": {}}
-        client.query_database.return_value = []
+        client.query_database_with_coverage.return_value = {"complete": True, "results": [], "reason": ""}
         client.create_database_page.return_value = {"page_id": "new", "created": True}
         candidate = {"page_id": "original", "title": "Synthetic", "url": "synthetic"} if existing else None
         decision = SimpleNamespace(action=action, as_dict=lambda: {"action": action, "reason": "test", "new_metrics": {}})
@@ -49,7 +49,7 @@ class RawPreservation(TestCase):
             "action_items": [{"text": "synthetic task"}], **extra})
 
     def assert_no_writes(self, g, client):
-        self.assertEqual([c[0] for c in client.mock_calls], ["read_database", "query_database"])
+        self.assertEqual([c[0] for c in client.mock_calls], ["read_database", "query_database_with_coverage"])
         for name in ("_sync_visible_notion_page_id", "_verify_raw_page_persistence",
                      "_alert_raw_integrity_failure", "handle_notion_upsert_task",
                      "_build_raw_transcript_properties", "_build_transcript_paragraph_blocks"):
@@ -93,7 +93,7 @@ class RawPreservation(TestCase):
         g, client = self.harness("create", existing=False)
         r = self.run_handler(g, dry_run=True)
         self.assertFalse(r["traceability_written"])
-        self.assertEqual([c[0] for c in client.mock_calls], ["read_database", "query_database"])
+        self.assertEqual([c[0] for c in client.mock_calls], ["read_database", "query_database_with_coverage"])
         g["handle_notion_upsert_task"].assert_not_called()
         self.assertFalse(r["notification_sent"])
 
@@ -110,9 +110,8 @@ class RawPreservation(TestCase):
 
     def test_read_failure_propagates_before_writes(self):
         g, client = self.harness()
-        client.query_database.side_effect = RuntimeError("synthetic read failure")
-        with self.assertRaises(RuntimeError):
-            self.run_handler(g)
+        client.query_database_with_coverage.return_value = {"complete": False, "results": [], "reason": "read_failed"}
+        self.assertTrue(self.run_handler(g)["deferred"])
         self.assert_no_writes(g, client)
 
     def test_unexpected_existing_create_cannot_overwrite(self):

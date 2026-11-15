@@ -1341,6 +1341,11 @@ def _upsert_raw_transcript_page(
     notion_result["schema_fields_used"] = used_fields
     notion_result["reconciliation"] = decision_dict
     notion_result["dry_run"] = False
+    # Report a completed write, not merely non-empty input or a preview.
+    notion_result["traceability_written"] = bool(
+        effective_traceability_text
+        and any(field in properties for field in ("Trazabilidad", "Traceability"))
+    )
     verification = _verify_raw_page_persistence(
         page_id=str(notion_result.get("page_id") or "").strip(),
         expected_blocks=blocks,
@@ -1854,7 +1859,7 @@ def handle_granola_process_transcript(input_data: Dict[str, Any]) -> Dict[str, A
         "granola_document_id": granola_document_id,
         "source_updated_at": source_updated_at,
         "source_url": source_url,
-        "traceability_written": bool(traceability_text),
+        "traceability_written": bool(page_result.get("traceability_written", False)),
         "matched_existing": bool(page_result.get("matched_existing")),
         "match_strategy": str(page_result.get("match_strategy") or ""),
         "resolved_title": str(page_result.get("resolved_title") or title),

@@ -35,7 +35,7 @@ class RawPreservation(TestCase):
             _resolve_source_updated_at=Mock(return_value=""),
             _resolve_source_url=Mock(return_value=""),
             _resolve_metadata_value=Mock(return_value=""),
-            _build_raw_traceability_text=Mock(return_value=""),
+            _build_raw_traceability_text=Mock(return_value="synthetic trace"),
             _extract_action_items_from_content=Mock(return_value=[]),
             _build_action_item_task_id=Mock(return_value="synthetic-task"),
             handle_notion_upsert_task=Mock())
@@ -66,6 +66,7 @@ class RawPreservation(TestCase):
                     self.assertEqual(r["reconciliation"]["reason"], "raw_existing_reconciliation_requires_review")
                     self.assertEqual(r["action_items_created"], 0)
                     self.assertFalse(r["notification_sent"])
+                    self.assertFalse(r["traceability_written"])
                     self.assert_no_writes(g, client)
 
     def test_existing_noop_and_defer_preserved(self):
@@ -74,6 +75,7 @@ class RawPreservation(TestCase):
             r = self.run_handler(g)
             self.assertEqual(r["reconciliation_action"], action)
             self.assertEqual(r["reconciliation"]["reason"], "test")
+            self.assertFalse(r["traceability_written"])
             self.assert_no_writes(g, client)
 
     def test_creation_and_downstream_preserved(self):
@@ -90,9 +92,21 @@ class RawPreservation(TestCase):
     def test_creation_dry_run_no_writes(self):
         g, client = self.harness("create", existing=False)
         r = self.run_handler(g, dry_run=True)
+        self.assertFalse(r["traceability_written"])
         self.assertEqual([c[0] for c in client.mock_calls], ["read_database", "query_database"])
         g["handle_notion_upsert_task"].assert_not_called()
         self.assertFalse(r["notification_sent"])
+
+    def test_traceability_requires_actual_property_write(self):
+        for field in ("Trazabilidad", "Traceability", None):
+            with self.subTest(field=field):
+                g, client = self.harness("create", existing=False)
+                properties = {field: {"rich_text": [{"text": {"content": "synthetic trace"}}]}} if field else {}
+                g["_build_raw_transcript_properties"].return_value = (properties, [field] if field else [])
+                r = self.run_handler(g)
+                self.assertEqual(r["traceability_written"], field is not None)
+                client.create_database_page.assert_called_once()
+                self.assertEqual(client.create_database_page.call_args.kwargs["properties"], properties)
 
     def test_read_failure_propagates_before_writes(self):
         g, client = self.harness()

@@ -101,7 +101,7 @@ class DetectionContract(TestCase):
             self.assertFalse(query("synthetic")["complete"])
 
     def test_real_lookup_and_caller_never_write_on_incomplete_coverage(self):
-        from test_granola_raw_preservation_isolated import RawPreservation
+        from tests.test_granola_raw_preservation_isolated import RawPreservation
         harness = RawPreservation()
         for replies in (
             [{"results": [], "has_more": True, "next_cursor": None}],
@@ -121,7 +121,7 @@ class DetectionContract(TestCase):
                 g["decide_reconciliation"].assert_not_called()
 
     def test_real_ambiguous_match_and_caller_never_write(self):
-        from test_granola_raw_preservation_isolated import RawPreservation
+        from tests.test_granola_raw_preservation_isolated import RawPreservation
         harness = RawPreservation()
         for doc_id in ("synthetic", ""):
             g, client = harness.harness("create", existing=False)
@@ -141,7 +141,7 @@ class DetectionContract(TestCase):
             g["decide_reconciliation"].assert_not_called()
 
     def test_empty_properties_and_missing_identity_defer_caller(self):
-        from test_granola_raw_preservation_isolated import RawPreservation
+        from tests.test_granola_raw_preservation_isolated import RawPreservation
         harness = RawPreservation()
         g, client = harness.harness("create", existing=False)
         strict, _ = self.query([{"results": [{"id": "synthetic-page", "properties": {}}],
@@ -164,7 +164,7 @@ class DetectionContract(TestCase):
             g["decide_reconciliation"].assert_not_called()
 
     def test_error_response_body_never_read_logged_or_returned(self):
-        from test_granola_raw_preservation_isolated import RawPreservation
+        from tests.test_granola_raw_preservation_isolated import RawPreservation
         harness = RawPreservation()
         for stage in ("metadata", "query", "decode"):
             g, client = harness.harness("create", existing=False)
@@ -191,7 +191,7 @@ class DetectionContract(TestCase):
         import re
         from datetime import datetime, timezone
         from typing import List, Optional
-        from test_granola_raw_preservation_isolated import RawPreservation
+        from tests.test_granola_raw_preservation_isolated import RawPreservation
         harness = RawPreservation()
         tree = ast.parse((ROOT / "worker/tasks/granola.py").read_text())
         definitions = {n.name: n for n in tree.body if isinstance(n, ast.FunctionDef)}

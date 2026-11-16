@@ -192,6 +192,16 @@ from worker.tasks.granola import (
 )
 
 
+def _mock_complete_raw_lookup(mock_nc):
+    """Model the strict lookup contract, including the same schema and rows."""
+    mock_nc.query_database_with_coverage.side_effect = lambda *_args, **_kwargs: {
+        "complete": True,
+        "schema": mock_nc.read_database.return_value["schema"],
+        "results": mock_nc.query_database.return_value,
+        "reason": "",
+    }
+
+
 def _mock_raw_transcript_db(
     mock_nc,
     *,
@@ -211,6 +221,7 @@ def _mock_raw_transcript_db(
         }
     }
     mock_nc.query_database.return_value = existing_pages or []
+    _mock_complete_raw_lookup(mock_nc)
     mock_nc.create_database_page.return_value = {
         "page_id": page_id,
         "url": page_url,
@@ -384,6 +395,7 @@ class TestHandleGranolaProcessTranscript:
         mock_upsert_task.return_value = {"page_id": "task-1", "created": True}
         mock_nc.add_comment.return_value = {"comment_id": "c-1"}
 
+        _mock_complete_raw_lookup(mock_nc)
         result = handle_granola_process_transcript(
             {
                 "title": "Reunión live",
@@ -399,12 +411,12 @@ class TestHandleGranolaProcessTranscript:
 
     @patch("worker.tasks.granola.handle_notion_upsert_task")
     @patch("worker.tasks.granola.notion_client")
-    def test_existing_match_backfills_missing_live_schema_dates(self, mock_nc, mock_upsert_task):
+    def test_existing_match_defers_without_backfilling_live_schema_dates(self, mock_nc, mock_upsert_task):
         mock_nc.read_database.return_value = {
             "schema": {
-                "TÃ­tulo": "title",
+                "Título": "title",
                 "Estado": "select",
-                "Fecha de transcripciÃ³n": "date",
+                "Fecha de transcripción": "date",
                 "Fecha que Rick pas? a Notion": "date",
                 "Fecha que el agente proces?": "date",
                 "Granola Document ID": "rich_text",
@@ -418,11 +430,11 @@ class TestHandleGranolaProcessTranscript:
                 "url": "https://notion.so/page-live",
                 "last_edited_time": "2026-04-02T13:20:00Z",
                 "properties": {
-                    "TÃ­tulo": {
+                    "Título": {
                         "type": "title",
-                        "title": [{"plain_text": "ReuniÃ³n live", "text": {"content": "ReuniÃ³n live"}}],
+                        "title": [{"plain_text": "Reunión live", "text": {"content": "Reunión live"}}],
                     },
-                    "Fecha de transcripciÃ³n": {
+                    "Fecha de transcripción": {
                         "type": "date",
                         "date": {"start": "2026-04-02"},
                     },
@@ -448,9 +460,10 @@ class TestHandleGranolaProcessTranscript:
         )
         mock_upsert_task.return_value = {"page_id": "task-1", "created": True}
 
+        _mock_complete_raw_lookup(mock_nc)
         result = handle_granola_process_transcript(
             {
-                "title": "ReuniÃ³n live",
+                "title": "Reunión live",
                 "content": "Contenido live",
                 "date": "2026-04-02",
                 "granola_document_id": "doc-live",
@@ -462,18 +475,21 @@ class TestHandleGranolaProcessTranscript:
         assert result["matched_existing"] is True
         assert result["match_strategy"] == "granola_document_id"
         mock_nc.create_database_page.assert_not_called()
-        props = mock_nc.update_page_properties.call_args.kwargs["properties"]
-        assert props["Fecha que Rick pas? a Notion"]["date"]["start"]
-        assert props["Fecha que el agente proces?"]["date"]["start"]
+        assert result["reconciliation_action"] == "defer"
+        assert result["traceability_written"] is False
+        mock_nc.update_page_properties.assert_not_called()
+        mock_nc.replace_blocks_in_page.assert_not_called()
+        mock_nc.add_comment.assert_not_called()
+        mock_upsert_task.assert_not_called()
 
     @patch("worker.tasks.granola.handle_notion_upsert_task")
     @patch("worker.tasks.granola.notion_client")
     def test_create_syncs_visible_notion_page_id_when_schema_exposes_column(self, mock_nc, mock_upsert_task):
         mock_nc.read_database.return_value = {
             "schema": {
-                "TÃ­tulo": "title",
+                "Título": "title",
                 "Estado": "select",
-                "Fecha de transcripciÃ³n": "date",
+                "Fecha de transcripción": "date",
                 "ID interno Notion": "rich_text",
                 "Trazabilidad": "rich_text",
                 "Tags": "multi_select",
@@ -499,9 +515,10 @@ class TestHandleGranolaProcessTranscript:
         mock_upsert_task.return_value = {"page_id": "task-1", "created": True}
         mock_nc.add_comment.return_value = {"comment_id": "c-1"}
 
+        _mock_complete_raw_lookup(mock_nc)
         result = handle_granola_process_transcript(
             {
-                "title": "ReuniÃ³n con ID visible",
+                "title": "Reunión con ID visible",
                 "content": "Contenido live",
                 "date": "2026-04-02",
                 "notify_enlace": False,
@@ -527,6 +544,7 @@ class TestHandleGranolaProcessTranscript:
 
         result = handle_granola_process_transcript({
             "title": "Meeting",
+            "date": "2026-03-04",
             "content": "Content",
             "action_items": [
                 {"text": "Task 1", "assignee": "David", "due": "2026-03-10"},
@@ -549,6 +567,7 @@ class TestHandleGranolaProcessTranscript:
 
         result = handle_granola_process_transcript({
             "title": "Meeting",
+            "date": "2026-03-04",
             "content": "Content",
             "action_items": [
                 {"text": "Task 1", "assignee": "David", "due": "2026-03-10"},
@@ -569,12 +588,34 @@ class TestHandleGranolaProcessTranscript:
 
         result = handle_granola_process_transcript({
             "title": "Quick note",
+            "date": "2026-03-04",
             "content": "Just notes",
             "notify_enlace": False,
         })
 
         assert result["notification_sent"] is False
         mock_nc.add_comment.assert_not_called()
+
+    @patch("worker.tasks.granola.handle_notion_upsert_task")
+    @patch("worker.tasks.granola.notion_client")
+    def test_schema_missing_identity_field_defers_without_writes(self, mock_nc, mock_upsert_task):
+        _mock_raw_transcript_db(mock_nc)
+        # No writable identity field, even if the handler supplies today's date.
+        mock_nc.read_database.return_value = {"schema": {"Title": "title"}}
+        result = handle_granola_process_transcript({
+            "title": "Meeting", "content": "Content",
+            "allow_legacy_raw_task_writes": True,
+            "action_items": [{"text": "Must not create"}],
+        })
+        assert result["reconciliation_action"] == "defer"
+        assert result["reconciliation"]["reason"] == "raw_identity_schema_insufficient"
+        assert result["traceability_written"] is False
+        assert result["notification_sent"] is False
+        mock_nc.create_database_page.assert_not_called()
+        mock_nc.update_page_properties.assert_not_called()
+        mock_nc.replace_blocks_in_page.assert_not_called()
+        mock_nc.add_comment.assert_not_called()
+        mock_upsert_task.assert_not_called()
 
     def test_missing_title(self):
         with pytest.raises(ValueError, match="'title' is required"):

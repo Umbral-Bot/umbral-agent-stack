@@ -103,6 +103,8 @@ def _extract_date_from_page(page_data: Dict[str, Any]) -> str:
         "Fecha",
         "Date",
         "Fecha de transcripcion",
+        "Fecha de transcripción",
+        "Fecha de reunion",
         "Meeting Date",
     )
 
@@ -664,6 +666,8 @@ def _find_existing_raw_candidate(
             for item in candidates
             if item.get("granola_document_id") == granola_document_id
         ]
+        if len(exact_matches) > 1:
+            return None, "ambiguous"
         selected = _select_preferred_raw_candidate(
             exact_matches,
             title=title,
@@ -677,6 +681,8 @@ def _find_existing_raw_candidate(
         exact_matches = [
             item for item in candidates if item.get("source_url") == source_url
         ]
+        if len(exact_matches) > 1:
+            return None, "ambiguous"
         selected = _select_preferred_raw_candidate(
             exact_matches,
             title=title,
@@ -692,6 +698,8 @@ def _find_existing_raw_candidate(
             for item in candidates
             if item.get("export_signature") == export_signature
         ]
+        if len(exact_matches) > 1:
+            return None, "ambiguous"
         selected = _select_preferred_raw_candidate(
             exact_matches,
             title=title,
@@ -708,6 +716,8 @@ def _find_existing_raw_candidate(
             if item.get("content_hash") == content_hash
             and item.get("source_updated_at") == source_updated_at
         ]
+        if len(exact_matches) > 1:
+            return None, "ambiguous"
         selected = _select_preferred_raw_candidate(
             exact_matches,
             title=title,
@@ -724,6 +734,8 @@ def _find_existing_raw_candidate(
             if item.get("shared_folder_path") == shared_folder_path
             and item.get("sha1") == sha1
         ]
+        if len(exact_matches) > 1:
+            return None, "ambiguous"
         selected = _select_preferred_raw_candidate(
             exact_matches,
             title=title,
@@ -740,6 +752,8 @@ def _find_existing_raw_candidate(
             if item.get("shared_folder_path") == shared_folder_path
             and item.get("source_updated_at") == source_updated_at
         ]
+        if len(exact_matches) > 1:
+            return None, "ambiguous"
         selected = _select_preferred_raw_candidate(
             exact_matches,
             title=title,
@@ -773,6 +787,8 @@ def _find_existing_raw_candidate(
             and item.get("title") == title
             and _fallback_allows(item)
         ]
+        if len(exact_title_matches) > 1:
+            return None, "ambiguous"
         if len(exact_title_matches) == 1:
             return exact_title_matches[0], "exact_title_date"
 
@@ -784,6 +800,8 @@ def _find_existing_raw_candidate(
             and item.get("normalized_title") == normalized_title
             and _fallback_allows(item)
         ]
+        if len(normalized_matches) > 1:
+            return None, "ambiguous"
         if len(normalized_matches) == 1:
             return normalized_matches[0], "normalized_title_date"
 
@@ -1124,17 +1142,70 @@ def _upsert_raw_transcript_page(
     read so the preview is realistic). The return dict always contains the full
     ``reconciliation`` summary so callers can audit what would happen.
     """
-    db_snapshot = notion_client.read_database(config.NOTION_GRANOLA_DB_ID, max_items=1)
-    schema = db_snapshot.get("schema") or {}
-    if not isinstance(schema, dict):
-        raise RuntimeError("Could not read Granola raw DB schema")
+    coverage = notion_client.query_database_with_coverage(config.NOTION_GRANOLA_DB_ID)
+    if not isinstance(coverage, dict) or coverage.get("complete") is not True:
+        return {
+            "page_id": "", "url": "", "created": False, "updated": False,
+            "matched_existing": False, "match_strategy": "", "resolved_title": title,
+            "schema_fields_used": [], "dry_run": bool(dry_run),
+            "reconciliation": {
+                "action": "defer", "reason": "raw_lookup_incomplete",
+                "review_required": True,
+            },
+        }
+    schema = coverage["schema"]
+    title_writable = any(
+        schema.get(name) == "title" for name in ("Name", "Nombre", "Título", "Title")
+    )
+    identity_writable = (
+        bool(date) and any(schema.get(name) == "date" for name in
+                          ("Date", "Fecha", "Fecha de transcripción", "Fecha de reunion", "Meeting Date"))
+        or bool(granola_document_id) and any(schema.get(name) in {"rich_text", "title", "url"}
+            for name in ("Granola Document ID", "Document ID", "ID documento Granola", "ID documento"))
+        or bool(source_url) and any(schema.get(name) in {"url", "rich_text", "title"}
+            for name in ("Source URL", "URL fuente", "URL Fuente", "Meeting URL"))
+        or bool(granola_document_id or source_url) and any(schema.get(name) in {"rich_text", "url", "title"}
+            for name in ("Trazabilidad", "Traceability"))
+    )
+    if not title_writable or not identity_writable:
+        return {
+            "page_id": "", "url": "", "created": False, "updated": False,
+            "matched_existing": False, "match_strategy": "", "resolved_title": title,
+            "schema_fields_used": [], "dry_run": bool(dry_run),
+            "reconciliation": {
+                "action": "defer", "reason": "raw_identity_schema_insufficient",
+                "review_required": True,
+            },
+        }
+    existing_pages = coverage["results"]
+    try:
+        candidates = [_build_existing_raw_candidate(page) for page in existing_pages]
+    except (TypeError, ValueError, AttributeError, KeyError):
+        # Malformed identities must never become a "no match" or leak payloads.
+        return {
+            "page_id": "", "url": "", "created": False, "updated": False,
+            "matched_existing": False, "match_strategy": "", "resolved_title": title,
+            "schema_fields_used": [], "dry_run": bool(dry_run),
+            "reconciliation": {
+                "action": "defer", "reason": "raw_identity_invalid",
+                "review_required": True,
+            },
+        }
 
-    existing_pages = notion_client.query_database(config.NOTION_GRANOLA_DB_ID)
-    candidates = [
-        _build_existing_raw_candidate(page)
-        for page in existing_pages
-        if isinstance(page, dict)
-    ]
+    if any(
+        not candidate.get("title")
+        or not (candidate.get("granola_document_id") or candidate.get("source_url") or candidate.get("date"))
+        for candidate in candidates
+    ):
+        return {
+            "page_id": "", "url": "", "created": False, "updated": False,
+            "matched_existing": False, "match_strategy": "", "resolved_title": title,
+            "schema_fields_used": [], "dry_run": bool(dry_run),
+            "reconciliation": {
+                "action": "defer", "reason": "raw_identity_incomplete",
+                "review_required": True,
+            },
+        }
 
     existing_match, match_strategy = _find_existing_raw_candidate(
         candidates,
@@ -1148,6 +1219,17 @@ def _upsert_raw_transcript_page(
         shared_folder_path=str(extra_traceability.get("shared_folder_path") or "").strip(),
         sha1=str(extra_traceability.get("sha1") or "").strip(),
     )
+
+    if match_strategy == "ambiguous":
+        return {
+            "page_id": "", "url": "", "created": False, "updated": False,
+            "matched_existing": True, "match_strategy": "ambiguous",
+            "resolved_title": title, "schema_fields_used": [], "dry_run": bool(dry_run),
+            "reconciliation": {
+                "action": "defer", "reason": "raw_match_ambiguous",
+                "review_required": True,
+            },
+        }
 
     decision = decide_reconciliation(
         existing=existing_match,
@@ -1165,7 +1247,19 @@ def _upsert_raw_transcript_page(
         else _resolve_new_raw_title(title, candidates)
     ) or title
 
-    if decision.action in {"defer", "noop"}:
+    # ADR11: existing raw may include human annotations or Notion AI work.
+    # Never reconcile it in-place, even when force_reconcile was requested.
+    # Preserve the evaluator's no-op/defer decisions and all creation behavior.
+    if existing_match is not None and decision.action not in {"defer", "noop"}:
+        decision_dict = {
+            **decision_dict,
+            "proposed_action": decision.action,
+            "action": "defer",
+            "reason": "raw_existing_reconciliation_requires_review",
+            "review_required": True,
+        }
+
+    if decision_dict["action"] in {"defer", "noop"}:
         return {
             "page_id": str((existing_match or {}).get("page_id") or ""),
             "url": str((existing_match or {}).get("url") or ""),
@@ -1329,6 +1423,11 @@ def _upsert_raw_transcript_page(
     notion_result["schema_fields_used"] = used_fields
     notion_result["reconciliation"] = decision_dict
     notion_result["dry_run"] = False
+    # Report a completed write, not merely non-empty input or a preview.
+    notion_result["traceability_written"] = bool(
+        effective_traceability_text
+        and any(field in properties for field in ("Trazabilidad", "Traceability"))
+    )
     verification = _verify_raw_page_persistence(
         page_id=str(notion_result.get("page_id") or "").strip(),
         expected_blocks=blocks,
@@ -1842,7 +1941,7 @@ def handle_granola_process_transcript(input_data: Dict[str, Any]) -> Dict[str, A
         "granola_document_id": granola_document_id,
         "source_updated_at": source_updated_at,
         "source_url": source_url,
-        "traceability_written": bool(traceability_text),
+        "traceability_written": bool(page_result.get("traceability_written", False)),
         "matched_existing": bool(page_result.get("matched_existing")),
         "match_strategy": str(page_result.get("match_strategy") or ""),
         "resolved_title": str(page_result.get("resolved_title") or title),
@@ -3796,3 +3895,4 @@ def _create_proposal(
                 "transcript_page_id": transcript_page_id,
             },
         }
+

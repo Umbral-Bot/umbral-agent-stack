@@ -1915,6 +1915,98 @@ def query_database(
     return results
 
 
+def query_database_with_coverage(database_id: str) -> dict[str, Any]:
+    """Strict read for Granola only; never represent partial coverage as absence.
+
+    Existing query_database callers retain their contract. No payload/error bodies
+    are returned on failure. Duplicate page IDs, malformed pagination and a bounded
+    scan all require review rather than a potentially duplicate creation.
+    """
+    if not config.NOTION_API_KEY:
+        return {"complete": False, "results": [], "reason": "read_unavailable"}
+    results: list[dict[str, Any]] = []
+    seen_cursors: set[str] = set()
+    seen_pages: set[str] = set()
+    cursor: str | None = None
+    try:
+        with httpx.Client(timeout=TIMEOUT) as client:
+            # Do not use _check_response: it logs response bodies on errors.
+            metadata = client.get(
+                f"{NOTION_BASE_URL}/databases/{database_id}", headers=_headers()
+            )
+            if metadata.status_code != 200:
+                return {"complete": False, "results": [], "reason": "schema_read_failed"}
+            meta = metadata.json()
+            props = meta.get("properties") if isinstance(meta, dict) else None
+            if not isinstance(props, dict) or not props:
+                return {"complete": False, "results": [], "reason": "invalid_schema"}
+            schema = {}
+            for name, prop in props.items():
+                if not isinstance(prop, dict) or not isinstance(prop.get("type"), str) or not prop["type"]:
+                    return {"complete": False, "results": [], "reason": "invalid_schema"}
+                schema[name] = prop["type"]
+            if "title" not in schema.values():
+                return {"complete": False, "results": [], "reason": "invalid_schema"}
+            for _ in range(1000):
+                body = {"start_cursor": cursor} if cursor else {}
+                response = client.post(
+                    f"{NOTION_BASE_URL}/databases/{database_id}/query",
+                    headers=_headers(),
+                    json=body,
+                )
+                if response.status_code != 200:
+                    return {"complete": False, "results": [], "reason": "query_read_failed"}
+                data = response.json()
+                if not isinstance(data, dict) or not isinstance(data.get("results"), list):
+                    return {"complete": False, "results": [], "reason": "invalid_page"}
+                for page in data["results"]:
+                    page_id = page.get("id") if isinstance(page, dict) else None
+                    if not isinstance(page_id, str) or not page_id.strip() or page_id in seen_pages:
+                        return {"complete": False, "results": [], "reason": "invalid_or_duplicate_page"}
+                    row_properties = page.get("properties")
+                    if not isinstance(row_properties, dict):
+                        return {"complete": False, "results": [], "reason": "incomplete_properties"}
+                    for name, kind in schema.items():
+                        value = row_properties.get(name)
+                        if not isinstance(value, dict) or value.get("type") != kind or kind not in value:
+                            return {"complete": False, "results": [], "reason": "incomplete_properties"}
+                        if kind in {"title", "rich_text"}:
+                            parts = value[kind]
+                            if not isinstance(parts, list) or any(
+                                not isinstance(part, dict) or not (
+                                    isinstance(part.get("plain_text"), str)
+                                    or isinstance(part.get("text"), dict)
+                                    and isinstance(part["text"].get("content"), str)
+                                ) for part in parts
+                            ):
+                                return {"complete": False, "results": [], "reason": "incomplete_properties"}
+                        if kind == "date" and value[kind] is not None:
+                            dates = value[kind]
+                            if not isinstance(dates, dict) or not isinstance(dates.get("start"), str):
+                                return {"complete": False, "results": [], "reason": "incomplete_properties"}
+                            try:
+                                # Parse format only; do not normalize or log source values.
+                                from datetime import datetime
+                                datetime.fromisoformat(dates["start"].replace("Z", "+00:00"))
+                            except ValueError:
+                                return {"complete": False, "results": [], "reason": "incomplete_properties"}
+                    seen_pages.add(page_id)
+                    results.append(page)
+                has_more = data.get("has_more")
+                next_cursor = data.get("next_cursor")
+                if has_more is False and next_cursor is None:
+                    return {"complete": True, "results": results, "schema": schema, "reason": ""}
+                if has_more is not True or not isinstance(next_cursor, str) or not next_cursor.strip():
+                    return {"complete": False, "results": [], "reason": "incomplete_pagination"}
+                if next_cursor in seen_cursors:
+                    return {"complete": False, "results": [], "reason": "repeated_cursor"}
+                seen_cursors.add(next_cursor)
+                cursor = next_cursor
+    except Exception:
+        return {"complete": False, "results": [], "reason": "read_failed"}
+    return {"complete": False, "results": [], "reason": "scan_limit"}
+
+
 def append_blocks_to_page(
     page_id: str,
     blocks: list[dict[str, Any]],
@@ -2154,3 +2246,4 @@ def prepend_blocks_to_page(
         "blocks_preserved": len(old_write_blocks),
         "page_id": page_id,
     }
+

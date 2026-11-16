@@ -1,0 +1,255 @@
+"""Offline characterization of matching and query coverage. No runtime imports."""
+import ast
+import logging
+import unicodedata
+from pathlib import Path
+from types import SimpleNamespace
+from typing import Any, Dict
+from unittest import TestCase, main
+from unittest.mock import Mock, PropertyMock
+
+ROOT = Path(__file__).resolve().parents[1]
+
+def functions(path, names, bindings):
+    tree = ast.parse(path.read_text())
+    nodes = [n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name in names]
+    exec(compile(ast.Module(body=nodes, type_ignores=[]), str(path), "exec"), bindings)
+    return bindings
+
+class DetectionContract(TestCase):
+    def test_existing_matching_and_ambiguity_characterization(self):
+        g = functions(ROOT / "worker/tasks/granola.py",
+                      {"_normalize_lookup_text", "_select_preferred_raw_candidate", "_find_existing_raw_candidate"},
+                      {"unicodedata": unicodedata, "Dict": Dict, "Any": Any})
+        args = dict(title="Synthetic", transcript_date="2026-11-15", granola_document_id="doc-a",
+                    source_url="", source_updated_at="", export_signature="", content_hash="", shared_folder_path="", sha1="")
+        a = dict(page_id="a", title="Synthetic", normalized_title="synthetic", date="2026-11-15", granola_document_id="doc-a")
+        find = g["_find_existing_raw_candidate"]
+        self.assertEqual(find([a], **args)[1], "granola_document_id")
+        self.assertEqual(find([{**a, "granola_document_id": "other"}], **args), (None, ""))
+        legacy = {**a, "granola_document_id": ""}
+        self.assertEqual(find([legacy], **args)[1], "exact_title_date")
+        # Ambiguity is explicit rather than absence or an arbitrary selected page:
+        self.assertEqual(find([legacy, {**legacy, "page_id": "b"}], **args), (None, "ambiguous"))
+        self.assertEqual(find([a, {**a, "page_id": "b"}], **args), (None, "ambiguous"))
+
+    def query(self, replies):
+        client = Mock()
+        client.__enter__ = Mock(return_value=client)
+        client.__exit__ = Mock(return_value=False)
+        # Real status/json behavior, with bodies that must never be logged/read.
+        metadata = Mock(status_code=200)
+        metadata.json.return_value = {"properties": {"Title": {"type": "title"}}}
+        client.get.return_value = metadata
+        responses = []
+        for reply in replies:
+            if isinstance(reply, Exception):
+                responses.append(reply)
+                continue
+            reply = dict(reply)
+            reply["results"] = [
+                {**row, "properties": {"Title": {"type": "title", "title": [{"plain_text": "Synthetic"}]}}}
+                if isinstance(row, dict) and "id" in row and "properties" not in row else row
+                for row in reply.get("results", [])
+            ]
+            response = Mock(status_code=200)
+            response.json.return_value = reply
+            response.text = "SENSITIVE_SENTINEL"
+            responses.append(response)
+        client.post.side_effect = responses
+        g = functions(ROOT / "worker/notion_client.py", {"query_database_with_coverage"},
+                      {"Any": Any, "config": SimpleNamespace(NOTION_API_KEY="synthetic"),
+                       "httpx": SimpleNamespace(Client=Mock(return_value=client)), "TIMEOUT": 1,
+                       "NOTION_BASE_URL": "https://synthetic.invalid", "_headers": lambda: {},
+                       "_check_response": Mock(side_effect=AssertionError("unsafe shared response helper")),
+                       "logger": logging.getLogger("adr11.strict.lookup")})
+        return g["query_database_with_coverage"], client
+
+    def test_complete_pagination(self):
+        query, client = self.query([
+            {"results": [{"id": "a"}], "has_more": True, "next_cursor": "next"},
+            {"results": [{"id": "b"}], "has_more": False, "next_cursor": None}])
+        result = query("synthetic")
+        self.assertTrue(result["complete"])
+        self.assertEqual([p["id"] for p in result["results"]], ["a", "b"])
+        self.assertEqual(client.post.call_args_list[1].kwargs["json"], {"start_cursor": "next"})
+
+    def test_second_page_failure_does_not_return_partial_result(self):
+        query, _ = self.query([
+            {"results": [{"id": "a"}], "has_more": True, "next_cursor": "next"},
+            RuntimeError("synthetic partial read")])
+        result = query("synthetic")
+        self.assertFalse(result["complete"])
+        self.assertEqual(result["results"], [])
+
+    def test_inconsistent_pagination_fails_closed(self):
+        query, client = self.query([{"results": [{"id": "a"}], "has_more": True, "next_cursor": None}])
+        result = query("synthetic")
+        self.assertFalse(result["complete"])
+        self.assertEqual(result["results"], [])
+        client.post.assert_called_once()
+
+    def test_repeated_cursor_fails_closed(self):
+        query, _ = self.query([
+            {"results": [{"id": "a"}], "has_more": True, "next_cursor": "same"},
+            {"results": [{"id": "b"}], "has_more": True, "next_cursor": "same"}])
+        self.assertEqual(query("synthetic")["reason"], "repeated_cursor")
+
+    def test_invalid_and_duplicate_page_fail_closed(self):
+        for page in (None, {}, {"id": "a"}):
+            query, _ = self.query([{"results": [{"id": "a"}, page], "has_more": False, "next_cursor": None}])
+            self.assertFalse(query("synthetic")["complete"])
+
+    def test_real_lookup_and_caller_never_write_on_incomplete_coverage(self):
+        from tests.test_granola_raw_preservation_isolated import RawPreservation
+        harness = RawPreservation()
+        for replies in (
+            [{"results": [], "has_more": True, "next_cursor": None}],
+            [{"results": [], "has_more": True, "next_cursor": "same"},
+             {"results": [], "has_more": True, "next_cursor": "same"}],
+            [RuntimeError("synthetic transport failure")],
+        ):
+            for force in (False, True):
+                g, client = harness.harness("create", existing=False)
+                strict, transport = self.query(replies)
+                client.query_database_with_coverage.side_effect = strict
+                result = harness.run_handler(g, force_reconcile=force)
+                self.assertTrue(result["deferred"])
+                self.assertEqual(result["reconciliation"]["reason"], "raw_lookup_incomplete")
+                self.assertFalse(result["notification_sent"])
+                harness.assert_no_writes(g, client)
+                g["decide_reconciliation"].assert_not_called()
+
+    def test_real_ambiguous_match_and_caller_never_write(self):
+        from tests.test_granola_raw_preservation_isolated import RawPreservation
+        harness = RawPreservation()
+        for doc_id in ("synthetic", ""):
+            g, client = harness.harness("create", existing=False)
+            g["unicodedata"] = unicodedata
+            functions(ROOT / "worker/tasks/granola.py",
+                      {"_normalize_lookup_text", "_select_preferred_raw_candidate", "_find_existing_raw_candidate"}, g)
+            candidate = {"page_id": "a", "title": "Synthetic", "normalized_title": "synthetic",
+                         "date": "2026-11-15", "granola_document_id": doc_id}
+            client.query_database_with_coverage.return_value = {
+                "complete": True, "schema": {"Title": "title", "Date": "date"}, "results": [candidate, {**candidate, "page_id": "b"}]}
+            g["_build_existing_raw_candidate"].side_effect = lambda page: page
+            result = harness.run_handler(g, force_reconcile=True)
+            self.assertTrue(result["deferred"])
+            self.assertEqual(result["reconciliation"]["reason"], "raw_match_ambiguous")
+            self.assertEqual(result["action_items_created"], 0)
+            harness.assert_no_writes(g, client)
+            g["decide_reconciliation"].assert_not_called()
+
+    def test_empty_properties_and_missing_identity_defer_caller(self):
+        from tests.test_granola_raw_preservation_isolated import RawPreservation
+        harness = RawPreservation()
+        g, client = harness.harness("create", existing=False)
+        strict, _ = self.query([{"results": [{"id": "synthetic-page", "properties": {}}],
+                                 "has_more": False, "next_cursor": None}])
+        client.query_database_with_coverage.side_effect = strict
+        result = harness.run_handler(g)
+        self.assertEqual(result["reconciliation"]["reason"], "raw_lookup_incomplete")
+        harness.assert_no_writes(g, client)
+        for candidate in (
+            {"title": "", "granola_document_id": "", "source_url": "", "date": ""},
+            {"title": "Synthetic", "granola_document_id": "", "source_url": "", "date": ""},
+        ):
+            g, client = harness.harness("create", existing=False)
+            client.query_database_with_coverage.return_value = {
+                "complete": True, "schema": {"Title": "title", "Date": "date"}, "results": [{"id": "synthetic-page"}]}
+            g["_build_existing_raw_candidate"].return_value = candidate
+            result = harness.run_handler(g)
+            self.assertEqual(result["reconciliation"]["reason"], "raw_identity_incomplete")
+            harness.assert_no_writes(g, client)
+            g["decide_reconciliation"].assert_not_called()
+
+    def test_error_response_body_never_read_logged_or_returned(self):
+        from tests.test_granola_raw_preservation_isolated import RawPreservation
+        harness = RawPreservation()
+        for stage in ("metadata", "query", "decode"):
+            g, client = harness.harness("create", existing=False)
+            strict, transport = self.query([{"results": [], "has_more": False, "next_cursor": None}])
+            response = Mock(status_code=200 if stage == "decode" else 403)
+            body = PropertyMock(side_effect=AssertionError("response body must not be read"))
+            type(response).text = body
+            response.json.side_effect = ValueError("SENSITIVE_SENTINEL")
+            if stage == "metadata":
+                transport.get.return_value = response
+            else:
+                transport.post.side_effect = [response]
+            client.query_database_with_coverage.side_effect = strict
+            with self.assertNoLogs("adr11.strict.lookup", level="DEBUG"):
+                result = harness.run_handler(g)
+            self.assertTrue(result["deferred"])
+            self.assertNotIn("SENSITIVE_SENTINEL", repr(result))
+            body.assert_not_called()
+            if stage != "decode":
+                response.json.assert_not_called()
+            harness.assert_no_writes(g, client)
+
+    def test_real_extraction_schema_and_handler_legacy_and_invalid(self):
+        import re
+        from datetime import datetime, timezone
+        from typing import List, Optional
+        from tests.test_granola_raw_preservation_isolated import RawPreservation
+        harness = RawPreservation()
+        tree = ast.parse((ROOT / "worker/tasks/granola.py").read_text())
+        definitions = {n.name: n for n in tree.body if isinstance(n, ast.FunctionDef)}
+        needed = {"_build_existing_raw_candidate", "_build_raw_transcript_properties"}
+        while True:
+            dependencies = {n.id for name in needed for n in ast.walk(definitions[name])
+                            if isinstance(n, ast.Name) and n.id in definitions}
+            expanded = needed | dependencies
+            if expanded == needed:
+                break
+            needed = expanded
+        for date_value, expected in (("2026-11-15", "raw_existing_reconciliation_requires_review"),
+                                      (123, "raw_lookup_incomplete")):
+            g, client = harness.harness()
+            g.update(re=re, unicodedata=unicodedata, datetime=datetime, timezone=timezone,
+                     List=List, Optional=Optional)
+            functions(ROOT / "worker/tasks/granola.py", needed, g)
+            functions(ROOT / "worker/tasks/granola.py",
+                      {"_normalize_lookup_text", "_select_preferred_raw_candidate", "_find_existing_raw_candidate"}, g)
+            page = {"id": "legacy", "properties": {
+                "Title": {"type": "title", "title": [{"plain_text": "Synthetic", "text": {"content": "Synthetic"}}]},
+                "Fecha de transcripción": {"type": "date", "date": {"start": date_value}},
+            }}
+            strict, transport = self.query([{"results": [page], "has_more": False, "next_cursor": None}])
+            transport.get.return_value.json.return_value = {"properties": {
+                "Title": {"type": "title"}, "Fecha de transcripción": {"type": "date"}}}
+            client.query_database_with_coverage.side_effect = strict
+            result = harness.run_handler(g)
+            self.assertEqual(result["reconciliation"]["reason"], expected)
+            self.assertFalse(result["traceability_written"])
+            self.assertEqual(result["action_items_created"], 0)
+            self.assertFalse(result["notification_sent"])
+            client.create_database_page.assert_not_called()
+            client.update_page_properties.assert_not_called()
+            client.replace_blocks_in_page.assert_not_called()
+
+        # Real property builder: an empty DB with only a title is not creatable;
+        # title + accented date persists the identity required for later matching.
+        for has_date in (False, True):
+            g, client = harness.harness("create", existing=False)
+            g.update(re=re, unicodedata=unicodedata, datetime=datetime, timezone=timezone,
+                     List=List, Optional=Optional)
+            functions(ROOT / "worker/tasks/granola.py", needed, g)
+            schema = {"Title": "title"}
+            if has_date:
+                schema["Fecha de transcripción"] = "date"
+            client.query_database_with_coverage.return_value = {"complete": True, "results": [], "schema": schema}
+            result = harness.run_handler(g)
+            if has_date:
+                client.create_database_page.assert_called_once()
+                props = client.create_database_page.call_args.kwargs["properties"]
+                self.assertEqual(props["Fecha de transcripción"]["date"]["start"], "2026-11-15")
+                self.assertTrue(props["Title"]["title"])
+            else:
+                self.assertEqual(result["reconciliation"]["reason"], "raw_identity_schema_insufficient")
+                client.create_database_page.assert_not_called()
+                self.assertEqual(result["action_items_created"], 0)
+                self.assertFalse(result["notification_sent"])
+
+if __name__ == "__main__":
+    main()

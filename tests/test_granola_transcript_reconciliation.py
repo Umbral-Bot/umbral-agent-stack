@@ -3,8 +3,8 @@
 Covers:
 
 - truncation detector (the "Comgrap Dynamo" tail ending in a comma)
-- partial -> complete reconciliation (same granola_document_id should update,
-  not duplicate, the existing Notion page)
+- partial -> complete reconciliation (same granola_document_id requires review,
+  never overwrites or duplicates the existing Notion page)
 - dry-run / audit mode (no Notion writes)
 - content hash unchanged -> noop
 - repeated title with a different granola_document_id -> new page is created
@@ -54,8 +54,8 @@ _BASE_SCHEMA = {
 
 
 def _mock_db(mock_nc, *, existing_pages=None, schema=None):
-    mock_nc.read_database.return_value = {"schema": schema or dict(_BASE_SCHEMA)}
-    mock_nc.query_database.return_value = existing_pages or []
+    effective_schema = dict(_BASE_SCHEMA) if schema is None else dict(schema)
+    mock_nc.query_database_with_coverage.return_value = {"complete": True, "results": existing_pages or [], "schema": effective_schema, "reason": ""}
     mock_nc.create_database_page.return_value = {
         "page_id": "page-new",
         "url": "https://notion.so/page-new",
@@ -353,19 +353,14 @@ class TestProcessTranscriptReconciliation:
         assert result["matched_existing"] is True
         assert result["match_strategy"] == "granola_document_id"
         assert result["page_id"] == "page-comgrap"
-        assert result["reconciliation_action"] == "reconcile"
+        assert result["reconciliation_action"] == "defer"
+        assert result["reconciliation"]["review_required"] is True
+        assert result["reconciliation"]["reason"] == "raw_existing_reconciliation_requires_review"
+        assert result["traceability_written"] is False
         mock_nc.create_database_page.assert_not_called()
-        mock_nc.update_page_properties.assert_called_once()
-        mock_nc.replace_blocks_in_page.assert_called_once()
-
-        update_args = mock_nc.update_page_properties.call_args
-        assert update_args.args[0] == "page-comgrap"
-        traceability_written = update_args.kwargs["properties"]["Trazabilidad"][
-            "rich_text"
-        ][0]["text"]["content"]
-        assert "content_hash=" in traceability_written
-        assert "reconciled_at=" in traceability_written
-        assert "truncation_detected=false" in traceability_written
+        mock_nc.update_page_properties.assert_not_called()
+        mock_nc.replace_blocks_in_page.assert_not_called()
+        mock_nc.add_comment.assert_not_called()
 
     @patch("worker.tasks.granola.notion_client")
     def test_dry_run_does_not_write_to_notion(self, mock_nc):
@@ -549,7 +544,7 @@ class TestProcessTranscriptReconciliation:
     ):
         """Control test: the title/date fallback must keep working against
         legacy rows that have no granola_document_id stored yet, so those can
-        be reconciled/backfilled rather than duplicated.
+        be identified for explicit review rather than overwritten or duplicated.
         """
         existing_page = _existing_page(
             page_id="page-legacy",
@@ -586,7 +581,11 @@ class TestProcessTranscriptReconciliation:
             "normalized_title_date",
         }
         mock_nc.create_database_page.assert_not_called()
-        mock_nc.update_page_properties.assert_called_once()
+        mock_nc.update_page_properties.assert_not_called()
+        mock_nc.replace_blocks_in_page.assert_not_called()
+        assert result["reconciliation_action"] == "defer"
+        assert result["reconciliation"]["review_required"] is True
+        assert result["traceability_written"] is False
 
     @patch("worker.tasks.granola.notion_client")
     def test_stability_window_defers_fresh_documents(self, mock_nc):
@@ -650,5 +649,99 @@ class TestExistingRawCandidateParsesFinalityFields:
         assert candidate["reconciled_at"] == "2026-04-02T09:00:00Z"
 
 
+class TestIdentityRoundTrip:
+    @patch("worker.tasks.granola.notion_client")
+    def test_mock_schema_override_and_explicit_empty_are_honored(self, mock_nc):
+        for schema in ({}, {"Title": "title"}):
+            mock_nc.reset_mock()
+            _mock_db(mock_nc, schema=schema)
+            assert mock_nc.query_database_with_coverage.return_value["schema"] == schema
+            result = handle_granola_process_transcript({
+                "title": "Synthetic", "content": _FULL_CONTENT, "date": "2026-04-01",
+                "granola_document_id": "synthetic", "stability_window_seconds": 0,
+                "notify_enlace": False,
+            })
+            assert result["reconciliation"]["reason"] == "raw_identity_schema_insufficient"
+            mock_nc.create_database_page.assert_not_called()
+
+    @patch("worker.tasks.granola.notion_client")
+    def test_create_query_detect_same_page_round_trip(self, mock_nc):
+        schema = {"Título": "title", "Fecha de transcripción": "date",
+                  "Granola Document ID": "rich_text", "Trazabilidad": "rich_text"}
+        payload = {
+            "title": "Synthetic round trip", "content": _FULL_CONTENT, "date": "2026-04-01",
+            "granola_document_id": "synthetic-roundtrip", "source_updated_at": "2026-04-01T08:00:00Z",
+            "stability_window_seconds": 0, "notify_enlace": False,
+        }
+        _mock_db(mock_nc, schema=schema)
+        _mock_read_page_full_snapshot(mock_nc, _FULL_CONTENT, page_id="page-new")
+        first = handle_granola_process_transcript(payload)
+        assert first["reconciliation_action"] == "create"
+        written = mock_nc.create_database_page.call_args.kwargs["properties"]
+        # Emulate only the server's property type annotation, not identities/metrics.
+        returned_properties = {name: {"type": schema[name], **value} for name, value in written.items()}
+        page = {"id": "page-new", "url": "https://notion.so/page-new",
+                "properties": returned_properties}
+        mock_nc.reset_mock()
+        _mock_db(mock_nc, schema=schema, existing_pages=[page])
+        second = handle_granola_process_transcript(payload)
+        assert second["matched_existing"] is True
+        assert second["page_id"] == first["page_id"] == "page-new"
+        assert second["match_strategy"] == "granola_document_id"
+        assert second["reconciliation_action"] == "noop"
+        assert second["traceability_written"] is False
+        mock_nc.create_database_page.assert_not_called()
+        mock_nc.update_page_properties.assert_not_called()
+        mock_nc.replace_blocks_in_page.assert_not_called()
+        mock_nc.add_comment.assert_not_called()
+
+        # Fail-closed coverage is evaluated before a potentially valid no-op.
+        mock_nc.query_database_with_coverage.return_value["results"].append(
+            {"id": "malformed-neighbor", "properties": {}})
+        third = handle_granola_process_transcript(payload)
+        assert third["reconciliation"]["reason"] == "raw_identity_incomplete"
+        assert third["deferred"] is True
+        mock_nc.create_database_page.assert_not_called()
+        mock_nc.update_page_properties.assert_not_called()
+
+    @patch("worker.tasks.granola.notion_client")
+    @patch("worker.tasks.granola.handle_notion_upsert_task")
+    def test_legacy_title_date_round_trip_without_doc_id_or_url(self, mock_task, mock_nc):
+        schema = {"Título": "title", "Fecha de transcripción": "date",
+                  "Trazabilidad": "rich_text"}
+        payload = {
+            "title": "Synthetic round trip", "content": _FULL_CONTENT, "date": "2026-04-01",
+            "granola_document_id": "", "source_url": "", "source_updated_at": "2026-04-01T08:00:00Z",
+            "stability_window_seconds": 0, "notify_enlace": True,
+            "allow_legacy_raw_task_writes": True, "action_items": [{"text": "synthetic follow-up"}],
+        }
+        _mock_db(mock_nc, schema=schema)
+        _mock_read_page_full_snapshot(mock_nc, _FULL_CONTENT, page_id="page-new")
+        first = handle_granola_process_transcript(payload)
+        assert first["reconciliation_action"] == "create"
+        written = mock_nc.create_database_page.call_args.kwargs["properties"]
+        # Emulate only the server's property type annotation, not identities/metrics.
+        returned_properties = {name: {"type": schema[name], **value} for name, value in written.items()}
+        page = {"id": "page-new", "url": "https://notion.so/page-new",
+                "properties": returned_properties}
+        mock_nc.reset_mock()
+        mock_task.reset_mock()
+        _mock_db(mock_nc, schema=schema, existing_pages=[page])
+        second = handle_granola_process_transcript(payload)
+        assert second["matched_existing"] is True
+        assert second["page_id"] == first["page_id"] == "page-new"
+        assert second["match_strategy"] == "exact_title_date"
+        assert second["reconciliation_action"] == "noop"
+        assert second["traceability_written"] is False
+        mock_nc.create_database_page.assert_not_called()
+        mock_nc.update_page_properties.assert_not_called()
+        mock_nc.replace_blocks_in_page.assert_not_called()
+        mock_nc.add_comment.assert_not_called()
+
+        assert second["action_items_created"] == 0
+        assert second["notification_sent"] is False
+        mock_task.assert_not_called()
+
 if __name__ == "__main__":  # pragma: no cover
     pytest.main([__file__, "-v"])
+

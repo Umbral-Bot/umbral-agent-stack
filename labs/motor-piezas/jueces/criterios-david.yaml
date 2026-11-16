@@ -1187,6 +1187,82 @@ criterios:
   - galeria: M02
     cita: Partamos en la producción de ideas primero como se origina la idea
     fuente: jueces/elecciones.yaml (M02) · mensaje de David del 2026-11-11
+- id: C54
+  regla: 'La idea tiene que entenderse rápido sin conocimiento técnico profundo y ser relevante para la mayoría de su
+    público. Una idea correcta pero de nicho técnico (permisos de un flujo publicado, la columna de estado de un CDE)
+    no conecta con su audiencia aunque esté bien argumentada. Prueba: ¿la entiende y le importa a un gerente de una
+    constructora, no solo a un BIM manager experto?'
+  tipo: rechazo
+  lentes:
+  - idea.enganche
+  - idea.alineacion
+  - eleccion.prediccion
+  confianza: alta
+  estado: activo
+  desde: G31
+  hasta: G31
+  origen: dicho por David (I01, posterior a M02)
+  evidencia:
+  - galeria: I01
+    cita: es correcto lo que dices pero creoque ese mensaje no conectará con mi audiencia es muy especifico y es necesario
+      tener mucho conocimiento tecnico para entenderlo rápidamente, creo que es irrelevante para la mayoria d elas personas
+      que podrían ser mi publico
+    fuente: jueces/elecciones.yaml (I01, opción 1 «En mi cuenta funciona») · mensaje de David del 2026-11-16
+  - galeria: I01
+    cita: tampoco me parece interesante
+    fuente: jueces/elecciones.yaml (I01, opción 2 «La columna de estado antes que el chatbot», también de nicho técnico;
+      el vínculo con esta regla es inferido)
+- id: C55
+  regla: 'La docencia como tema (cómo enseñar, cómo diseñar un taller, qué hace la sala con un ejemplo) está fuera de
+    los temas de David. Sus clases siguen siendo canal y fuente de experiencia, pero la idea no puede ser sobre enseñar.'
+  tipo: rechazo
+  lentes:
+  - idea.alineacion
+  - eleccion.prediccion
+  confianza: alta
+  estado: activo
+  desde: G31
+  hasta: G31
+  origen: dicho por David (I01)
+  evidencia:
+  - galeria: I01
+    cita: este tema está fuera de los temas que veo, yo no enseño docencia
+    fuente: jueces/elecciones.yaml (I01, opción 4 «La sala copia el ejemplo») · mensaje de David del 2026-11-16
+- id: C56
+  regla: 'Un buen tema no se salva con una redacción extraña: la narrativa es parte de la idea. Si el tema engancha pero
+    se lee raro, la idea vuelve a escribirse antes de pasar a metáforas; no se aprueba por el tema.'
+  tipo: proceso
+  lentes:
+  - idea.voz
+  - idea.enganche
+  - eleccion.prediccion
+  confianza: alta
+  estado: activo
+  desde: G31
+  hasta: G31
+  origen: dicho por David (I01)
+  evidencia:
+  - galeria: I01
+    cita: este tema si es interesnte, pero la redacción y narrativa está un poco extraña
+    fuente: 'jueces/elecciones.yaml (I01, opción 3 «La resistencia joven: miedo a quedar medido») · mensaje de David
+      del 2026-11-16'
+- id: C57
+  regla: 'Lo que probablemente sonó extraño en la ficha: la fórmula «Lo que sostengo es que…», el rótulo «Escena
+    ilustrativa:», frases que cargan dos ideas a la vez, marcas de andamiaje («punto de partida», «tensión», «cierre»)
+    y cierres abstractos («se lee como información de diseño»). A David se le muestra la idea contada como él la
+    contaría: un párrafo corto que va del gancho a la escena, al giro y a la frase que queda.'
+  tipo: preferencia
+  lentes:
+  - idea.voz
+  confianza: media
+  estado: a prueba
+  desde: G31
+  hasta: G31
+  origen: 'inferido de C56 (I01): David no dijo qué le sonó extraño; se pone a prueba en I02'
+  evidencia:
+  - galeria: I01
+    cita: la redacción y narrativa está un poco extraña
+    fuente: jueces/elecciones.yaml (I01, opción 3)
 rechazados:
 - id: C46
   regla: 'Cuando todas las opciones ya cumplen el contraste y el tamaño mínimo, la más legible no gana por eso.

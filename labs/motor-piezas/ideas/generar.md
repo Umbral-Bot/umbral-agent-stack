@@ -23,11 +23,17 @@ evidencia real.
    un BIM manager?
 4. Enganche: ¿qué creencia mueve, qué sorpresa trae, por qué importa esta semana? Una idea que se entiende pero no
    engancha no sirve (lo que pasó con M01).
-5. Varía: tus tres ideas tienen tesis distintas. Evita girar otra vez sobre «criterio antes que automatizar» salvo que
+5. Audiencia amplia: la idea se entiende rápido sin conocimiento técnico profundo y le importa a la mayoría de su
+   público. Prueba: ¿la entiende y le importa a un gerente de una constructora, no solo a un BIM manager experto? El
+   detalle técnico puede ser la escena, no la idea. La docencia como tema está fuera: David no enseña a enseñar (I01).
+6. Escribe como David lo contaría, no como una plantilla. Evita «Lo que sostengo es que…» fuera del campo premisa,
+   rótulos como «Escena ilustrativa:», frases que cargan dos ideas y cierres abstractos. La narrativa es parte de la
+   idea: un buen tema con redacción extraña no pasa (I01).
+7. Varía: tus tres ideas tienen tesis distintas. Evita girar otra vez sobre «criterio antes que automatizar» salvo que
    la evidencia lo exija y la idea sea nueva.
-6. Respeta las reglas de verdad: sin cifras ni credenciales que el CV v6 no confirma, sin nombrar clientes fuera del v6,
+8. Respeta las reglas de verdad: sin cifras ni credenciales que el CV v6 no confirma, sin nombrar clientes fuera del v6,
    sin pegar transcripciones, Konstruedu solo como patrón anónimo.
-7. Escribe en castellano, en la voz de David (directo, técnico, sin la lista negra). Usa «ustedes», nunca «vosotros».
+9. Escribe en castellano, en la voz de David (directo, técnico, sin la lista negra). Usa «ustedes», nunca «vosotros».
 
 ## Salida
 Tres fichas en JSON, con los campos de `ficha.md`: titulo, tema, manantial, formula, evidencia {tipo, referencia,

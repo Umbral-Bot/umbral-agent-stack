@@ -1,4 +1,6 @@
-# Rúbricas de los jueces del motor de piezas · versión 4 (2026-11-11).
+# Rúbricas de los jueces del motor de piezas · versión 5 (2026-11-16).
+# v5: tras I01, la etapa «idea» pide audiencia amplia (C54), deja fuera la docencia como tema (C55) y trata la
+# redacción como parte de la idea (C56). Los jueces eligieron la opción 1, que David descartó por ser de nicho técnico.
 # v4: etapa «idea» para la fábrica de ideas (premisa, alineación, voz, enganche, monotonía).
 # v3: tras G28 la lente contenido pregunta por la metáfora y el veto de marca exige que el texto se lea a tamaño
 # de feed (la lente de marca vetó la opción que David puso como la mejor por unas cotas que no se leen).
@@ -13,7 +15,7 @@
 # - Una lente que no aplica a la galería lo dice (no_aplica) y no cuenta en la suma.
 # - La suma se pondera con pesos.yaml: cada lente pesa según cuánto coincidió con David.
 # - Protocolo ciego: los jueces votan antes que David, el voto se sella y David elige sin verlo.
-version: 4
+version: 5
 
 escala: "0 a 10 por opción; 7 o más = sirve; 5 a 7 = sirve con ajustes; menos de 5 = no sirve"
 gravedad:
@@ -36,12 +38,12 @@ etapas:
         veto: ["no hay postura: es un tema", "la respuesta repite la hipótesis o no la contesta"]
       alineacion:
         mira: "¿nace de una evidencia de David (su experiencia, un dolor de su audiencia, una señal traducida a la obra o uno de sus pilares)? ¿conecta con su tesis central y sus marcos (raiz-david.yaml)?"
-        veto: ["contradice la tesis o los principios de David", "afirma una cifra, un cliente o una credencial que el CV v6 no confirma"]
+        veto: ["contradice la tesis o los principios de David", "afirma una cifra, un cliente o una credencial que el CV v6 no confirma", "el tema es la docencia o la pedagogía (raiz-david.yaml, fuera_de_alcance)"]
       voz:
         mira: "¿David diría esto en una reunión con un BIM manager? Escena de obra antes del concepto, afirmación antes que pregunta, sin la lista negra ni frases redondas"
-        veto: ["suena a texto genérico de IA o de marketing"]
+        veto: ["suena a texto genérico de IA o de marketing", "la redacción se lee extraña o de plantilla: un buen tema con mala narrativa no pasa (I01)"]
       enganche:
-        mira: "¿qué creencia mueve, qué sorpresa trae, por qué importa ahora? Una idea que se entiende pero no engancha no sirve (M01). Vale más una tensión concreta del oficio que una moraleja"
+        mira: "¿qué creencia mueve, qué sorpresa trae, por qué importa ahora? Una idea que se entiende pero no engancha no sirve (M01). Vale más una tensión concreta del oficio que una moraleja. ¿Se entiende rápido sin conocimiento técnico profundo y le importa a la mayoría de su público, o solo al especialista? Una idea de nicho técnico no engancha a su audiencia aunque sea correcta (I01)"
         veto: []
       monotonia:
         mira: "dentro de la ronda: ¿repite la tesis de otra idea, o vuelve otra vez a «criterio antes que automatizar»?"

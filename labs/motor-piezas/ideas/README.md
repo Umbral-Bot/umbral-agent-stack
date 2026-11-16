@@ -37,3 +37,9 @@ ejemplo sin tesis (M01 y M02). La dirección de arte de M02 quedó aprobada; lo 
 - De la skill `asesor-discursivo` salen la premisa, el residuo y el selector de arquitectura. De `mi-contenido`, el mapa
   de la evidencia.
 - Lo que UAS no tenía: medir si una idea engancha y evitar que todas repitan la misma tesis.
+
+## Rondas
+
+| Ronda | Fecha | Lo que dijo David | Los jueces | Lo que cambió |
+|---|---|---|---|---|
+| I01 | 2026-11-16 | Ninguna. Solo la 3 (la resistencia joven) le interesó como tema, «pero la redacción y narrativa está un poco extraña». La 1, correcta pero de nicho técnico; la 2, poco interesante; la 4, fuera de sus temas («yo no enseño docencia») | Eligieron la 1; ρ con su valoración −0,77 | Criterios C54 (audiencia amplia), C55 (docencia fuera), C56 (la narrativa es parte de la idea) y C57 a prueba (qué sonó extraño). Rúbricas v5, `fuera_de_alcance` en la raíz y dos pasos nuevos en `generar.md` |

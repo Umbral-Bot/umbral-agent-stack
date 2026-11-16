@@ -93,6 +93,16 @@ audiencias:
   x: {texto: "ninguna fuente lo define; por ahora, la regla de UAS: una tesis, una condición operativa y un cierre", fuente: "pendiente de David"}
   blog: {texto: "blog.umbralbim.io, más informal que la web; Expertise técnico, Historias y casos, Tendencias y opinión; newsletter con 1 artículo, 3 enlaces y 1 tip", fuente: BLOG}
   educacion: {texto: "alumnos del Máster AEC 4.0, alumnos corporativos, ARQ331 y cursos asíncronos; quien compra busca relevancia industrial", fuente: "PO, GE, GCE"}
+  amplitud:                    # David sobre I01 (2026-11-16), criterio C54
+    regla: "la idea se entiende rápido sin conocimiento técnico profundo y le importa a la mayoría de su público, no solo al especialista"
+    prueba: "¿la entiende y le importa a un gerente de una constructora, no solo a un BIM manager experto?"
+    fuente: "David, I01 (2026-11-16): «es muy especifico y es necesario tener mucho conocimiento tecnico para entenderlo rápidamente»"
+
+fuera_de_alcance:              # temas que David no trata; sus clases siguen siendo canal y fuente de experiencia
+  - tema: "la docencia o la pedagogía (cómo enseñar, cómo diseñar un taller, qué hace la sala con un ejemplo)"
+    fuente: "David, I01 (2026-11-16): «yo no enseño docencia»"
+  - tema: "el detalle técnico de nicho como tema principal (permisos de un flujo, columnas de un CDE): puede ser la escena, no la idea"
+    fuente: "David, I01 (2026-11-16), C54"
 
 voz:
   tono: {texto: "directo, técnicamente preciso, ligeramente informal sin ser casual, orientado a resultados y empático con la resistencia", fuente: "PPV, PM"}

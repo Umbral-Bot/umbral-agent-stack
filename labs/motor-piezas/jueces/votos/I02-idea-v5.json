@@ -1,0 +1,432 @@
+{
+ "galeria": "I02",
+ "seccion": null,
+ "rubrica": "idea-v5",
+ "retro": false,
+ "criterios_hasta": null,
+ "sellado": "2026-11-16T21:09:38",
+ "hash_rubrica": "c470bb3ef507",
+ "hash_criterios": "e25be5aad2ab",
+ "votos": [
+  {
+   "lente": "premisa",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 7.5,
+    "2": 6,
+    "3": 8.5,
+    "4": 7,
+    "5": 6
+   },
+   "hallazgos": [
+    {
+     "opcion": 1,
+     "donde": "contraargumento frente a la respuesta",
+     "problema": "La objeción más fuerte (transparentar la IA puede acelerar la presión por bajar honorarios, y hay entregables que el cliente sí podría hacer solo) queda dicha pero sin contestar: la premisa afirma que mostrar la IA protege el valor y no explica qué pasa cuando no lo protege. Sin esa respuesta, la postura queda expuesta.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": 1,
+     "donde": "evidencia",
+     "problema": "Toda la tensión sale de un solo caso relatado. La hipótesis, en cambio, es una creencia real y extendida («mejor no contarlo o cobrarlo más barato»), y la respuesta la contradice de frente. Es la postura más contraintuitiva de la galería.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": 2,
+     "donde": "respuesta y cadena_tesis",
+     "problema": "La postura se apoya en una sola entrevista declarada, en una bitácora «Planificado», y en una interpretación («miedo al control» es lo que quedó registrado, no una cita). Además da el salto de «los jóvenes resisten por miedo al control» a «basta con anunciar qué se mide», que no se sostiene con esa evidencia. La premisa promete más de lo que la prueba sostiene.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": 2,
+     "donde": "hipótesis",
+     "problema": "La creencia de que frenan los mayores sí es real y la respuesta la tensiona. El problema no es la hipótesis. Es que el contraargumento (sí hay gente mayor que no sabe usar el sistema) le quita casi toda la fuerza a la tesis y la respuesta no lo contesta.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": 3,
+     "donde": "hipótesis",
+     "problema": "La creencia («ya tengo tableros, un agente encima me anticipará atrasos») es plausible y vendible, pero corre el riesgo de sonar a «basura entra, basura sale», una idea conocida. La salva el giro concreto: la persona del viernes y la propuesta de abaratar la captura.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": 3,
+     "donde": "contraargumento",
+     "problema": "Sin defecto de premisa. Es la única ficha que formula la objeción fuerte (la IA lee documentos desordenados) y la contesta en el mismo texto («sigue dando la foto del viernes, y nadie sabe qué faltó»). La sostienen tres fuentes. Es una postura con su objeción contestada y sin inflar.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": 4,
+     "donde": "hipótesis",
+     "problema": "«Meter a todas las áreas en la mejor plataforma» es una creencia típica de un BIM manager, no de un gerente. Para buena parte del público la respuesta se acerca a «ir a donde está el usuario», que ya se acepta, así que la tensión pierde fuerza. Además, el motivo del fracaso (la licencia) puede leerse como un tema de costo y no como la regla de adopción que propone la premisa.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": 4,
+     "donde": "contraargumento",
+     "problema": "La objeción de la fuente única de verdad es real y queda sin responder en la respuesta. La ficha la declara, pero la premisa no dice por qué copiar el estado a otras pantallas no la rompe.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": 5,
+     "donde": "hipótesis frente a la respuesta",
+     "problema": "Casi nadie defiende de verdad que un caso que funcionó prueba que funciona en todo el proyecto. La respuesta («pruébalo con otra entrada») es algo en lo que la audiencia ya está de acuerdo, así que tensiona poco y está cerca de ser un tema con consejo más que una postura. La propia ficha avisa que «puede sonar obvio».",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": 5,
+     "donde": "contraargumento",
+     "problema": "La objeción es buena (quien no sabe qué buscar tampoco ve el techo que falta) y pegaría justo en la tesis, pero queda sin contestar.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": 3,
+   "veredicto": "sirve",
+   "resumen": "Ninguna opción cae en un veto: las cinco son posturas y no solo temas. La 3 (La planilla del viernes) tiene la premisa más sólida: cruza tres fuentes, la creencia es de gerentes y la tensiona, y es la única que contesta su objeción fuerte dentro de la ficha. La 1 tiene la tensión más contraintuitiva, pero deja sin responder la objeción de los honorarios. La 4 es sólida como experiencia, aunque tensiona poco para un gerente. La 2 promete más de lo que una sola entrevista sostiene, y la 5 sostiene algo en lo que casi todos ya están de acuerdo."
+  },
+  {
+   "lente": "alineacion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 8,
+    "2": 5.5,
+    "3": 8,
+    "4": 9,
+    "5": 7
+   },
+   "hallazgos": [
+    {
+     "opcion": 1,
+     "donde": "evidencia / relato",
+     "problema": "Nace de un dolor real de una sesión con informe y conecta casi literal con la tesis central (la IA hace el borrador, el criterio profesional valida y firma). Pero es un caso único y la línea de entrega es propuesta del agente: hay que contarlo como un caso, no como tendencia, y David tiene que validar la línea.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": 1,
+     "donde": "cadena_tesis.evidencia",
+     "problema": "Dice «una ingeniería multinacional»: es un rasgo que identifica y no aporta. Conviene dejarla solo como «una ingeniería».",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": 2,
+     "donde": "relato («En un diagnóstico que hice… me contó») / evidencia",
+     "problema": "La experiencia en primera persona sale de una bitácora rotulada «Planificado» que tiene una columna comprobada. La regla de verdad pide que una experiencia esté en un informe o en el CV para afirmarla. Sin la confirmación de David no se puede contar en primera persona.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": 2,
+     "donde": "titulo / gancho / escena",
+     "problema": "El tema es el liderazgo del cambio y no la pedagogía, así que no cae en el veto. Pero el título y la escena giran en torno a «a quién se capacita» y a un taller, y en el celular se puede leer como una idea de formación. Esto choca con el criterio de David de dejar la docencia fuera de sus temas: conviene sacar «taller» del título y del gancho.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": 2,
+     "donde": "evidencia de contraste",
+     "problema": "El apoyo viene de una evaluación del Máster («resistencias como temores legítimos»). La clase sirve como fuente, pero refuerza la lectura de que la idea es docente.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": 3,
+     "donde": "evidencia (diagnóstico de la consultora)",
+     "problema": "Tiene el mismo problema que la opción 2: el «diagnóstico» contado en primera persona sale de una bitácora «Planificado». El patrón de la masterclass sí tiene informe y sostiene el dolor por sí solo, pero la escena de la persona del viernes necesita que David la confirme.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": 3,
+     "donde": "pilar / mensajes",
+     "problema": "Es muy fiel a David: cruza el pilar «BIM no basta si no conecta datos y decisiones», el mensaje a gerentes «No tienes visibilidad real», el problema de la falta de visibilidad, el dolor con Excel y la Automatización Empática. La idea la entiende cualquier gerente. Lo de McKinsey es traducción a la obra mediana: no conviene apoyarse en el estudio más de lo que dice.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": 4,
+     "donde": "evidencia",
+     "problema": "Es la mejor anclada: es el caso estrella OXXO con su error, está confirmado en el CV v6 y en el informe de la clase 32, y aplica casi palabra por palabra lo que David defiende («la consultoría parte de la licencia disponible»). Toca además Puentes Digitales (datos ↔ decisiones) y el pilar de datos y decisiones. El riesgo, como dice la ficha, es gastar el caso si se repite.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": 4,
+     "donde": "relato («Teams», «listas compartidas»)",
+     "problema": "El CV v6 nombra Power Automate, SharePoint y Kanban; Teams sale de la clase. No hay problema mientras no se agreguen cifras de ahorro ni de tiempo.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": 5,
+     "donde": "escena / tema",
+     "problema": "La experiencia está respaldada (demostración propia con informe) y conecta con su paso por la obra y con Puentes Digitales (oficina ↔ terreno). Pero la escena es de modelador en Revit (vista recortada, copiloto) y la conexión con la tesis central es indirecta: habla de verificar, no de que el criterio se amplifica con un proceso. Un gerente entiende «pruébalo en la de al lado», aunque el caso de partida queda cerca del nicho técnico.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": 5,
+     "donde": "evidencia (fuente: clase del Máster)",
+     "problema": "La fuente es una clase. Eso vale como canal y como experiencia, y el tema no es docente. Solo hay que cuidar que el relato no hable de «la clase» ni de los alumnos.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "4",
+   "veredicto": "sirve",
+   "resumen": "Desde la alineación, la 4 es la idea más de David: su caso estrella confirmado en el CV, su regla de partir de la licencia disponible y su marco de Puentes Digitales. La 1 y la 3 también sirven: la 1 baja directo a la tesis central y la 3 cruza a la vez su pilar, su mensaje a gerentes y la Automatización Empática, aunque su diagnóstico en primera persona sale de una bitácora «Planificado» y necesita confirmación. La 5 sirve con ajustes: está bien respaldada, pero la escena es de modelador y la conexión con la tesis es indirecta. La 2 sirve con ajustes: afirma en primera persona una experiencia que solo está en una bitácora «Planificado», y su título y su gancho de taller la acercan a la docencia, que David dejó fuera de sus temas."
+  },
+  {
+   "lente": "voz",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 6,
+    "2": 7.5,
+    "3": 6.5,
+    "4": 8,
+    "5": 8.5
+   },
+   "hallazgos": [
+    {
+     "opcion": 1,
+     "donde": "relato, apertura",
+     "problema": "Abre con la analogía del escáner y la escena de la ingeniería llega después: el concepto va antes que la escena. Así suena a columna armada, no a algo que David cuente en una reunión.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": 1,
+     "donde": "relato, «La respuesta en la sesión fue mostrar el uso, según la política de la empresa, y poner puntos donde un profesional revisa y valida»",
+     "problema": "Suena a acta, no a voz hablada: «según la política de la empresa» y «puntos donde un profesional revisa y valida» son lenguaje de procedimiento.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": 1,
+     "donde": "relato, «El cliente nunca le pagó a nadie por teclear. Le paga a quien responde.»",
+     "problema": "Es una frase redonda con cambio de tiempo verbal (pagó / paga), y el cierre termina en una tríada (qué hizo la IA, qué revisó, con qué nombre firma). Funciona, pero se nota armado.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": 2,
+     "donde": "relato, «ahora van a saber cuánto se demora en cada informe»",
+     "problema": "La broma no deja claro de quién habla: en tercera persona parece que se refiere a otro y no a él mismo. Diría «cuánto me demoro», porque ahí está toda la idea.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": 2,
+     "donde": "relato, paso de la escena imaginada al diagnóstico real",
+     "problema": "En un párrafo corto se pasa de «Piensen en…» (escena construida) a «En un diagnóstico que hice…» (hecho). La voz se sostiene bien («Yo me quedaría con la broma», «Es un solo caso y es su lectura»), pero en el celular se puede confundir qué pasó de verdad.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": 3,
+     "donde": "relato, «los tableros de gerencia estaban y se veían bien»",
+     "problema": "La primera frase se tropieza («estaban y se veían bien»). Es justo la que tiene que enganchar.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": 3,
+     "donde": "relato, frase de McKinsey",
+     "problema": "Es una frase larga que carga dos ideas (planifican mal porque nadie registra el avance diario + ese es el dato que necesitaría un agente). Además, apilar tres fuentes (diagnóstico, masterclass, McKinsey) le da tono de informe y no de relato. La voz vuelve al final con «No va a ver la obra. Va a ver lo que alguien alcanzó a copiar el viernes».",
+     "gravedad": "media"
+    },
+    {
+     "opcion": 3,
+     "donde": "relato, cierre «al capataz le cueste menos reportar el avance que no reportarlo»",
+     "problema": "El caso es una consultora de ingeniería, pero el cierre habla del capataz: el salto de oficina a obra no se cuenta y se lee como incoherencia. La frase final, con doble negación implícita, también se lee lenta.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": 4,
+     "donde": "relato, «ya pagaba», «ya pasaba el día», «ya abría», «ya no me pudieron»",
+     "problema": "Cuatro «ya» seguidos marcan una muletilla. Por lo demás es la voz más reconocible de David: primera persona, el error dicho sin adornos («Ese fue mi error») y su frase propia.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": 4,
+     "donde": "residuo y título, «No lleves a la gente al sistema. Lleva el dato a donde ya trabaja quien decide.»",
+     "problema": "El residuo es un quiasmo simétrico, con algo de frase redonda de LinkedIn. El cierre del relato («pregunto dónde trabaja el que tiene que decidir») suena más a David que el residuo.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": 5,
+     "donde": "relato, «Apareció un techo que la regla no consideraba»",
+     "problema": "«La regla» aparece sin presentarla (antes se habla de «comando»). Un lector no técnico no sabe de qué regla se trata. Conviene decir «el comando».",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": 5,
+     "donde": "relato, apertura en Revit",
+     "problema": "La escena de entrada es de modelado y la de obra (recepción de un edificio) llega como traducción. Aun así, la escena va antes que el concepto, y «el «listo» de la máquina vale lo mismo que el «ya está» de un subcontrato» suena a alguien que estuvo en obra.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "premisa, «Lo que sostengo es que…»",
+     "problema": "Defecto común (no desempata): las cinco premisas repiten la fórmula señalada en I01. Según el encargo, David no ve ese campo, pero si alguna premisa pasa a la pieza tiene que reescribirse.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": 5,
+   "veredicto": "sirve",
+   "resumen": "Por voz, la 5 es la que David diría tal cual en una reunión: frases cortas, la escena antes del concepto, la recepción de obra como recurso suyo y un cierre que sirve para la próxima reunión. La 4 queda muy cerca (su caso, su error, su frase), con detalles menores: la muletilla «ya» y un residuo algo redondo. La 2 tiene buena voz, pero la broma se lee ambigua. La 3 tiene el mejor residuo, pero el relato se carga de fuentes y tiene una incoherencia entre consultora y capataz. La 1 abre con la analogía y suena a procedimiento. La lente no ve vetos en ninguna."
+  },
+  {
+   "lente": "enganche",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 8,
+    "2": 6.5,
+    "3": 8.5,
+    "4": 6.5,
+    "5": 6
+   },
+   "hallazgos": [
+    {
+     "opcion": 3,
+     "donde": "relato, segunda mitad",
+     "problema": "Apila tres fuentes seguidas (diagnóstico, masterclass, McKinsey) y el relato se vuelve informe justo cuando debería apretar la tensión. Basta la persona del viernes y una sola señal externa; McKinsey puede quedar como respaldo y no en el cuerpo.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": 3,
+     "donde": "gancho y residuo",
+     "problema": "Es la que mejor pasa la prueba del gerente de constructora: cualquiera reconoce el tablero bonito alimentado a mano y la frase «La IA no ve la obra. Ve la planilla del viernes» mueve una creencia concreta (tener tableros = tener visibilidad) en el momento en que se decide qué IA comprar. Sin defecto de enganche, solo se anota como fortaleza.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": 1,
+     "donde": "relato, cierre",
+     "problema": "El gancho del cliente («entonces lo hacemos nosotros») es fuerte y toca un miedo actual de cualquier oficina que cobra honorarios, y el escáner se entiende sin saber nada técnico. Pero el cierre «Por eso basta una línea en la entrega» llega de golpe y achica la idea a un trámite; la frase que queda debería ser la de «se paga a quien responde», no la nota de entrega.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": 2,
+     "donde": "relato",
+     "problema": "La sorpresa es buena (resisten los jóvenes hábiles, por miedo al control), pero el relato la diluye: «Yo me quedaría con la broma» se lee raro, y meter el segundo miedo (hacerlo mal o tardar) en la misma línea le quita filo. Además la escena es construida y la base es una sola entrevista declarada, lo que obliga a tantas salvedades que el enganche se enfría. Por el criterio de David sobre redacción extraña, conviene reescribirla antes de pasar a metáforas.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": 4,
+     "donde": "tema",
+     "problema": "Error caro en primera persona y regla clara, pero la tensión gira en torno a licencias y plataforma BIM: al gerente le llega como un tema de herramientas más que de una creencia que le duela. Poca sorpresa para quien ya oyó el caso OXXO; es el caso estrella y se gasta.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": 5,
+     "donde": "escena y tema",
+     "problema": "La regla de la recepción de obra es buena y todos la entienden, pero la entrada es una vista recortada en Revit con un copiloto: eso suena a asunto de modeladores y la idea de fondo (revisar lo que entrega la IA) puede leerse como obvia. Corre el riesgo de nicho que David ya rechazó en I01.",
+     "gravedad": "media"
+    }
+   ],
+   "mejor": 3,
+   "veredicto": "sirve",
+   "resumen": "Por enganche gana la 3: dolor oculto que reconoce cualquier gerente, creencia concreta que se cae y frase que queda; conviene aligerar las fuentes del relato. La 1 queda muy cerca y también sirve (tensión de honorarios actual, analogía clara), con el cierre por ajustar. La 2 sorprende pero se lee rara y llena de salvedades; la 4 y la 5 enganchan menos fuera del especialista."
+  },
+  {
+   "lente": "monotonia",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 5,
+    "2": 9,
+    "3": 7,
+    "4": 8,
+    "5": 6
+   },
+   "hallazgos": [
+    {
+     "opcion": 1,
+     "donde": "premisa, residuo y marco («Que la IA haga el borrador no cambia quién firma»; «conecta con la tesis central»)",
+     "problema": "Es la vuelta más directa a «criterio antes que automatizar»: la IA produce y el profesional revisa y responde. La propia ficha se ancla en la tesis central en vez de abrir un ángulo nuevo. Lo que la distingue (cómo cobrar y la línea de entrega) queda en segundo plano frente al mensaje ya conocido.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": 1,
+     "donde": "frente a la opción 5 (pilar, arquitectura y analogía)",
+     "problema": "Repite la tesis de la 5: el resultado de la IA no vale hasta que un profesional lo revisa. Las dos usan el mismo pilar («IA sin flujo es humo»), la misma arquitectura (postura) y el mismo recurso, una analogía de oficio (el mecánico frente a la recepción de obra). Leídas una tras otra en el feed, suenan a la misma idea.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": 5,
+     "donde": "premisa y salto («el listo no prueba nada; se recibe yendo a ver»)",
+     "problema": "Comparte la tesis de fondo con la 1 y también vuelve a «criterio antes que confiar en la máquina». Le queda un ángulo propio más concreto y verificable (probar con otra entrada, volver a revisar tras corregir), que es lo que hay que poner adelante si se publica cerca de la 1.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": 3,
+     "donde": "respuesta y residuo («antes de comprar análisis, conviene abaratar la captura»)",
+     "problema": "Roza la variante «proceso antes que IA» del tema recurrente. La salva que propone automatizar algo de inmediato (la captura en el celular del capataz) en vez de frenar. Comparte pilar con la 4 («BIM no basta si no conecta datos y decisiones») y las dos tratan cómo llega el dato a la gerencia: la 3 desde abajo (la captura) y la 4 desde arriba (la pantalla de quien decide). No es la misma tesis, pero conviene no publicarlas seguidas.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": 4,
+     "donde": "riesgo (caso estrella OXXO)",
+     "problema": "Dentro de la ronda no repite ninguna tesis ni vuelve al criterio: trata de adopción y del lugar donde vive el dato. Lo único que puede cansar es el caso OXXO, que la ficha reconoce como recurso que se gasta si se repite; eso queda fuera de esta ronda.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": 2,
+     "donde": "pilar y premisa",
+     "problema": "No hay defecto de monotonía. Es la única con el pilar «La resistencia no es el problema», no habla de verificar a la IA ni de criterio frente a automatización, y su tesis (la resistencia que frena es otra que la esperada y se responde en el arranque) no se cruza con ninguna otra de la ronda.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": 2,
+   "veredicto": "sirve",
+   "resumen": "La ronda tiene un par repetido: la 1 (escáner del taller) y la 5 (habitación de al lado) sostienen lo mismo, que el resultado de la IA vale cuando un profesional lo revisa. Comparten pilar, arquitectura y una analogía de oficio, y la 1 es la vuelta más directa a «criterio antes que automatizar». Si sigue una sola, mejor la 5, por su ángulo más concreto. La 3 y la 4 comparten pilar, pero tienen tesis distintas. La 2 es la más distinta del conjunto y no toca el tema recurrente, así que es la que elige esta lente."
+  },
+  {
+   "lente": "prediccion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 7.0,
+    "2": 6.8,
+    "3": 8.2,
+    "4": 7.4,
+    "5": 6.3
+   },
+   "hallazgos": [
+    {
+     "opcion": "3",
+     "donde": "relato",
+     "problema": "El párrafo carga tres fuentes seguidas (diagnóstico, masterclass, McKinsey) antes del giro; en el celular la escena se diluye y puede leerse como síntesis de informe más que como algo contado por David. Conviene dejar el viernes como escena y bajar McKinsey a una frase.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "de dónde sale",
+     "problema": "La escena de la persona del viernes viene de una bitácora rotulada Planificado; David tiene que confirmar que lo vio antes de contarlo en primera persona.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "relato",
+     "problema": "Es la reescritura del tema que a David le interesó en I01, pero la escena sigue siendo construida («Piensen en…») y la evidencia es una sola entrevista declarada; el giro «Yo me quedaría con la broma» mejora la narrativa, aunque el relato aún depende de una escena inventada para enganchar. Riesgo de que lo siga sintiendo artificial.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "tema",
+     "problema": "Habla de a quién capacitar; no es docencia en sentido estricto (es gestión del cambio), pero el «taller» como eje puede rozar el tema que David dejó fuera. Señal, no veto.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "4",
+     "donde": "tema y riesgo",
+     "problema": "Es su caso estrella y suena totalmente suyo, pero David ya lo usa como ruta canon y puede sentir que no es una idea nueva; además el eje de licencias puede leerse como un tema de BIM manager más que de gerente.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "evidencia",
+     "problema": "Caso aislado; la analogía del escáner y la línea de entrega son del agente. El tema (cobrar y presentar trabajo con IA) le importa a cualquier dueño de oficina, pero la analogía mecánica puede sentirse ajena a su voz de obra y oficina.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "5",
+     "donde": "tema y audiencia",
+     "problema": "La escena es un copiloto dentro de Revit y una vista recortada: para un gerente de constructora sigue siendo un tema de modeladores, el mismo tipo de nicho que David rechazó en I01, aunque la regla de recepción de obra lo amplíe. También puede sonar obvio.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "todas",
+     "donde": "premisa",
+     "problema": "Todas conservan la fórmula «Lo que sostengo es que…» en la premisa; si David la ve, es la marca que probablemente sonó extraña en I01. Defecto común, no desempata.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "3",
+   "veredicto": "sirve con ajustes",
+   "resumen": "Predigo que David elige la 3, La planilla del viernes: le habla directo al gerente con su propio mensaje «No tienes visibilidad real», la entiende cualquiera sin saber de software, conecta con la compra de IA de fin de año y deja una frase que engancha («La IA no ve la obra. Ve la planilla del viernes»). Ajuste: aligerar el relato, que apila tres fuentes, y confirmar la escena del Planificado. Le sigue la 4 (OXXO, muy suya pero ya gastada), luego la 1 (tema amplio, analogía ajena) y la 2 (el tema que le interesó, pero aún con escena construida). La 5 queda abajo por seguir siendo un tema de Revit."
+  }
+ ]
+}

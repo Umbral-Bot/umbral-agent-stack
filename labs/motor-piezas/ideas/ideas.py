@@ -26,6 +26,10 @@ RAIZ = yaml.safe_load((AQUI / 'raiz-david.yaml').read_text(encoding='utf-8'))
 
 OBLIGATORIOS = ['titulo', 'tema', 'manantial', 'formula', 'evidencia', 'premisa', 'hipotesis', 'respuesta', 'cadena_tesis',
                 'residuo', 'gancho', 'arco', 'escena', 'arquitectura', 'pilar', 'audiencia', 'canales', 'procedencia']
+# desde I02 (C57): la idea contada como David la contaría, que es lo que se le muestra
+OBLIGATORIOS_DESDE_I02 = ['relato']
+RELATO_PLANTILLA = r'(lo que sostengo es|escena ilustrativa|punto de partida|\(tension|\(cierre|hipotesis|se cree que)'
+DOCENCIA = r'\b(docen\w*|pedagog\w*|ensenar a|como ensenar|disenar (un|el) taller|la sala copia|didactic\w*)'
 MANANTIALES = {'experiencia', 'dolor', 'senal', 'señal', 'pilar'}
 FORMULAS = {'experiencia_a_criterio', 'senal_a_angulo', 'sintesis', 'contraria', 'traduccion'}
 GANCHOS = {'creencia equivocada', 'error caro', 'dolor oculto', 'contraste', 'mecanismo real', 'diagnostico', 'diagnóstico'}
@@ -55,9 +59,9 @@ def texto_de(f: dict) -> str:
     return ' '.join(partes)
 
 
-def validar_ficha(f: dict) -> tuple[list, list]:
+def validar_ficha(f: dict, ronda: str = 'I01') -> tuple[list, list]:
     E, A = [], []
-    for c in OBLIGATORIOS:
+    for c in OBLIGATORIOS + (OBLIGATORIOS_DESDE_I02 if ronda >= 'I02' else []):
         v = f.get(c)
         if not v or (isinstance(v, dict) and not any(v.values())):
             E.append(f'falta «{c}»')
@@ -123,6 +127,23 @@ def validar_ficha(f: dict) -> tuple[list, list]:
             E.append(f'lista negra: «{frase}»')
     if re.search(r'\b(vosotros|os |vuestro|dedicais|queres)\b', norm(todo)):
         E.append('persona gramatical: se usa «ustedes»')
+    # C55: la docencia como tema está fuera (las clases siguen siendo canal y fuente)
+    m = re.search(DOCENCIA, norm(' '.join([f['titulo'], f['tema'], f['premisa'], f['respuesta']])))
+    if m:
+        A.append(f'¿el tema es la docencia? («{m.group(0)}»): fuera de los temas de David (C55)')
+    if 'escena ilustrativa' in norm(todo):
+        A.append('rótulo «Escena ilustrativa» (C57): la escena se cuenta, no se rotula')
+    # C56 y C57: el relato es lo que lee David; sin plantilla ni andamiaje
+    r = f.get('relato')
+    if r:
+        n = len(r.split())
+        if not 70 <= n <= 170:
+            A.append(f'relato de {n} palabras (de 70 a 170)')
+        m = re.search(RELATO_PLANTILLA, norm(r))
+        if m:
+            E.append(f'relato con plantilla o andamiaje («{m.group(0)}»): se cuenta como lo diría David (C57)')
+        if '(' in r:
+            A.append('relato con paréntesis: suele ser andamiaje')
     return E, A
 
 
@@ -149,7 +170,7 @@ def o_validar(a):
     fichas = ronda['fichas']
     validas = 0
     for f in fichas:
-        E, A = validar_ficha(f)
+        E, A = validar_ficha(f, ronda['id'])
         f['validacion'] = {'errores': E, 'avisos': A}
         validas += not E
         estado = 'ok   ' if not E else 'FALLA'
@@ -182,7 +203,16 @@ def o_pagina(a):
         ev = f['evidencia']
         canales = ''.join(f'<li><b>{e(k.capitalize() if k != "x" else "X")}:</b> {e(v)}</li>'
                           for k, v in f['canales'].items() if v)
+        # desde I02 (C57): la idea contada primero y menos campos; sin relato, la ficha completa como en I01
         filas = [
+            ('La idea, contada', e(f['relato'])),
+            ('Lo que mueve', f"<b>Se suele creer:</b> {e(f['hipotesis'])}<br><b>Tú dices:</b> {e(f['respuesta'])}"),
+            ('La frase que queda', e(f['residuo'])),
+            ('De dónde sale', f"De {e(nombres_manantial.get(norm(f['manantial']), f['manantial']))}: "
+                              f"{e(ev.get('referencia', ''))}."),
+            ('La objeción', e(f.get('contraargumento') or '—')),
+            ('En cada canal', f'<ul>{canales}</ul>'),
+        ] if f.get('relato') else [
             ('Lo que sostienes', e(f['premisa'])),
             ('Hipótesis → respuesta', f"<b>Se cree:</b> {e(f['hipotesis'])}<br><b>Tú respondes:</b> {e(f['respuesta'])}"),
             ('Gancho', e(f['gancho']['texto'])),
@@ -225,7 +255,7 @@ footer {{ color: var(--mu); font-size: .9rem; border-top: 1px solid var(--bo); p
 </style>
 <main>
   <header>
-    <h1>{e(ronda['id'])} · Cuatro ideas tuyas</h1>
+    <h1>{e(ronda['id'])} · {len(ids)} ideas tuyas</h1>
     <p>{e(ronda.get('intro', ''))}</p>
     <div class="caja">
       <p><b>Cómo responder:</b> el número de la que aprobarías y una frase de por qué. Para las demás vale «observar», «descartar» (con el motivo) o «archivar». Los jueces ya votaron; su voto te lo muestro después.</p>

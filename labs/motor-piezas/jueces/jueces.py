@@ -176,6 +176,15 @@ def preparar(a):
             lineas.append(f"  - pieza {p['numero']} ({p['formato']}): {dir_g / p['png']} · {medidas(a.galeria, p)}")
     contexto = (f"Galería {a.galeria}: {defin.get('titulo', '')}\n{' '.join(str(defin.get('descripcion', '')).split())}\n"
                 f"Hoja con todas las piezas numeradas: {dir_g / '00_preview.jpg'}\n" + '\n'.join(lineas))
+    if a.galeria.startswith('I'):
+        # ronda de ideas: no hay piezas sino fichas; el juez las lee como las ve David (relato primero)
+        archivo = LAB / 'ideas' / 'rondas' / f'{a.galeria}.json'
+        presentadas = json.loads(archivo.read_text(encoding='utf-8'))['presentadas']
+        contexto = (f"Ronda de ideas {a.galeria}. Las fichas están en {archivo} (campo fichas, por id); quién es David, "
+                    f"en {LAB / 'ideas' / 'raiz-david.yaml'}. David ve de cada idea el relato, lo que se suele creer y lo "
+                    f"que él dice, la frase que queda, de dónde sale, la objeción y los canales: júzgala por eso, como la "
+                    f"leería él en el celular. Lee las fichas con Read.\n"
+                    + '\n'.join(f"Opción {o['id']}: {o['nombre']} (ficha {i})" for o, i in zip(ops, presentadas)))
     encargos = []
     for etapa in a.etapas.split(','):
         for lente, regla in rub['etapas'][etapa]['lentes'].items():

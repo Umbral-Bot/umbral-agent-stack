@@ -1,0 +1,771 @@
+{
+ "id": "C01",
+ "fecha": "2026-11-20",
+ "intro": "Primera ronda de ideas creativas. Cada post viene de la editorial de UAS (base Publicaciones). Para cada uno, conceptos visuales que representan su idea y buscan que alguien de tu público se detenga y lo lea. Todavía no hay prompts ni imágenes.",
+ "fuente": "Notion, base Publicaciones (collection://dc833f1f-07d9-49d0-82ec-fdfad1c808c4), leída el 2026-11-20 (solo lectura)",
+ "items": [
+  {
+   "id": "V",
+   "titulo": "La ventaja no está en adoptar IA, sino en rediseñar el trabajo",
+   "estado": "Borrador",
+   "etapa": null,
+   "url": "https://app.notion.com/p/3d15f443fb5c8146b9b2eff39a74cdca",
+   "idea": "Acelerar una tarea con IA no mejora el conjunto si la demora reaparece en los traspasos, las decisiones o el cierre. La ventaja está en rediseñar el flujo completo.",
+   "premisa": "Acelerar una tarea con IA puede ahorrar tiempo en ese paso, pero no garantiza por sí solo una mejora del conjunto si el cuello de botella reaparece en los traspasos, las decisiones o el cierre. La ventaja surge al rediseñar el flujo completo para que cada incidencia avance con antecedentes suficientes, juicio responsable, cierre verificable y aprendizaje recuperable.",
+   "claim": null,
+   "copy_linkedin": "Ejemplo hipotético: en una revisión de coordinación, la IA prepara el resumen de una incidencia: una bandeja de cables interfiere con un conducto. El especialista la devuelve porque falta confirmar la versión del modelo. Cuando llega el dato, aparece otra dificultad. El desvío propuesto elimina el choque, pero bloquea el acceso de mantenimiento. El tiempo ahorrado en la preparación no garantiza una resolución más rápida. Rediseñar el flujo completo exige antecedentes vigentes, un traspaso que aclare qué debe decidir el especialista y una condición verificable de cierre. [...] Primero claridad. Después velocidad.",
+   "visual_existente": "La editorial ya propuso una cremallera que avanza y se detiene ante un diente desalineado (Propuesta visual del ítem). Aquí se buscan otras ideas.",
+   "notas": null
+  },
+  {
+   "id": "M",
+   "titulo": "El MOP acelera BIM con adopción progresiva y controlada: la misma lógica sirve para meter IA en tu equipo",
+   "estado": "Idea",
+   "etapa": "awareness",
+   "url": "https://app.notion.com/p/41a5f443fb5c814cab7bfda2c8fb1445",
+   "idea": "Ni BIM ni IA se adoptan de golpe: estándar, plan y control por etapas valen igual para un ministerio que para un estudio de cinco personas.",
+   "premisa": "El 11 nov 2026 la DGOP informó la primera sesión 2026 del Comité Directivo BIM MOP y presentó una Estrategia de Implementación BIM MOP con adopción progresiva, estandarizada y controlada mediante un plan.",
+   "claim": "Ni BIM ni IA se adoptan de golpe: estándar, plan y control por etapas valen igual para un ministerio que para un estudio de cinco personas.",
+   "copy_linkedin": null,
+   "visual_existente": "Escalera de 3 peldaños (estándar, plan, control) con el mismo esquema aplicado a IA.",
+   "notas": "No atribuir al MOP nada sobre IA: el paralelo es opinión de Umbral. Fuente: https://dgop.mop.gob.cl/comite-directivo-bim-mop-define-acciones-para-acelerar-la-adopcion-de-la-metodologia-en-los-servicios-ejecutores/"
+  },
+  {
+   "id": "R",
+   "titulo": "La IA en Revit ya deja rastro: journal, Undo etiquetado y botón Stop",
+   "estado": "Idea",
+   "etapa": "trust",
+   "url": "https://app.notion.com/p/41a5f443fb5c8124992fd6c9c2433533",
+   "idea": "Antes de pedirle algo a la IA en tu modelo, sabé cómo auditarlo y revertirlo: la trazabilidad es lo que la vuelve usable en un estudio.",
+   "premisa": "Desde Revit 2027.3/2027.4 las corridas del Autodesk Assistant quedan registradas en el journal de Revit, los cambios hechos por IA aparecen etiquetados en el menú Deshacer y hay un botón Stop para interrumpir una solicitud.",
+   "claim": "Antes de pedirle algo a la IA en tu modelo, sabé cómo auditarlo y revertirlo: la trazabilidad es lo que la vuelve usable en un estudio.",
+   "copy_linkedin": null,
+   "visual_existente": "Captura propia del menú Deshacer con una acción etiquetada como cambio de IA y el botón Stop.",
+   "notas": "Título alterno: «Pedile a la IA, pero sabé deshacerla». Fuente: https://www.autodesk.com/blogs/aec/2026/11/10/whats-new-in-revit-2027-3-and-2027-4/"
+  },
+  {
+   "id": "T",
+   "titulo": "Tu modelo Revit tarda 30 minutos en abrir: medí antes de purgar",
+   "estado": "Idea",
+   "etapa": "consideration",
+   "url": "https://app.notion.com/p/41a5f443fb5c81f18cc3c7b3a75cb247",
+   "idea": "Purgar a ciegas es trabajo perdido: los journals dicen si el problema son los vínculos, la descarga o la regeneración, y una IA puede ayudar a leerlos más rápido.",
+   "premisa": "Autodesk recomienda medir dónde se va el tiempo (journals, caché fría vs caliente, vínculos, sincronización) antes de limpiar familias y vistas, porque el tamaño del archivo no siempre es el cuello de botella.",
+   "claim": "Purgar a ciegas es trabajo perdido: los journals te dicen si el problema son los vínculos, la descarga o la regeneración, y una IA puede ayudarte a leerlos más rápido.",
+   "copy_linkedin": null,
+   "visual_existente": "Carrusel de 5 láminas (síntoma, journal, caché, vínculos, qué medir).",
+   "notas": "Título alterno: «No es el peso del archivo». Fuente: https://www.autodesk.com/blogs/aec/2026/11/13/improving-revit-model-health-and-performance/"
+  }
+ ],
+ "fichas": [
+  {
+   "id": "C01-V1",
+   "item": "V",
+   "titulo": "Losas sueltas que se vuelven planta",
+   "concepto": "Losas sueltas a distintas alturas, una más terminada que las otras, se vuelven de izquierda a derecha una planta continua cuyo recorrido vuelve al inicio: la ventaja está en unir el flujo, no en pulir una losa.",
+   "escena": "Ilustración isométrica plana de trazo fino sobre fondo claro, leída de izquierda a derecha. En el tercio izquierdo, losas de hormigón sueltas a distintas alturas, separadas por vacíos; una está más terminada que las demás y sobre las otras se apilan piezas en espera. Hacia el centro, las losas bajan a un mismo nivel y se unen con rampas cortas y juntas visibles. En el tercio derecho forman una planta continua cuyo recorrido da la vuelta y regresa a su inicio. El turquesa marca solo la última junta, la que cierra la vuelta. Aire claro a la derecha.",
+   "relacion": "El post dice que acelerar una tarea no mejora el conjunto si la demora reaparece en traspasos, decisiones y cierre. La izquierda es ese estado: la losa más terminada es la tarea acelerada con IA y los vacíos con piezas en espera son los traspasos que frenan. La transformación es el rediseño: las rampas son traspasos con antecedentes, las juntas son decisiones con juicio responsable, la última junta es el cierre verificable y la vuelta al inicio es el aprendizaje recuperable. El turquesa está en el cierre, no en la losa pulida.",
+   "estrategia": "transformación",
+   "publico": {
+    "tipo": "alumno",
+    "quien": "coordinador o BIM manager que evalúa el Máster AEC 4.0 y quiere aprender a diseñar procesos con IA, no solo a usar una herramienta"
+   },
+   "persuasion": "Le promete aprender a unir el recorrido completo y lo convence de dejar de buscar la herramienta que pule una sola parte del trabajo.",
+   "gancho_visual": "Piezas sueltas y desniveladas que, de izquierda a derecha, se vuelven una sola planta que se cierra.",
+   "proceso": [
+    "Leí la premisa y el copy: la demora reaparece en tres lugares concretos (traspasos, decisiones, cierre) y la salida tiene cuatro condiciones (antecedentes, juicio, cierre, aprendizaje).",
+    "Tomé el arnés de H021 como camino (estado A, paso intermedio, estado B) y cambié la ciudad por losas, material del oficio, para no repetir la red.",
+    "Asigné a cada condición de la premisa una parte visible: rampa, junta, última junta y vuelta al inicio.",
+    "Puse el turquesa en el cierre y no en la losa terminada, porque la premisa dice que la ventaja está en el flujo y no en el paso acelerado.",
+    "Elegí al alumno porque lo que promete un máster es aprender a rediseñar el trabajo, que es justo lo que muestra la transformación."
+   ],
+   "evitar": "Islas flotantes de fantasía; piezas de rompecabezas que encajan (otra historia, la de completar); un anillo que parezca logo o símbolo de reciclaje; que la losa terminada se vea como la heroína.",
+   "riesgo": "Que las losas a distintas alturas se lean como un paisaje abstracto sin oficio; que la vuelta se vuelva un ícono de diagrama; que el modelo agregue flechas para marcar el sentido del recorrido.",
+   "validacion": {
+    "errores": [],
+    "avisos": []
+   }
+  },
+  {
+   "id": "C01-V2",
+   "item": "V",
+   "titulo": "La grúa que se adelantó",
+   "concepto": "Una grúa torre nueva descarga paneles más rápido que nunca, pero al pie del edificio se acumula una montaña de paneles porque la losa siguiente no está lista: la obra no sube más rápido.",
+   "escena": "Ilustración isométrica plana de trazo fino, fondo claro y plano. Una obra vista desde lo alto: un edificio en obra gruesa de seis pisos, con la losa superior sin moldaje ni armadura. A su lado, una grúa torre nueva, la única con el mástil en turquesa, sostiene un panel en el aire. Al pie del edificio, una pila enorme de paneles prefabricados ocupa el patio y bloquea el acceso; en el portón esperan tres camiones con más carga. El resto de la faena está quieto: betoneras detenidas, andamios vacíos. Mucho aire claro sobre la grúa.",
+   "relacion": "La grúa es la tarea acelerada con IA: hace su paso más rápido que antes. La pila al pie y los camiones en el portón son la demora que reaparece en el traspaso; la losa sin moldaje es la decisión que nadie tomó, y el edificio que no sube es el conjunto que no mejora. Es el mismo momento del copy: el tiempo ganado en preparar no se convierte en avance.",
+   "estrategia": "escala del oficio",
+   "publico": {
+    "tipo": "cliente",
+    "quien": "gerente de operaciones de una constructora mediana que evalúa comprar IA para su oficina técnica"
+   },
+   "persuasion": "Lo hace dudar antes de comprar otra herramienta que acelere un paso y lo invita a revisar dónde se detiene su obra entre un paso y el siguiente.",
+   "gancho_visual": "Una grúa turquesa sola frente a una montaña de paneles que no tienen dónde ir.",
+   "proceso": [
+    "Apliqué la prueba de C54: un gerente de constructora no necesita saber qué es una revisión de coordinación para entender una obra detenida; la bandeja de cables del copy, en cambio, es de especialista.",
+    "Busqué en la faena una máquina que trabaje a su ritmo mientras el resto espera y que todo gerente reconozca: la grúa torre.",
+    "Traduje los tres lugares de la premisa a la obra: el patio bloqueado (traspaso), la losa sin moldaje (decisión), el edificio que no sube (cierre).",
+    "Subí la escala a la faena completa por C51: el mecanismo chico se lee pero no engancha.",
+    "Dejé el turquesa en la grúa para que el ojo vaya primero a lo nuevo y después descubra el atasco."
+   ],
+   "evitar": "Una grúa con rasgos de IA o brazo robótico; escena de accidente o peligro; la grúa rota o fallando, porque la premisa no dice que la IA falle: dice que acelera un solo paso.",
+   "riesgo": "Que se lea como mala planificación de obra y no como un paso acelerado que no mueve el conjunto; que la pila de paneles quede ordenada y no se vea como exceso.",
+   "validacion": {
+    "errores": [],
+    "avisos": []
+   }
+  },
+  {
+   "id": "C01-V3",
+   "item": "V",
+   "titulo": "El peldaño perfecto",
+   "concepto": "Una escalera de obra con un peldaño nuevo y perfecto en turquesa que no lleva a ninguna parte, porque más arriba faltan peldaños, el descanso no sigue y el último tramo choca con una losa sin vano.",
+   "escena": "Ilustración isométrica plana de trazo fino sobre fondo claro. Una escalera de hormigón en obra gris sube en tres tramos dentro de un núcleo abierto. En el primer tramo destaca un peldaño pulido, de cantos exactos, en turquesa. El resto de la escalera sigue en pie pero no sirve: en el segundo tramo faltan dos peldaños y queda un hueco; el descanso intermedio termina contra un muro ciego; el último tramo llega bajo una losa cerrada, sin vano para salir. Hormigón neutro, encofrado a medio retirar, aire claro arriba.",
+   "relacion": "El peldaño turquesa es la tarea que la IA aceleró: ese paso quedó mejor que nunca. La escalera completa es el flujo: el hueco es el traspaso sin antecedentes, el descanso contra el muro es la decisión sin responsable y la losa sin vano es el cierre que no se puede verificar. La escalera se sostiene, como un proceso que funciona a medias, pero no lleva arriba.",
+   "estrategia": "defecto que se sostiene",
+   "publico": {
+    "tipo": "seguidor",
+    "quien": "BIM manager o coordinador que ya usa IA para preparar resúmenes de incidencias y siente que el equipo no resuelve más rápido"
+   },
+   "persuasion": "Le pone imagen a la frustración de mejorar un paso sin avanzar y lo empuja a mirar menos su peldaño y más la escalera completa.",
+   "gancho_visual": "Un peldaño turquesa impecable en una escalera que termina contra el techo.",
+   "proceso": [
+    "Me quedé con la palabra que el post usa sin decirla: paso. Una tarea es un paso y un peldaño es un paso que se puede ver.",
+    "Busqué un defecto que se sostenga: algo que está en pie y parece funcionar, pero no cumple su fin. Una escalera que no lleva a ninguna parte.",
+    "Ordené los defectos como la premisa, en el sentido de subida: traspaso, decisión, cierre.",
+    "Pensé en el coordinador que lee el copy: el especialista que devuelve la incidencia es su semana y el peldaño perfecto es su resumen hecho con IA."
+   ],
+   "evitar": "La escalera al cielo o la escalera imposible de Escher (otra historia, la de lo absurdo); peldaños caídos que sugieran derrumbe; una escalera en ruinas o abandonada.",
+   "riesgo": "Que el peldaño turquesa se pierda a tamaño de feed; que la losa sin vano no se distinga y la escalera parezca solo inconclusa, algo normal en obra.",
+   "validacion": {
+    "errores": [],
+    "avisos": []
+   }
+  },
+  {
+   "id": "C01-V4",
+   "item": "V",
+   "titulo": "El segundero que no adelanta la hora",
+   "concepto": "Un reloj abierto cuyo segundero, nuevo y turquesa, gira a toda velocidad mientras el minutero y el horario no se mueven, porque los engranajes que los conectan están desacoplados.",
+   "escena": "Ilustración isométrica plana de trazo fino sobre fondo claro. Un reloj de pared grande, girado en isométrica, con la esfera lisa, sin números ni marcas, y la tapa trasera abierta para mostrar su mecanismo. El segundero es nuevo, fino y turquesa, rodeado de tres trazos curvos que muestran que gira rápido. El minutero y el horario siguen quietos en la misma posición. Detrás, el tren de engranajes: tres ruedas intermedias separadas, sin tocarse. La última rueda, junto al horario, quieta. Bronce y gris neutros, el reloj ocupa el cuadro con aire alrededor.",
+   "relacion": "El segundero es la tarea que la IA acelera: gira más rápido que nunca. La hora es el conjunto, la incidencia resuelta. Las ruedas desacopladas son los traspasos, las decisiones y el cierre que no transmiten el movimiento. Es la misma consecuencia del post: el tiempo ahorrado en un paso no adelanta el resultado. Rediseñar el flujo es volver a engranar el mecanismo completo.",
+   "estrategia": "objeto cotidiano",
+   "publico": {
+    "tipo": "cliente",
+    "quien": "dueño o gerente general de una oficina de ingeniería o arquitectura que ya pagó licencias de IA y no ve que los proyectos se entreguen antes"
+   },
+   "persuasion": "Le explica por qué su inversión en IA no adelanta la entrega y lo invita a dejar de medir velocidad por tarea y empezar a medirla por proyecto cerrado.",
+   "gancho_visual": "Un segundero turquesa girando rápido en un reloj cuya hora no cambia.",
+   "proceso": [
+    "Busqué un objeto que conozca todo el público y donde la velocidad de una parte no sea la del conjunto: el reloj.",
+    "Comprobé que la tensión se mantiene en los mismos términos del post: segundero es tarea, hora es resultado, ruedas sueltas son traspasos.",
+    "Lo contrasté con C51: un mecanismo chico no engancha, así que el reloj va grande, abierto y llenando el cuadro, con el absurdo a la vista.",
+    "Elegí al dueño de oficina porque la pregunta que le abre (pagué IA, ¿por qué no entrego antes?) es de negocio y no técnica."
+   ],
+   "evitar": "Relojes derretidos al estilo Dalí; reloj de arena; engranajes como símbolo genérico de empresa o de proceso; reloj de pulsera o reloj inteligente, que trae pantalla.",
+   "riesgo": "Que la velocidad del segundero no se lea en una imagen fija; que las ruedas desacopladas sean un detalle invisible a tamaño de feed; que el conjunto quede como ilustración genérica del tiempo.",
+   "validacion": {
+    "errores": [],
+    "avisos": []
+   }
+  },
+  {
+   "id": "C01-V5",
+   "item": "V",
+   "titulo": "La nave de incidencias",
+   "concepto": "Un campo denso de cientos de incidencias que cruzan rápido una primera franja despejada y se compactan en tres masas ante pasos estrechos, hasta que solo unas pocas llegan cerradas al final.",
+   "escena": "Ilustración isométrica plana de trazo fino, fondo claro. Una retícula de piso amplia, como una nave de acopio, cubre todo el cuadro. Sobre ella avanzan cientos de pequeños prismas iguales, cada uno una incidencia. En la franja izquierda van ordenados, bien espaciados. Luego se compactan en tres masas densas, cada una frente a un paso angosto: un portón de traspaso, una mesa de decisión con un solo puesto, un portal de salida. Pasada la tercera masa, la retícula queda casi vacía y solo cinco prismas, en turquesa, descansan alineados y cerrados.",
+   "relacion": "La franja despejada es el paso que la IA aceleró: las incidencias se preparan rápido y llegan juntas. Las tres masas son los tres lugares de la premisa donde reaparece el cuello de botella: traspasos, decisiones y cierre. Los cinco prismas turquesa son las incidencias que de verdad se resolvieron, y su escasez es la consecuencia del post: el tiempo ahorrado en preparar no se convierte en resolución.",
+   "estrategia": "campo denso",
+   "publico": {
+    "tipo": "seguidor",
+    "quien": "coordinador BIM o jefe de oficina técnica que vive la revisión de coordinación semanal con decenas de incidencias abiertas"
+   },
+   "persuasion": "Reconoce su propia lista de incidencias atascadas y abre el post para saber cómo rediseñar los tres pasos donde se le acumulan, en vez de preparar más rápido.",
+   "gancho_visual": "Una marea de prismas que se compacta en tres masas y casi nada que llega al final.",
+   "proceso": [
+    "Partí de C51 y C53: lo que enganchó fue un campo gráfico denso con presencia (la retícula con losas turquesa), así que busqué la versión densa de esta premisa.",
+    "Conté cada incidencia como un prisma para que el volumen se vea: el problema del post no es una incidencia, son muchas.",
+    "Ubiqué las tres masas en los tres lugares que nombra la premisa, en el orden del copy.",
+    "Puse el turquesa solo en lo que se cierra, para que la mirada mida lo que llega y no lo que sale rápido.",
+    "Pensé en el coordinador: su semana es una lista de incidencias abiertas y la densidad se la reconoce sin explicación."
+   ],
+   "evitar": "Que parezca un gráfico de barras o un embudo de ventas; tráfico de autos; prismas que se vean como cajas de mudanza o de comercio electrónico.",
+   "riesgo": "Que el campo denso se vuelva ruido y no se distingan las tres masas; que los cinco prismas turquesa no alcancen a verse en el celular.",
+   "validacion": {
+    "errores": [],
+    "avisos": []
+   }
+  },
+  {
+   "id": "C01-V6",
+   "item": "V",
+   "titulo": "La misma máquina en dos plantas",
+   "concepto": "Dos plantas vecinas instalaron la misma máquina nueva en turquesa; en una, los módulos se amontonan después de ella; en la otra, rediseñada, salen terminados por el otro extremo.",
+   "escena": "Ilustración isométrica plana de trazo fino sobre fondo claro. Dos naves de prefabricados lado a lado, con el techo a medias para ver adentro y la misma máquina nueva en turquesa al inicio de cada línea. En la nave izquierda, después de la máquina, la línea serpentea y los módulos se amontonan en tres esquinas; al fondo, el patio de salida está vacío. En la nave derecha, la misma máquina alimenta una línea recta, con estantes de antecedentes junto a cada estación y una mesa de revisión antes de la salida; en su patio, módulos terminados y alineados.",
+   "relacion": "El título del post dice que la ventaja no está en adoptar IA sino en rediseñar el trabajo. Las dos plantas adoptaron lo mismo: la máquina turquesa es idéntica. La diferencia está en todo lo demás: en una, la demora reaparece en las esquinas (traspasos, decisiones, cierre); en la otra, el flujo rediseñado trae antecedentes en cada estación, una revisión con juicio y un cierre que se comprueba en el patio.",
+   "estrategia": "comparación",
+   "publico": {
+    "tipo": "alumno",
+    "quien": "profesional AEC que duda entre un curso de herramientas de IA y un programa que enseñe a integrarla en procesos, como el Máster AEC 4.0"
+   },
+   "persuasion": "Le muestra que aprender la misma herramienta que todos no da ventaja y lo convence de formarse en rediseñar el proceso donde esa herramienta trabaja.",
+   "gancho_visual": "Dos máquinas turquesa idénticas y dos patios de salida opuestos: uno vacío y otro lleno.",
+   "proceso": [
+    "Leí el título como una comparación implícita: dos equipos adoptan la misma IA y solo uno gana ventaja.",
+    "Hice idéntica la máquina en las dos plantas para que la diferencia no pueda atribuirse a la tecnología.",
+    "Repartí la premisa en la planta derecha: estantes de antecedentes, mesa de revisión y patio de salida que verifica el cierre.",
+    "Pensé en el alumno que compara programas: se pregunta si basta aprender la herramienta, y la imagen le responde sin texto.",
+    "Revisé que no repitiera a V1: aquí no hay un estado que se transforma, hay dos resultados en paralelo."
+   ],
+   "evitar": "Un antes y después del mismo lugar (otra historia, la de la mejora en el tiempo); que una planta se vea moderna y la otra vieja; marcar la ganadora con colores fuertes.",
+   "riesgo": "Que los estantes y la mesa no se lean a tamaño de feed y solo quede «una planta ordenada y otra desordenada»; que el turquesa repetido en las dos máquinas compita con los patios.",
+   "validacion": {
+    "errores": [],
+    "avisos": []
+   }
+  },
+  {
+   "id": "C01-M1",
+   "item": "M",
+   "titulo": "El túnel por avances",
+   "concepto": "Un túnel que entra en la montaña en ciclos iguales: nadie perfora el cerro entero de una vez, cada tramo se sostiene antes de abrir el siguiente.",
+   "escena": "Corte isométrico de una montaña en trazo fino sobre fondo claro y plano. Dentro, un túnel avanza de izquierda a derecha en anillos idénticos: el primer tercio ya revestido y liso, después anillos con pernos y malla, al final el frente recién excavado. El anillo recién sostenido, junto al frente, es el único en turquesa. Delante del frente la roca sigue entera, con sus estratos en línea fina. En la boca del túnel, un acopio ordenado de anillos iguales espera su turno. Luz pareja, sin sombras dramáticas, sin personas ni maquinaria con cabina.",
+   "relacion": "La premisa: la DGOP presentó una Estrategia de Implementación BIM MOP con adopción progresiva, estandarizada y controlada mediante un plan. El anillo repetido es el estándar, el orden de avance es el plan y sostener cada tramo antes de seguir es el control; la consecuencia es la misma: se avanza sin derrumbes. El túnel es obra pública, a la escala del MOP. El paralelo con la IA lo pone el post como opinión de Umbral; la imagen no se lo atribuye al MOP.",
+   "estrategia": "escala del oficio",
+   "publico": {
+    "tipo": "cliente",
+    "quien": "gerente de una constructora de obras públicas que licita con el MOP y ve venir la exigencia BIM"
+   },
+   "persuasion": "Reconoce su propia obra y una regla que ya respeta en terreno, y abre el post para ver por qué esa regla sirve para adoptar BIM e IA.",
+   "gancho_visual": "Una montaña cortada en isométrica, un túnel a medio avanzar y un solo anillo turquesa junto al frente.",
+   "proceso": [
+    "Reduje la premisa del MOP a sus tres palabras: progresiva, estandarizada, controlada.",
+    "Busqué una obra pública chilena donde esas tres cosas son obligatorias y no opcionales, y llegué al túnel, que nunca se excava de una vez.",
+    "Comprobé que el ciclo de avance trae las tres piezas: anillo igual (estándar), secuencia (plan) y sostener antes de seguir (control).",
+    "Descarté el puente por dovelas porque repetía el puente de la ficha M4.",
+    "Puse el turquesa en el último anillo sostenido para que marque la etapa controlada, no el avance."
+   ],
+   "evitar": "La tuneladora heroica o la perforación de golpe; el túnel terminado sin etapas visibles; cascos, operarios o maquinaria; cualquier alusión a IA dentro de la montaña, que el MOP no dijo.",
+   "riesgo": "Que el corte quede técnico y oscuro; que los estratos de la roca se lean como degradado; que el modelo dibuje el túnel completo y se pierda la diferencia entre etapas.",
+   "validacion": {
+    "errores": [],
+    "avisos": []
+   }
+  },
+  {
+   "id": "C01-M2",
+   "item": "M",
+   "titulo": "Dos obras, la misma pauta",
+   "concepto": "Un enlace vial enorme y una casa de un piso crecen sobre la misma retícula y van en la misma etapa: el tamaño cambia, el orden no.",
+   "escena": "Díptico isométrico sobre fondo claro y plano. A la izquierda, un enlace vial de gran escala llena su mitad; a la derecha, una casa de un piso en un terreno chico. Los dos se dibujan sobre la misma retícula de trazo fino y muestran la misma secuencia: trazado en planta, módulos levantados y parte terminada. En ambos, el módulo que entra a continuación va en turquesa, en la misma posición relativa dentro de su retícula. Todo lo demás en blanco con línea verde oscura, sin sombras.",
+   "relacion": "La idea del post es que estándar, plan y control por etapas valen igual para un ministerio que para un estudio de cinco personas. El enlace vial es la escala de la estrategia BIM del MOP, la casa es la del estudio chico, y la retícula compartida con la misma etapa en turquesa dice que la lógica es la misma. Extender esa lógica a la IA es opinión de Umbral en el post, no algo que diga el MOP.",
+   "estrategia": "comparación",
+   "publico": {
+    "tipo": "seguidor",
+    "quien": "dueño o socio de un estudio de arquitectura de cinco personas que cree que una estrategia de adopción es cosa de grandes"
+   },
+   "persuasion": "Ve su casa chica al lado de una obra del ministerio, siguiendo el mismo orden, y abre el post para saber cómo aplicarlo en su estudio.",
+   "gancho_visual": "Dos dibujos de tamaño muy distinto con el mismo cuadro turquesa en el mismo lugar.",
+   "proceso": [
+    "Separé las dos mitades de la idea: la adopción por etapas y la igualdad de escala entre ministerio y estudio.",
+    "Elegí la segunda para esta ficha, porque es la que le habla al estudio chico que no se siente aludido por el MOP.",
+    "Busqué dos obras que cualquiera reconoce por su tamaño: un enlace vial y una casa de un piso.",
+    "Les di la misma retícula y la misma etapa para que la comparación se lea sin texto.",
+    "Dejé el turquesa en el mismo módulo relativo de las dos, que es donde está la tesis."
+   ],
+   "evitar": "Una balanza o un antes y después; que la obra grande se vea mejor o más avanzada que la chica; edificios ministeriales reconocibles o escudos; sugerir que el MOP habla de IA.",
+   "riesgo": "Que el díptico se lea como dos ilustraciones sueltas si las retículas no coinciden; que la casa chica quede tan pequeña que no se lea en el celular.",
+   "validacion": {
+    "errores": [],
+    "avisos": []
+   }
+  },
+  {
+   "id": "C01-M3",
+   "item": "M",
+   "titulo": "Descimbre por paños",
+   "concepto": "Un bosque de puntales bajo una losa que se hormigona por paños: cada paño se libera cuando fraguó, nunca la losa entera de una vez.",
+   "escena": "Vista isométrica baja de una losa extensa sostenida por un campo denso de puntales y vigas de moldaje en trazo fino, ordenados en retícula. La losa está dividida en paños iguales. Bajo los paños de la izquierda los puntales ya se retiraron y queda planta libre; en el centro los puntales siguen bajo paños recién hormigonados; a la derecha el moldaje vacío espera su turno. Un solo paño, el que está en control antes de liberarse, va en turquesa. Fondo claro y plano, sin sombras dramáticas.",
+   "relacion": "Adopción progresiva, estandarizada y controlada mediante un plan, como la presentó la DGOP: los paños iguales son el estándar, el orden de hormigonado es el plan y no retirar puntales hasta que el paño fragua es el control. La consecuencia es la del post: lo que se libera antes de tiempo se cae. El paralelo con la IA lo hace el post como opinión de Umbral.",
+   "estrategia": "campo denso",
+   "publico": {
+    "tipo": "seguidor",
+    "quien": "jefe o administrador de obra de edificación que ha vivido un descimbre apurado"
+   },
+   "persuasion": "Sabe que descimbrar la losa entera de una vez es un error de obra y se pregunta por qué su empresa adoptaría BIM o IA así.",
+   "gancho_visual": "Un campo apretado de puntales que se abre a la izquierda en planta libre, con un paño turquesa en el borde.",
+   "proceso": [
+    "Busqué en la obra gruesa una regla que todo jefe de obra respeta y que tenga etapas, estándar y control a la vez.",
+    "Llegué al hormigonado por paños con descimbre controlado, donde liberar de golpe es un error conocido.",
+    "Elegí la vista desde abajo porque los puntales arman un campo gráfico denso, que es lo que enganchó en la retícula con losas turquesa (C51).",
+    "Ordené los tres estados de izquierda a derecha: liberado, en control y por hormigonar.",
+    "Marqué en turquesa el paño en control, porque el control es la palabra que la premisa agrega a la adopción progresiva."
+   ],
+   "evitar": "Una losa que se derrumba o una escena de accidente; obreros, cascos o grúas; detalles de cálculo; mostrar la losa terminada sin los tres estados.",
+   "riesgo": "Que el campo de puntales se vuelva ruido ilegible en el celular; que la vista baja confunda arriba y abajo; que el modelo agregue sombras fuertes bajo la losa.",
+   "validacion": {
+    "errores": [],
+    "avisos": []
+   }
+  },
+  {
+   "id": "C01-M4",
+   "item": "M",
+   "titulo": "El puente que no se encuentra",
+   "concepto": "Dos mitades de un puente avanzan desde cada orilla con módulos distintos y no se juntan en el centro: lo que pasa cuando se adopta sin estándar ni plan común.",
+   "escena": "Isométrica de un valle sobre fondo claro y plano. Desde cada orilla avanza medio puente en voladizo, las dos mitades bien dibujadas en trazo fino. Pero cada una usa un módulo distinto y en el centro los tableros quedan desfasados: uno más alto, el otro corrido hacia un lado, con un vacío entre ambos. La única pieza turquesa es la dovela de cierre, suspendida sobre el vacío, que no calza en ninguna de las dos mitades. Sin maquinaria ni personas.",
+   "relacion": "La premisa dice que la adopción BIM del MOP será estandarizada y controlada mediante un plan. La imagen muestra la consecuencia de no hacerlo: dos equipos que adoptan cada uno a su manera, con trabajo bien hecho que no se encuentra. Es el mismo momento, la adopción, visto desde lo que la estrategia evita. El paralelo con la IA en un equipo es opinión de Umbral en el post.",
+   "estrategia": "defecto que se ve",
+   "publico": {
+    "tipo": "alumno",
+    "quien": "profesional AEC que quiere aprender BIM e IA aplicada y ve que en su oficina cada colega usa algo distinto"
+   },
+   "persuasion": "Reconoce el desfase de su propia oficina, donde cada uno adopta por su cuenta, y abre el post para saber qué lo evita.",
+   "gancho_visual": "Un puente partido en el aire con las dos mitades desalineadas y una pieza turquesa que no calza.",
+   "proceso": [
+    "Me pregunté qué pasa cuando falta lo que la premisa pide: sin estándar y sin plan.",
+    "Pensé en la imagen de error que todo el rubro conoce: el puente cuyas mitades no se encuentran.",
+    "Dibujé las dos mitades bien construidas para que el defecto no sea mala ejecución sino falta de acuerdo.",
+    "Puse el turquesa en la dovela de cierre, la pieza que el estándar común habría hecho calzar."
+   ],
+   "evitar": "Un puente derrumbado o un accidente; caricatura o humor; atribuir el error al MOP o a una obra real; dar a entender que el MOP habla de IA.",
+   "riesgo": "Que se lea como meme de obra mal hecha y no como falta de estándar; que el desfase sea tan sutil que en el celular no se vea.",
+   "validacion": {
+    "errores": [],
+    "avisos": []
+   }
+  },
+  {
+   "id": "C01-M5",
+   "item": "M",
+   "titulo": "La almaciguera",
+   "concepto": "Una almaciguera de celdas iguales donde los plantines pasan a tierra en orden, cuando cada uno está listo, nunca todos el mismo día.",
+   "escena": "Isométrica de una almaciguera grande de celdas iguales sobre fondo claro y plano, en trazo fino. De izquierda a derecha los brotes crecen por etapas: semillas, brotes chicos, plantines con hojas. En el borde derecho, una hilera de tierra preparada ya recibió los primeros plantines, plantados en línea y a la misma distancia. Un solo plantín, el siguiente en salir de su celda, va en turquesa. Las celdas que quedaron vacías se ven limpias y en orden. Sin sombras ni adornos.",
+   "relacion": "La premisa es una adopción progresiva, estandarizada y controlada mediante un plan. Las celdas iguales son el estándar, el orden de trasplante es el plan y pasar a tierra solo lo que está listo es el control. La idea del post, ni BIM ni IA se adoptan de golpe, queda en el gesto de no trasplantar todo el mismo día. El paralelo con la IA es opinión de Umbral, no del MOP.",
+   "estrategia": "objeto cotidiano",
+   "publico": {
+    "tipo": "alumno",
+    "quien": "profesional AEC que siente que va tarde con la IA y quiere aprenderlo todo de una vez"
+   },
+   "persuasion": "Le quita la urgencia de aprenderlo todo ya: nada se trasplanta antes de estar listo, y el post le muestra en qué orden avanzar.",
+   "gancho_visual": "Una bandeja de celdas con brotes que crecen de izquierda a derecha y un plantín turquesa a punto de salir.",
+   "proceso": [
+    "Busqué un objeto fuera de la obra que cualquiera haya visto y que tenga etapas obligatorias.",
+    "Probé la cubetera de hielo y la descarté: se llena de una vez y no tiene control.",
+    "Me quedé con la almaciguera porque trae las tres piezas: celda igual, orden de trasplante y esperar a que esté listo.",
+    "Agregué la hilera de tierra para que se vea el paso de una etapa a la siguiente, no solo el crecimiento."
+   ],
+   "evitar": "Un jardín idílico, una planta gigante o una metáfora de crecimiento personal; manos o regaderas; mezclar edificios dentro de las celdas.",
+   "riesgo": "Que se lea como mecanismo chico y didáctico que no engancha (C51); que se aleje del oficio y no se reconozca como pieza de Umbral BIM.",
+   "validacion": {
+    "errores": [],
+    "avisos": []
+   }
+  },
+  {
+   "id": "C01-M6",
+   "item": "M",
+   "titulo": "El plano que se levanta por cuadrantes",
+   "concepto": "Una lámina de planos 2D extendida en el suelo se vuelve modelo un cuadrante a la vez, siguiendo sus ejes, mientras el resto espera plano.",
+   "escena": "Gran lámina de planos de arquitectura extendida en el suelo, en isométrica de trazo fino sobre fondo claro y plano, dividida por su retícula de ejes en cuadrantes iguales. De izquierda a derecha los cuadrantes cambian de estado: los primeros ya se levantaron como modelo con muros, losas y pilares; el siguiente está a medio levantar, en alambre; los de la derecha siguen siendo líneas de planta. El cuadrante que se está levantando va en turquesa. Sin cotas escritas ni rótulos.",
+   "relacion": "Es la adopción BIM misma, del plano 2D al modelo, contada como la presentó la DGOP: progresiva (un cuadrante a la vez), estandarizada (la retícula de ejes que todos siguen) y controlada mediante un plan (el orden de los cuadrantes). La consecuencia del post: el proyecto sigue funcionando mientras cambia. La IA no aparece en la imagen; el paralelo lo hace el post como opinión de Umbral.",
+   "estrategia": "transformación",
+   "publico": {
+    "tipo": "cliente",
+    "quien": "gerente de una oficina de ingeniería o arquitectura que todavía entrega en 2D y teme migrar todo de una vez"
+   },
+   "persuasion": "Ve que pasar a BIM no obliga a levantar todo el proyecto de golpe, y abre el post para saber qué cuadrante va primero.",
+   "gancho_visual": "Un plano plano que a la izquierda ya es edificio, con un cuadrante turquesa a medio levantarse.",
+   "proceso": [
+    "Tomé la arquitectura de H021, una transformación que se lee de izquierda a derecha, sin repetir su red de nodos.",
+    "Pensé en el cambio que la estrategia BIM del MOP pide de verdad a una oficina: pasar del plano al modelo.",
+    "Corté ese cambio por la retícula de ejes para que la transformación sea progresiva y tenga un estándar visible.",
+    "Dejé la derecha como línea de planta para que se vea que el resto del proyecto sigue vivo mientras tanto.",
+    "Marqué en turquesa el cuadrante en curso, la etapa que el plan controla."
+   ],
+   "evitar": "El plano que se convierte entero en edificio de un golpe; datos flotantes o nodos, que repetirían H021; rótulos o cotas dibujadas.",
+   "riesgo": "Que el modelo dibuje letras en la lámina de planos; que se lea como tablero de juego; que la transición en alambre se pierda en el celular.",
+   "validacion": {
+    "errores": [],
+    "avisos": []
+   }
+  },
+  {
+   "id": "C01-R1",
+   "item": "R",
+   "titulo": "La obra que se rebobina",
+   "concepto": "Un edificio vuelve a su estado anterior soltando, en orden inverso, solo las piezas marcadas: deshacer lo de la IA no obliga a demoler.",
+   "escena": "Ilustración isométrica plana de trazo fino sobre fondo claro, leída de izquierda a derecha en tres tiempos del mismo edificio de cinco pisos. A la izquierda, el edificio terminado: estructura blanca y algunas piezas en turquesa (una losa, dos tabiques, un tramo de escalera). Al centro, esas piezas turquesa flotan apenas sobre su sitio, separadas en el orden inverso al que se pusieron. A la derecha, el edificio sin ellas, entero y en pie, con las piezas turquesa apiladas con orden a un costado. El turquesa marca solo lo que hay que poder quitar.",
+   "relacion": "Cuenta el Undo etiquetado del post: los cambios hechos por la IA se distinguen del resto (el turquesa es la etiqueta) y se revierten uno a uno sin tocar el trabajo del equipo. Mismo momento, después de una solicitud; misma consecuencia: como se puede volver, la oficina puede aceptar el pedido.",
+   "estrategia": "transformación",
+   "publico": {
+    "tipo": "cliente",
+    "quien": "socio o director de una oficina de arquitectura que duda en dejar que su equipo use IA sobre el modelo de un proyecto vivo"
+   },
+   "persuasion": "Le da lo que necesita para decir que sí: si la IA se equivoca en el proyecto, se vuelve atrás solo lo suyo, sin rehacer el trabajo del equipo.",
+   "gancho_visual": "Tres veces el mismo edificio y unas piezas turquesa que se despegan en fila: se entiende que algo se está quitando con orden, no derribando.",
+   "proceso": [
+    "Separé la premisa en sus tres mecanismos (journal, Undo etiquetado y botón Stop); este concepto toma el segundo.",
+    "Traduje «Undo etiquetado» a lo que entiende un socio que no abre Revit: sacar solo lo que hizo la IA sin tocar lo del equipo.",
+    "Tomé el camino de H021 (estado A, paso, estado B, de izquierda a derecha) pero al revés: no construir, rebobinar.",
+    "Usé piezas de edificio y no capas abstractas para que la escala sea del oficio (C51) y el edificio quede en pie al final, que es la consecuencia.",
+    "Dejé el turquesa como la etiqueta: es lo único que distingue lo hecho por la IA (C32)."
+   ],
+   "evitar": "Demolición, escombros o un edificio a medio caer: el post dice que se revierte sin romper. Tampoco el ícono de la flecha curva de deshacer.",
+   "riesgo": "Que las piezas flotando se lean como explosión o como montaje en curso en vez de retiro, o que el modelo dibuje tres edificios distintos en lugar de tres tiempos del mismo.",
+   "validacion": {
+    "errores": [],
+    "avisos": []
+   }
+  },
+  {
+   "id": "C01-R2",
+   "item": "R",
+   "titulo": "La grúa que se detiene a tiempo",
+   "concepto": "Una grúa torre frenada en plena maniobra, con la carga quieta en el aire: la IA se puede interrumpir a mitad de camino y nada se viene abajo.",
+   "escena": "Isométrica plana de trazo fino sobre fondo claro: una obra amplia vista desde arriba, con radier, pilares en espera y dos grúas torre. La grúa principal sostiene un módulo prefabricado de fachada colgado a media altura, inmóvil, con el cable tenso y vertical, lejos de su sitio final. En la base de la torre, una seta de parada de emergencia en turquesa, único acento de la imagen. Todo lo demás en blanco y gris cálido, quieto: la maniobra quedó suspendida, no fallida.",
+   "relacion": "Toma el botón Stop del post: interrumpir una solicitud en curso. La grúa a mitad de maniobra es el mismo momento (la IA trabajando sobre el modelo) y la carga que no cae es la misma consecuencia: quien opera corta antes de que termine, con control.",
+   "estrategia": "escala del oficio",
+   "publico": {
+    "tipo": "cliente",
+    "quien": "gerente de operaciones de una constructora, que jamás dejaría trabajar una grúa sin parada de emergencia"
+   },
+   "persuasion": "Le pone en su idioma una exigencia que ya aplica en obra: ninguna máquina trabaja sin parada de emergencia, y la IA en el modelo tampoco debería.",
+   "gancho_visual": "Una grúa enorme con la carga colgando quieta en el aire y un solo punto turquesa abajo: algo se detuvo a propósito.",
+   "proceso": [
+    "Tomé el tercer mecanismo de la premisa, el botón Stop, que es el más fácil de entender fuera de Revit.",
+    "Busqué en la obra la máquina que todos aceptan porque se puede frenar: la grúa torre con su parada de emergencia.",
+    "Le apliqué la prueba de C54: un gerente de constructora la entiende sin saber qué es el Autodesk Assistant.",
+    "Elegí el instante de la carga suspendida para contar el momento del Stop y no el accidente que evita.",
+    "Puse el turquesa solo en la seta de parada, para que el acento sea el control y no la máquina."
+   ],
+   "evitar": "Carga cayendo o accidente, cinta de peligro amarilla y negra, señalética, casco u operador en la cabina; tampoco un botón rojo dibujado como ícono de interfaz.",
+   "riesgo": "Que el modelo pinte la seta de rojo por costumbre, agregue un operador o la deje tan chica que en el celular no se vea; sin ella, queda solo una grúa.",
+   "validacion": {
+    "errores": [],
+    "avisos": []
+   }
+  },
+  {
+   "id": "C01-R3",
+   "item": "R",
+   "titulo": "El juego de planos con pestañas",
+   "concepto": "Un juego grueso de planos visto de canto, con pestañas turquesa que asoman justo en las hojas que tocó la IA: cada cambio se encuentra sin hojear todo.",
+   "escena": "Isométrica plana de trazo fino sobre fondo claro: un juego de planos de gran formato apilado, grueso como el de una obra completa, visto en tres cuartos para que se lean los cantos de cientos de hojas blancas. De su borde lateral asoma una columna irregular de pestañas turquesa, a distintas alturas, cada una en la hoja exacta donde hubo un cambio. Encima, un escalímetro y un clip. Hojas lisas, sin letras ni rótulos; la densidad de los cantos da la presencia.",
+   "relacion": "Cuenta el journal y el Undo etiquetado del post: lo que hace la IA queda registrado y marcado dentro del mismo modelo. Las pestañas son ese rastro, y la consecuencia es la misma: auditar es ir directo a lo que cambió, no revisar todo de nuevo.",
+   "estrategia": "objeto cotidiano",
+   "publico": {
+    "tipo": "alumno",
+    "quien": "profesional AEC que evalúa entrar a un diplomado de IA aplicada y teme que usarla en el modelo de su oficina lo deje sin poder explicar qué cambió"
+   },
+   "persuasion": "Le baja el miedo a probar: si cada cambio de la IA queda marcado, puede usarla en su trabajo y responder cuando le pregunten qué tocó.",
+   "gancho_visual": "Un bloque blanco de hojas con una hilera de pestañas turquesa saliendo del costado: se lee «aquí hay cambios marcados» en un segundo.",
+   "proceso": [
+    "Junté el journal y el Undo etiquetado en la pregunta que se haría el alumno: ¿cómo sé qué hizo la IA?",
+    "Busqué un objeto que toda oficina AEC tiene a mano y que ya resuelve «encontrar lo que cambió»: el juego de planos con marcadores.",
+    "Descarté el libro de obra porque obligaba a dibujar escritura, que la marca no permite (C31).",
+    "Lo hice grueso, de obra completa, para que tenga presencia y no sea un mecanismo chico (C51, C53).",
+    "Puse las pestañas a alturas irregulares para que se vean como cambios puntuales y no como capítulos."
+   ],
+   "evitar": "Planos con dibujos o rótulos legibles, nubes de revisión numeradas, una lupa de auditoría o un archivador con candado.",
+   "riesgo": "Que salga como una resma de papel de oficina sin oficio, que el modelo escriba en las pestañas o que se lea como archivo burocrático y no como trazabilidad.",
+   "validacion": {
+    "errores": [],
+    "avisos": []
+   }
+  },
+  {
+   "id": "C01-R4",
+   "item": "R",
+   "titulo": "El hilo que recorre la estructura",
+   "concepto": "Un hilo turquesa continuo entra a una estructura densa, rodea cada elemento modificado y sale enrollado en un carrete: la corrida se puede seguir y volver a enrollar.",
+   "escena": "Isométrica plana de trazo fino sobre fondo claro: un campo denso de estructura que llena casi todo el cuadro, cientos de vigas, pilares, losas y diagonales en blanco con línea fina verde oscuro. Un solo hilo turquesa delgado entra desde la izquierda, serpentea por dentro y rodea con una vuelta algunas piezas repartidas en distintos niveles. Sale por el borde derecho y termina enrollado en un carrete pequeño apoyado en el suelo. El resto queda intacto y sin color.",
+   "relacion": "Representa el journal del post: el registro de una corrida de la IA de principio a fin. El hilo es el mismo momento (lo que la IA hizo, en orden) y el carrete la misma consecuencia: ese recorrido se puede leer y deshacer vuelta por vuelta.",
+   "estrategia": "campo denso",
+   "publico": {
+    "tipo": "seguidor",
+    "quien": "BIM manager que responde por el modelo central y tiene que contestar qué tocó la IA cuando algo aparece distinto"
+   },
+   "persuasion": "Le da un criterio para ordenar el uso de IA en su equipo: antes de permitir pedidos al modelo, exigir que cada corrida deje un recorrido que se pueda seguir.",
+   "gancho_visual": "Una maraña blanca de estructura atravesada por una sola línea turquesa que se sigue con los ojos hasta el carrete.",
+   "proceso": [
+    "Tomé el primer mecanismo, el journal, que es el más técnico de los tres y el que más cuesta explicar fuera de Revit.",
+    "Lo traduje a una idea universal: el hilo de Ariadna, el rastro que permite salir del laberinto por donde se entró.",
+    "Cambié el laberinto por una estructura densa del oficio para tener un campo gráfico con presencia (C51, C53).",
+    "Agregué el carrete para cerrar con la consecuencia del post (revertir) y no quedarme solo en el rastro.",
+    "Lo dirigí al BIM manager porque es quien recibe hoy la pregunta «¿quién cambió esto?»."
+   ],
+   "evitar": "Una red de nodos o una ciudad de datos (ya usada en H021), cables eléctricos, circuitos o el hilo leído como cable de red.",
+   "riesgo": "Que el hilo se pierda en la densidad a tamaño de celular o se lea como cable de instalación; que el modelo multiplique los hilos turquesa.",
+   "validacion": {
+    "errores": [],
+    "avisos": []
+   }
+  },
+  {
+   "id": "C01-R5",
+   "item": "R",
+   "titulo": "El error apuntalado",
+   "concepto": "Un pilar fuera de eje queda a la vista, marcado y apuntalado, sin comprometer el edificio: la equivocación existe, pero está identificada y se puede retirar.",
+   "escena": "Isométrica plana de trazo fino sobre fondo claro: un edificio en obra gruesa de varios pisos, losas y pilares blancos en una grilla ordenada. Un solo pilar turquesa está corrido de su eje, fuera de la grilla, sostenido por dos puntales metálicos finos que lo mantienen firme y separado del resto. Las losas no descansan en él: se ve que puede sacarse sin tocar nada más. El resto del edificio, sereno y regular, enmarca el defecto.",
+   "relacion": "Cuenta el Undo etiquetado del post desde el error: la IA puede equivocarse, pero su cambio queda marcado como suyo y se revierte sin afectar lo demás. El pilar corrido es el mismo momento (después de una solicitud) y los puntales la misma consecuencia: se sostiene a la vista hasta revisarlo.",
+   "estrategia": "defecto que se sostiene",
+   "publico": {
+    "tipo": "seguidor",
+    "quien": "coordinador BIM que revisa modelos de terceros y sabe que lo grave no es el error sino el que no se ve"
+   },
+   "persuasion": "Le cambia la pregunta de «¿la IA se equivoca?» a «¿su error queda a la vista y se puede sacar?», la misma que ya le hace a cualquier modelador nuevo.",
+   "gancho_visual": "Una grilla perfecta de pilares blancos y uno turquesa fuera de eje, apuntalado: el ojo va directo al defecto.",
+   "proceso": [
+    "Partí de la objeción más probable de un coordinador ante la IA en el modelo: «¿y si se equivoca?».",
+    "Invertí el enfoque: no prometer que no falla, sino mostrar el fallo contenido y etiquetado, que es lo que asegura la premisa.",
+    "Elegí un pilar fuera de eje porque cualquier persona AEC lo detecta sin explicación, incluso un gerente.",
+    "Agregué los puntales para que se lea «contenido» y no «colapso», y las losas sin apoyo en él para que se lea «removible».",
+    "Revisé que no fuera el choque literal en una viga que descartó C47: aquí la noticia no es el error, sino que se sostiene marcado."
+   ],
+   "evitar": "Grietas, colapso, cinta de peligro, cruz roja o signo de error; tampoco el choque de elementos (clash) como tema.",
+   "riesgo": "Que se lea como un error de diseño que la imagen celebra, o que los puntales parezcan estructura definitiva; si el edificio no tiene escala, puede quedar como mecanismo chico (C51).",
+   "validacion": {
+    "errores": [],
+    "avisos": []
+   }
+  },
+  {
+   "id": "C01-R6",
+   "item": "R",
+   "titulo": "Caja cerrada y caja abierta",
+   "concepto": "Dos volúmenes iguales lado a lado: uno cerrado, del que no se sabe qué pasó adentro, y otro en despiece que muestra en orden cada intervención marcada.",
+   "escena": "Isométrica plana de trazo fino sobre fondo claro: dos volúmenes de edificio del mismo tamaño sobre la misma base. A la izquierda, un bloque blanco cerrado y liso, sin aberturas: no deja ver nada. A la derecha, el mismo bloque en axonometría explotada, con sus pisos separados en vertical como un despiece, y en cada piso unas pocas piezas turquesa en su sitio exacto. Entre ambos, aire. El turquesa aparece solo en el bloque abierto.",
+   "relacion": "Pone frente a frente dos maneras de usar IA en el modelo: sin rastro (caja cerrada) y con journal, Undo etiquetado y Stop (caja abierta). Mismo edificio, mismo pedido; la diferencia es si se puede auditar, que es la tesis del post: la trazabilidad es lo que la vuelve usable.",
+   "estrategia": "comparación",
+   "publico": {
+    "tipo": "alumno",
+    "quien": "arquitecto o ingeniero que se está formando en IA aplicada y desconfía de ella porque «no se sabe qué hizo»"
+   },
+   "persuasion": "Le muestra que su desconfianza tiene remedio práctico: aprender a abrir la caja antes de pedirle algo a la IA, en vez de evitarla.",
+   "gancho_visual": "Dos edificios iguales, uno mudo y otro desarmado en capas con puntos turquesa: la diferencia se ve antes de pensarla.",
+   "proceso": [
+    "Leí el claim: la trazabilidad es lo que vuelve usable a la IA, una comparación implícita entre IA con y sin rastro.",
+    "Busqué la forma más corta de mostrar «sin rastro»: un volumen cerrado, la caja negra que el alumno ya teme.",
+    "Para «con rastro» usé la axonometría explotada, un dibujo que todo estudiante de arquitectura o ingeniería reconoce.",
+    "Mantuve el mismo edificio a ambos lados para que la única diferencia sea poder ver adentro.",
+    "Dejé el turquesa solo a la derecha, para que el acento marque lo que entrega la premisa."
+   ],
+   "evitar": "Una caja negra literal, un candado, un ojo, una lupa o la IA como objeto; tampoco un antes y después de calidad del diseño.",
+   "riesgo": "Que el bloque cerrado se lea como «mejor diseño» por lo limpio, o que el despiece parezca solo un diagrama de pisos sin relación con la IA.",
+   "validacion": {
+    "errores": [],
+    "avisos": []
+   }
+  },
+  {
+   "id": "C01-T1",
+   "item": "T",
+   "titulo": "Del peso al recorrido",
+   "concepto": "El bloque macizo del modelo se despliega de izquierda a derecha en una fila de tramos de espera: lo que parecía peso resulta ser recorrido, y un solo tramo se lleva casi toda la demora.",
+   "escena": "Ilustración isométrica plana de trazo fino sobre fondo claro. A la izquierda, un edificio compacto y macizo, caras blancas y línea verde oscura. Hacia el centro, el volumen se abre como un acordeón y se estira en una larga franja de módulos en fila, como tramos de un mismo recorrido: unos de losas sueltas, otros de pequeños edificios encadenados, otros de piezas que se rearman. Casi todos los tramos son cortos y neutros; uno solo se alarga mucho más que el resto y es el único en turquesa. El tercio derecho queda con aire limpio. Sin texto, sin números, sin personas.",
+   "relacion": "Cuenta la premisa y el título alterno «No es el peso del archivo»: el edificio macizo es cómo se ve el modelo cuando tarda 30 minutos en abrir; desplegado es lo que muestran los journals, el tiempo repartido entre descarga, vínculos y regeneración. El tramo turquesa es el cuello de botella que hay que encontrar antes de purgar; los cortos son lo que purgar no habría cambiado.",
+   "estrategia": "transformación",
+   "publico": {
+    "tipo": "seguidor",
+    "quien": "coordinadores BIM que cada mañana esperan que abra el modelo central y cuya primera reacción ante la lentitud es purgar familias y vistas"
+   },
+   "persuasion": "Le muestra que su espera tiene partes y que una sola pesa de verdad; lo empuja a medir dónde se va el tiempo antes de purgar otra vez.",
+   "gancho_visual": "Un edificio que se estira en una fila de tramos donde uno, turquesa, es mucho más largo que todos los demás.",
+   "proceso": [
+    "Leí la premisa y el título alterno de las notas: la tensión es peso contra tiempo, lo que se ve contra lo que demora.",
+    "Tomé el arnés H021 (un estado que se vuelve otro, de izquierda a derecha) y cambié la materia: el volumen del modelo se vuelve duración.",
+    "Busqué que la consecuencia se viera sin texto: cada tramo tiene largo, y el largo se lee como espera.",
+    "Elegí al coordinador BIM porque es quien vive la espera cada mañana y quien purga primero.",
+    "Dejé el turquesa en un solo tramo para que marque el cuello de botella y no decore."
+   ],
+   "evitar": "Relojes, cronómetros o barras de progreso; una balanza; el modelo achicado como solución; una papelera; robots o cerebros para la parte de IA.",
+   "riesgo": "Que la franja se lea como un gráfico de barras o una línea de montaje genérica; que los tramos salgan parejos y se pierda cuál demora; que el edificio de partida pierda forma de edificio.",
+   "validacion": {
+    "errores": [],
+    "avisos": []
+   }
+  },
+  {
+   "id": "C01-T2",
+   "item": "T",
+   "titulo": "La obra ordenada que sigue esperando",
+   "concepto": "Una obra impecablemente ordenada sigue detenida porque el atraso está en la fila de camiones mixer del acceso: ordenar lo que se ve no acelera si la demora está en otro punto.",
+   "escena": "Vista isométrica amplia de una obra sobre fondo claro, trazo fino. El recinto está barrido y ordenado al extremo: pallets alineados, encofrados apilados por tamaño, la grúa quieta y una losa a medio hormigonar con la armadura lista. Fuera del cerco, la calle de acceso dibuja una larga fila de camiones mixer detenidos que se pierde hacia el borde izquierdo del cuadro; esa fila y el portón cerrado son el único acento turquesa. Neutros dominantes y luz pareja, sin sombras dramáticas, sin personas ni texto.",
+   "relacion": "Purgar familias y vistas es ordenar la obra: el esfuerzo se ve, pero el modelo sigue tardando 30 minutos porque la espera puede estar en la descarga o en los vínculos, fuera de lo que se limpia. Leer los journals es ir a mirar el acceso antes de mandar a barrer otra vez; la consecuencia es la del post, trabajo perdido.",
+   "estrategia": "escala del oficio",
+   "publico": {
+    "tipo": "cliente",
+    "quien": "gerente de operaciones de una constructora que paga horas de equipo detenido y distingue de memoria entre ordenar una obra y destrabarla"
+   },
+   "persuasion": "Reconoce en la imagen un error de gestión que ya pagó en terreno; lo convence de pedir a su equipo BIM que mida dónde se va el tiempo antes de financiar otra limpieza.",
+   "gancho_visual": "Una obra limpia y quieta y, afuera, una fila turquesa de camiones que no entra.",
+   "proceso": [
+    "Apliqué la prueba de amplitud (C54): un journal no lo entiende un gerente de constructora; una obra parada, sí.",
+    "Busqué en terreno el mismo error que purgar a ciegas: ordenar lo visible mientras el atraso está en el suministro.",
+    "Elegí el hormigón porque la espera de los mixer en el acceso es un atraso que todo gerente ya pagó.",
+    "Puse la escena a escala de obra completa, no un mecanismo chico (C51).",
+    "Dejé el turquesa en la fila y el portón: el punto que habría que medir."
+   ],
+   "evitar": "Operarios barriendo, conos o señales con leyenda, un reloj, una obra desordenada (contaría que el problema sí era la limpieza).",
+   "riesgo": "Que se lea como logística de obra si el título del post no lo ancla en el modelo; que la fila quede diminuta a tamaño de feed; que Magnific agregue operarios o choferes.",
+   "validacion": {
+    "errores": [],
+    "avisos": []
+   }
+  },
+  {
+   "id": "C01-T3",
+   "item": "T",
+   "titulo": "Replanteo antes de excavar",
+   "concepto": "Un terreno completo cubierto por una retícula densa de estacas e hilos de replanteo, casi intacto, con un único pozo excavado donde las estacas son turquesa: se mide todo y se interviene solo donde la medición apunta.",
+   "escena": "Gran terreno plano en isométrica, trazo fino, fondo claro. Lo cubre una retícula densa y regular de estacas de madera unidas por hilos tensos: cientos de puntos que forman un campo gráfico con presencia de borde a borde. Casi todo el suelo sigue intacto. En un solo sector, algo descentrado, un grupo de estacas turquesa rodea el único pozo excavado, limpio y de bordes precisos, con la tierra retirada apilada a un costado. Sin maquinaria, sin personas, sin texto ni números.",
+   "relacion": "Medir antes de purgar es replantear antes de excavar: los journals y la comparación entre caché fría y caliente son la retícula que dice dónde está el problema, en los vínculos, la descarga o la regeneración. El pozo único es la intervención que sí sirve; el terreno intacto es todo lo que no hacía falta purgar.",
+   "estrategia": "campo denso",
+   "publico": {
+    "tipo": "alumno",
+    "quien": "profesional que viene de obra o de la inspección técnica y evalúa formarse en BIM, que ya sabe que nadie mueve tierra sin topografía"
+   },
+   "persuasion": "Le muestra que el criterio que ya aplica en terreno vale dentro del modelo; lo invita a medir primero e intervenir menos, solo donde aparece la demora.",
+   "gancho_visual": "Un campo enorme de estacas iguales y un solo pozo rodeado de turquesa.",
+   "proceso": [
+    "Partí del «medir antes de arreglar» del encargo y busqué dónde ya es ley en el oficio: la topografía antes del movimiento de tierra.",
+    "Pensé en el alumno que viene de obra: el replanteo le es propio y le dice que su criterio se traslada al BIM.",
+    "Lo resolví como campo denso (C51, C53) para que tenga presencia y no sea un mecanismo chico.",
+    "El contraste es de cantidad: todo medido, casi nada excavado; así se ve el trabajo que se ahorra.",
+    "El turquesa marca el punto encontrado, no el instrumento que mide."
+   ],
+   "evitar": "Una retroexcavadora cavando por todas partes, un teodolito en primer plano, planos con cotas, una lupa.",
+   "riesgo": "Que la retícula se lea como un cultivo o una plantación; que el pozo quede tan chico que desaparezca en el celular; que la densidad se vuelva ruido.",
+   "validacion": {
+    "errores": [],
+    "avisos": []
+   }
+  },
+  {
+   "id": "C01-T4",
+   "item": "T",
+   "titulo": "Mide dos veces, corta una",
+   "concepto": "Un montón de retazos de una viga cortada sin medir junto a una viga gemela todavía entera con la cinta extendida: el refrán del carpintero aplicado a purgar el modelo.",
+   "escena": "Isométrica plana de trazo fino sobre fondo claro, a escala de taller. A la izquierda, sobre dos caballetes, lo que fue una viga de madera: un montón alto de retazos cortos y desparejos, aserrín y cortes inútiles que ocupan media escena. A la derecha, en otros caballetes, una viga idéntica aún entera, con una cinta de medir metálica extendida a lo largo y una sola marca de corte; la cinta es el único acento turquesa. Neutros cálidos y luz pareja, cinta sin graduación ni números, sin personas.",
+   "relacion": "Purgar a ciegas es cortar sin medir: muchos cortes, trabajo perdido y el modelo sigue tardando en abrir. La cinta son los journals, que dicen si el problema son los vínculos, la descarga o la regeneración antes del primer corte. Es la premisa de Autodesk dicha con un refrán que todo el rubro ya respeta.",
+   "estrategia": "refrán del oficio",
+   "publico": {
+    "tipo": "alumno",
+    "quien": "arquitecto o ingeniero joven que aprende Revit por su cuenta y resuelve la lentitud borrando cosas porque nadie le enseñó a diagnosticar"
+   },
+   "persuasion": "Le recuerda un refrán que ya obedece y le muestra que lo rompe cada vez que purga; lo convence de medir antes de cortar.",
+   "gancho_visual": "Una pila de retazos de madera al lado de una viga entera cruzada por una cinta turquesa.",
+   "proceso": [
+    "Busqué un dicho que todo el público AEC ya obedece y que diga lo mismo que la premisa: «mide dos veces, corta una».",
+    "Hice visible el trabajo perdido: la pila de retazos ocupa la mitad del cuadro.",
+    "Puse las dos vigas en una sola escena para que se lea de izquierda a derecha: sin medir, midiendo.",
+    "Elegí al que aprende solo porque purga por intuición y busca un curso que le dé método.",
+    "Revisé C51: dos caballetes pueden quedar chicos, así que pedí escala de taller y no un objeto suelto."
+   ],
+   "evitar": "Una sierra en acción con chispas, una mano sosteniendo la cinta, graduación o números en la cinta, un lápiz gigante.",
+   "riesgo": "Que quede como un mecanismo didáctico chico y no enganche (C51); que Magnific dibuje números en la cinta; que se lea como un post de carpintería.",
+   "validacion": {
+    "errores": [],
+    "avisos": []
+   }
+  },
+  {
+   "id": "C01-T5",
+   "item": "T",
+   "titulo": "Desarmar la fachada o cortar para ver",
+   "concepto": "Dos edificios gemelos: a uno le arrancan la fachada pieza por pieza buscando la falla; el otro aparece en un corte de sección limpio que revela su interior y un único ducto estrangulado.",
+   "escena": "Dos edificios de oficinas idénticos en isométrica plana, trazo fino, fondo claro. El de la izquierda está siendo desmantelado por fuera: paneles de fachada, tabiques y muebles retirados y apilados en montones a su alrededor, y el edificio sigue igual de cerrado. El de la derecha está intacto, pero cortado por un plano de sección limpio que deja ver todos sus pisos en orden; en el corte asoma un solo ducto vertical estrangulado, el único acento turquesa. Sin personas, sin texto.",
+   "relacion": "Purgar familias y vistas es desarmar la fachada: mucho trabajo por fuera sin saber qué pasa dentro. El corte son los journals y la prueba de caché fría contra caliente: muestran dónde se traba el tiempo, en vínculos, descarga o regeneración. La consecuencia es la del post: el que desarma pierde trabajo y el que mide encuentra el punto.",
+   "estrategia": "comparación",
+   "publico": {
+    "tipo": "cliente",
+    "quien": "socio de una oficina de arquitectura o ingeniería que ve a su equipo cargar horas de limpieza de modelo sin que el archivo abra más rápido"
+   },
+   "persuasion": "Le hace ver que puede estar pagando desarme en vez de diagnóstico; lo lleva a exigir que se mida dónde se va el tiempo antes de autorizar otra limpieza.",
+   "gancho_visual": "Dos edificios gemelos: uno rodeado de piezas arrancadas, el otro abierto en corte con un ducto turquesa.",
+   "proceso": [
+    "Tomé el corte de sección porque es como el oficio mira adentro sin romper.",
+    "Lo armé como comparación de gemelos para que la diferencia sea de método y no de edificio.",
+    "Pensé en el socio que paga las horas: para él la tensión es costo, y la pila de piezas retiradas es ese costo a la vista.",
+    "Puse el turquesa en el ducto estrangulado, el cuello de botella que el post enseña a buscar.",
+    "Descarté la radiografía y la lupa por cliché médico y detectivesco."
+   ],
+   "evitar": "Rayos X, lupas, estetoscopios, demolición con explosiones o polvo, grietas dramáticas.",
+   "riesgo": "Que el ducto no se lea a tamaño de feed; que el edificio desmantelado parezca en construcción y no en desarme; que los dos edificios compitan y diluyan el punto.",
+   "validacion": {
+    "errores": [],
+    "avisos": []
+   }
+  },
+  {
+   "id": "C01-T6",
+   "item": "T",
+   "titulo": "No es el peso",
+   "concepto": "Una grúa intenta izar un módulo que ya vaciaron por completo y no despega: lo retienen amarras finas hacia los edificios vecinos, así que el problema nunca fue el peso.",
+   "escena": "Isométrica plana de trazo fino, fondo claro. Una grúa torre tensa su cable sobre un módulo prefabricado que fue vaciado: su contenido, cajas, muebles y paneles, está descargado y ordenado en el suelo alrededor. El módulo, liviano y hueco, sigue apoyado sin despegar. De sus esquinas salen tres amarras delgadas y tensas hacia tres edificios cercanos más pequeños; esas amarras son el único acento turquesa. Neutros dominantes y luz pareja, sin personas, sin texto, sin efectos.",
+   "relacion": "Es el título alterno «No es el peso del archivo»: purgar es vaciar el módulo, y la grúa sigue sin poder levantarlo. Las amarras son los modelos vinculados que se cargan al abrir, lo que los journals revelan cuando se mide antes de purgar. La consecuencia es la del post: vaciar no movió la espera.",
+   "estrategia": "defecto que se sostiene",
+   "publico": {
+    "tipo": "seguidor",
+    "quien": "BIM manager que ya purgó, comprimió y auditó el modelo y sigue sin entender por qué tarda lo mismo en abrir"
+   },
+   "persuasion": "Le pone delante una frustración que ya vivió y una causa que no había mirado; lo convence de buscar la amarra antes de vaciar otra vez.",
+   "gancho_visual": "Una grúa con el cable tenso, un módulo vacío que no sube y tres hilos turquesa que lo sujetan.",
+   "proceso": [
+    "Tomé el título alterno de las notas como tensión central: algo aliviado que igual no se mueve.",
+    "Busqué un objeto del oficio donde el peso es la explicación obvia: la grúa que iza.",
+    "Dejé el contenido vaciado a la vista para que el esfuerzo de purgar se vea hecho y sin efecto.",
+    "Elegí los vínculos como causa visible porque se dibujan sin texto; descarga y regeneración quedan para el post.",
+    "Lo dirigí al BIM manager que ya probó todo, porque es quien comparte un diagnóstico que le ahorró una tarde."
+   ],
+   "evitar": "Una balanza o una pesa, el cable cortado, el módulo cayendo, cualquier lectura de accidente de grúa.",
+   "riesgo": "Que se lea como peligro o accidente en vez de un bloqueo tranquilo; que las amarras se pierdan a tamaño de feed; que la grúa se coma el cuadro y el módulo quede chico.",
+   "validacion": {
+    "errores": [],
+    "avisos": []
+   }
+  }
+ ],
+ "presentadas": {
+  "V": [
+   "C01-V2",
+   "C01-V1",
+   "C01-V5"
+  ],
+  "M": [
+   "C01-M1",
+   "C01-M6",
+   "C01-M4"
+  ],
+  "R": [
+   "C01-R1",
+   "C01-R4",
+   "C01-R3"
+  ],
+  "T": [
+   "C01-T1",
+   "C01-T5",
+   "C01-T3"
+  ]
+ },
+ "monotonia": [],
+ "editor": {
+  "quien": "Claude (sesión principal)",
+  "criterio": "tres de seis por post: una de escala del oficio o comparación, una transformación y una de campo denso u objeto cotidiano, con públicos distintos; se evita repetir la grúa entre posts (V2, R2 y T6 la usaban)",
+  "descartes": {
+   "V3": "mecanismo chico (un peldaño): se lee pero engancha poco (C51)",
+   "V4": "reloj: objeto cotidiano chico y fuera del oficio",
+   "V6": "comparación de fábricas, lejos de la obra",
+   "M2": "la idea pide etapas y la comparación de tamaños no las muestra",
+   "M3": "cerca de M1 (por tramos)",
+   "M5": "la almaciguera saca la imagen del oficio",
+   "R2": "grúa repetida con V2; el Stop es solo una de las tres partes del post",
+   "R5": "el pilar fuera de eje se lee como error, no como trazabilidad",
+   "R6": "caja cerrada y abierta: muy genérica",
+   "T2": "cerca de T5 y con camiones que el motor no centra bien",
+   "T4": "retazos de viga: mecanismo chico",
+   "T6": "grúa repetida con V2"
+  }
+ }
+}

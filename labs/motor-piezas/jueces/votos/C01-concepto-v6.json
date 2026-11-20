@@ -1,0 +1,648 @@
+{
+ "galeria": "C01",
+ "seccion": null,
+ "rubrica": "concepto-v6",
+ "retro": false,
+ "criterios_hasta": null,
+ "sellado": "2026-11-20T16:17:45",
+ "hash_rubrica": "72432a2d475a",
+ "hash_criterios": "cbce3c041e53",
+ "votos": [
+  {
+   "lente": "relacion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 8,
+    "2": 6,
+    "3": 7,
+    "4": 8,
+    "5": 6,
+    "6": 5,
+    "7": 7,
+    "8": 8,
+    "9": 6,
+    "10": 8,
+    "11": 7,
+    "12": 6
+   },
+   "hallazgos": [
+    {
+     "opcion": "1",
+     "donde": "relacion",
+     "problema": "La metáfora se dice en una frase: la grúa nueva es el paso acelerado y la obra que no sube es el conjunto que no mejora. Muestra el problema del titular, pero no el rediseño. Le alcanza porque el copy cierra con «primero claridad»; el riesgo es que se lea como mala planificación de obra y no como un paso acelerado que no mueve el resto.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "relacion",
+     "problema": "Le carga a la imagen cuatro equivalencias (rampa, junta, última junta, vuelta al inicio) que no se leen sin texto. La tensión del post (una tarea acelerada contra el flujo completo) queda reducida a una losa «más terminada», que no se distingue a tamaño de feed. La metáfora es de completar un recorrido, más que de acelerar un paso sin efecto.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "relacion",
+     "problema": "Usa los mismos términos y el mismo orden que la premisa (traspaso, decisión, cierre), pero la metáfora está muy cerca del hecho: incidencias dibujadas como prismas en una cola. Puede leerse como un diagrama de flujo o un embudo, y eso lo acerca al veto de «hecho técnico dibujado».",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4",
+     "donde": "relacion",
+     "problema": "Es una metáfora limpia: el anillo repetido es el estándar, el orden de avance es el plan y sostener cada tramo antes de seguir es el control. Cuenta el lado MOP y deja el paralelo con la IA al texto, como piden las notas. Lo que no muestra es la escala del equipo chico, que es la mitad del titular.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "5",
+     "donde": "relacion",
+     "problema": "Es casi la ilustración literal de «adoptar BIM» (plano 2D que pasa a modelo), más que una metáfora. Ata la imagen a BIM y no deja espacio a la segunda mitad del titular (la misma lógica sirve para la IA).",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "6",
+     "donde": "relacion",
+     "problema": "Cuenta otra tensión: dos equipos sin estándar común. El post habla de adoptar por etapas y no de golpe, y en el puente falta lo progresivo. Además, el puente que no se encuentra es un meme gastado de obra mal hecha.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "7",
+     "donde": "relacion",
+     "problema": "Representa bien el Undo etiquetado: se quita solo lo marcado y el edificio queda en pie. Pero solo cubre uno de los tres mecanismos, y los tres tiempos pueden leerse como montaje en curso en vez de retiro, lo que invertiría el sentido.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "8",
+     "donde": "relacion",
+     "problema": "La metáfora es la de Ariadna: el hilo es la corrida registrada (journal) y el carrete es la posibilidad de volver atrás. Cubre las dos palabras del claim, auditar y revertir. El riesgo de relación es que el hilo se lea como un cable de instalación, y entonces deja de ser un rastro.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "9",
+     "donde": "relacion",
+     "problema": "La metáfora se entiende (pestañas como cambios marcados), pero es un mecanismo chico y didáctico de objeto cotidiano: explica y no engancha (criterio M01). No hay nada que transmita la idea de revertir.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "10",
+     "donde": "relacion",
+     "problema": "Dibuja exactamente la tensión del título alterno «No es el peso del archivo»: el volumen se despliega en duración y un solo tramo concentra la demora. Es una transformación que se lee sin texto. El riesgo es que salga como un gráfico de barras genérico y no como un edificio que se despliega.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "11",
+     "donde": "relacion",
+     "problema": "Las dos acciones del titular aparecen enfrentadas: purgar es desarmar la fachada y medir es cortar en sección. Es fiel, pero los dos edificios compiten, y el ducto turquesa, que es la consecuencia, puede perderse en el feed.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "12",
+     "donde": "relacion",
+     "problema": "La analogía del oficio funciona para «medir antes de intervenir», pero no lleva la tensión propia del post, que es el tamaño contra el tiempo. Serviría igual para cualquier post de diagnóstico, así que la relación con este titular es más débil.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "todas",
+     "donde": "común",
+     "problema": "Son conceptos en texto y no hay imagen todavía. Que la metáfora pase en texto no anticipa que guste en imagen (criterio a prueba M01), y la elección final se hace sobre la imagen. Tampoco hay formatos que juzgar, así que el veredicto por formato queda pendiente para cuando haya imágenes.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "10",
+   "mejor_por_post": {
+    "V": 1,
+    "M": 4,
+    "R": 8,
+    "T": 10
+   },
+   "veredicto": "sirve",
+   "resumen": "Por relación, elegiría la 1 en V (la grúa: un paso acelerado frente a una obra que no sube), la 4 en M (el túnel por avances: estándar, plan y control en una sola imagen), la 8 en R (el hilo y el carrete: auditar y revertir) y la 10 en T (del peso al recorrido). La mejor de la ronda es la 10, porque su metáfora es el giro mismo del titular («no es el peso, es dónde se va el tiempo») y se lee sin texto. La 6 no sirve: cuenta otra tensión, la falta de estándar común, en vez de la adopción por etapas. La 5 y la 3 están demasiado cerca del hecho dibujado. Todo queda sujeto a ver las imágenes."
+  },
+  {
+   "lente": "enganche",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 7,
+    "2": 5,
+    "3": 7.5,
+    "4": 6.5,
+    "5": 8,
+    "6": 6,
+    "7": 4.5,
+    "8": 7,
+    "9": 4,
+    "10": 6,
+    "11": 5,
+    "12": 7
+   },
+   "hallazgos": [
+    {
+     "opcion": "general",
+     "donde": "toda la ronda",
+     "problema": "Son conceptos en texto, sin imagen: el enganche se juzga sobre lo que promete la escena. Que suene bien en texto no anticipa que guste en imagen (M01); la elección final debe hacerse sobre la imagen. Tampoco hay formatos todavía, así que no hay veredicto por formato.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "pila de paneles y portón",
+     "problema": "Escala de faena completa y lectura rápida de atasco, pero puede leerse como mala planificación de obra; si la pila sale ordenada se pierde el exceso que detiene la mirada.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "losas a distintas alturas y vuelta final",
+     "problema": "La transformación es sutil y abstracta: en un segundo se ven losas flotando, no un flujo que se une; la vuelta al inicio arriesga leerse como ícono de diagrama. Engancha menos que la ciudad que se vuelve red.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "3",
+     "donde": "las tres masas y los cinco prismas turquesa",
+     "problema": "Campo denso con presencia, el tipo que enganchó; riesgo de leerse como embudo o gráfico y de que los cinco prismas turquesa desaparezcan en el celular.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4",
+     "donde": "corte de montaña",
+     "problema": "Obra pública a escala y corte llamativo, pero el ciclo de anillos es un mecanismo didáctico de manual de túneles; se lee como lámina técnica más que como algo que detiene el feed.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "5",
+     "donde": "cuadrante en alambre",
+     "problema": "Es la transformación a escala que más se parece a lo que enganchó: un plano que se vuelve edificio se lee en un segundo. Riesgo: letras en la lámina y que el tramo en alambre se pierda a tamaño de feed.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "6",
+     "donde": "desfase central",
+     "problema": "El puente que no se junta detiene la mirada, pero es una imagen conocida que roza el meme de obra mal hecha; si el desfase es sutil no se ve en el celular.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "7",
+     "donde": "tres tiempos del mismo edificio",
+     "problema": "Secuencia de tres viñetas que explica el Undo: mecanismo chico y didáctico; las piezas flotando pueden leerse como explosión o montaje. Se entiende, pero no engancha.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "8",
+     "donde": "hilo turquesa en la estructura",
+     "problema": "Campo denso con una sola línea que el ojo sigue: tiene presencia. Riesgo de que el hilo delgado se pierda en la maraña a tamaño de celular o se lea como cable.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "9",
+     "donde": "juego de planos de canto",
+     "problema": "Objeto cotidiano y chico: una resma con pestañas se lee, pero no tiene escala del oficio ni transformación; parece papelería de oficina.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "10",
+     "donde": "franja de tramos",
+     "problema": "Transformación interesante en idea, pero la franja con un tramo largo se lee como gráfico de barras; el edificio que se estira como acordeón es difícil de leer sin texto.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "11",
+     "donde": "dos edificios gemelos",
+     "problema": "Comparación didáctica: dos objetos compiten por la mirada y el ducto turquesa es chico; el edificio desmantelado puede leerse como obra en construcción.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "12",
+     "donde": "retícula de estacas y pozo",
+     "problema": "Campo denso del oficio con un solo punto turquesa: buen gancho. Riesgo de leerse como plantación y de que el pozo quede demasiado chico en el celular.",
+     "gravedad": "media"
+    }
+   ],
+   "mejor": 5,
+   "mejor_por_post": {
+    "V": 3,
+    "M": 5,
+    "R": 8,
+    "T": 12
+   },
+   "veredicto": "sirve con ajustes",
+   "resumen": "Desde el enganche, ganan los conceptos de campo denso o de transformación a escala del oficio, y pierden los mecanismos chicos. La mejor de la ronda es la 5: un plano que se levanta como edificio por cuadrantes se lee en un segundo sin texto. Por post elegiría V: 3 (la nave de incidencias, con la 1 cerca), M: 5, R: 8 (el hilo en la estructura) y T: 12 (el replanteo). Tienen poco gancho la 7 y la 11, que son secuencias o comparaciones didácticas, y la 9, que es un objeto chico. En todas falta ver la imagen: el texto solo filtra, y el gancho real se decide sobre el dibujo y por formato."
+  },
+  {
+   "lente": "publico",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 8,
+    "2": 5,
+    "3": 6,
+    "4": 7,
+    "5": 7,
+    "6": 8,
+    "7": 7,
+    "8": 5.5,
+    "9": 7.5,
+    "10": 5,
+    "11": 7.5,
+    "12": 6.5
+   },
+   "hallazgos": [
+    {
+     "opcion": "1",
+     "donde": "riesgo de lectura",
+     "problema": "Un gerente de constructora puede leer la pila de paneles como mala planificación de su jefe de obra y no como un paso acelerado que no mueve el conjunto; la persuasión («dudar antes de comprar otra herramienta») depende de que se entienda que la grúa es lo nuevo que se compró.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "concepto",
+     "problema": "Losas a distintas alturas que se unen en una planta que vuelve al inicio es una metáfora abstracta: el alumno que evalúa el máster no reconoce ahí su trabajo diario y la prueba del gerente (C54) no se pasa sin explicación. La promesa de «aprender a unir el recorrido» queda en el texto, no en la imagen.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "3",
+     "donde": "concepto y público",
+     "problema": "Los prismas como incidencias son una abstracción que el coordinador BIM reconoce, pero un gerente no ve en ellos su obra; la idea se vuelve de especialista. Además puede leerse como embudo de ventas.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4",
+     "donde": "relación con la idea",
+     "problema": "El túnel por avances lo entiende bien quien construye obra pública, pero el salto a «así se adopta BIM e IA en un estudio de cinco personas» no está en la imagen; para la oficina chica el túnel queda lejos.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "5",
+     "donde": "persuasión",
+     "problema": "Le habla directo a la oficina que entrega en 2D y teme migrar, y se entiende sin saber BIM; pero solo cuenta BIM y deja fuera la mitad del claim (IA en el equipo), que es lo que hace relevante el post para la mayoría del público de LinkedIn.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "6",
+     "donde": "riesgo de lectura",
+     "problema": "Es la imagen de error que todo el rubro reconoce en un segundo, pero corre el riesgo de leerse como meme de obra mal ejecutada; si el desfase es sutil, en el celular no se ve el punto.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "7",
+     "donde": "gancho visual",
+     "problema": "La persuasión al socio es la más creíble de la ronda para su post (se vuelve atrás solo lo de la IA), pero las piezas flotando pueden leerse como montaje o explosión, y que el turquesa sea «lo hecho por la IA» no se infiere sin el texto.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "8",
+     "donde": "público",
+     "problema": "Toma el mecanismo más técnico (el journal) y lo dirige al BIM manager del modelo central: no pasa la prueba del gerente (C54). El hilo de Ariadna se pierde en la densidad y puede leerse como cable.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "9",
+     "donde": "riesgo de lectura",
+     "problema": "Objeto que toda oficina AEC reconoce y se lee «aquí hay cambios marcados» en un segundo; el riesgo es que parezca archivo burocrático y no se vincule con la IA sin el título.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "10",
+     "donde": "concepto",
+     "problema": "El edificio que se despliega en tramos de espera es abstracto: los tramos sin texto pueden leerse como gráfico de barras y la idea solo la entiende quien ya sabe qué es un journal. No pasa la prueba del gerente.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "11",
+     "donde": "gancho visual",
+     "problema": "La comparación de gemelos la entiende un socio sin saber Revit y la persuasión (estar pagando desarme en vez de diagnóstico) es creíble; el ducto turquesa puede no leerse a tamaño de feed.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "12",
+     "donde": "público",
+     "problema": "La analogía del replanteo funciona para quien viene de obra, pero es una audiencia acotada; el campo de estacas puede leerse como cultivo y el pozo perderse en el celular.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "común R y T",
+     "donde": "posts",
+     "problema": "Defecto común a todas las opciones de esos posts, no desempata: los temas (journal y Undo de Revit 2027.3; tiempo de apertura de un modelo Revit) son de especialista y su relevancia para la mayoría del público depende de que el concepto los traduzca a una consecuencia de negocio.",
+     "gravedad": "media"
+    }
+   ],
+   "mejor": 1,
+   "mejor_por_post": {
+    "V": 1,
+    "M": 6,
+    "R": 9,
+    "T": 11
+   },
+   "veredicto": "sirve con ajustes",
+   "resumen": "Por la lente de público, lo que mejor conecta son las escenas de obra que cualquier gerente reconoce sin explicación. V: la grúa (1), la que mejor pasa la prueba del gerente, cuidando que la pila se lea como exceso y no como mala planificación. M: el puente que no se encuentra (6), error que todo el rubro entiende al instante; el plano por cuadrantes (5) es buena variante para la oficina que teme migrar, pero deja fuera la IA. R: el juego de planos con pestañas (9), objeto cotidiano y lectura de un segundo; la obra que se rebobina (7) tiene la persuasión más creíble para un socio y podría ir como variante si se resuelve que no parezca montaje. T: los gemelos fachada contra corte (11), comprensible para quien paga las horas. Las más abstractas o de especialista (2, 8, 10) no conectan. La mejor de la ronda es la 1."
+  },
+  {
+   "lente": "marca",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 6.5,
+    "2": 6,
+    "3": 7,
+    "4": 7,
+    "5": 7,
+    "6": 7.5,
+    "7": 6,
+    "8": 8,
+    "9": 6.5,
+    "10": 5.5,
+    "11": 6,
+    "12": 7.5
+   },
+   "hallazgos": [
+    {
+     "opcion": "1",
+     "donde": "escena: camiones, betoneras, andamios, pila de paneles y portón",
+     "problema": "Faena muy cargada de máquinas con cabina y objetos chicos; a trazo fino se vuelve ruido y el turquesa de la grúa compite con todo. Además la grúa es alta y angosta: en una banda apaisada queda chica o se corta.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "escena: «aire claro a la derecha», lectura de izquierda a derecha",
+     "problema": "Composición de afiche: el sujeto se carga a la izquierda y deja la derecha vacía; los recortes por máscara lo correrían o cortarían. Riesgo declarado de flechas para marcar el sentido, que la línea de marca prohíbe.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "losas a distintas alturas separadas por vacíos",
+     "problema": "Puede leerse como islas flotantes abstractas, fuera de la isométrica de oficio de las referencias aprobadas.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "los cinco prismas turquesa al final del recorrido",
+     "problema": "El acento queda en un extremo del cuadro; en máscaras estrechas el recorte puede dejarlo fuera. Conviene que el tramo final quede dentro de la zona central. Riesgo de leerse como gráfico de embudo (diagrama).",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4",
+     "donde": "corte de montaña y estratos de roca",
+     "problema": "La masa de roca tiende a llenarse de tono o degradado y a oscurecer el corte; hay que exigir caras planas claras y estratos solo en línea.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "5",
+     "donde": "lámina de planos 2D en el suelo",
+     "problema": "Un plano de arquitectura invita al modelo a dibujar cotas, rótulos y letras (veto de texto). El cuadrante turquesa es una superficie más grande que un acento; se acepta como ajuste.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "6",
+     "donde": "valle",
+     "problema": "El paisaje del valle puede traer degradados o cielo; pedir terreno plano y claro. Objeto bajo y ancho, bien centrado en el vacío: es el que mejor se adapta a bandas apaisadas.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "7",
+     "donde": "tres edificios con losa, tabiques y escalera en turquesa",
+     "problema": "El turquesa se reparte en muchas piezas multiplicadas por tres tiempos: deja de ser acento en uno o dos elementos. El tríptico es muy apaisado y en 9:16 los tres edificios quedan chicos.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "8",
+     "donde": "carrete en el borde derecho",
+     "problema": "El cierre de la idea (el carrete) queda pegado al borde; un recorte por máscara lo corta. Pedir el carrete dentro del cuadro, no en el borde. El hilo fino puede perderse en el celular.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "9",
+     "donde": "escalímetro sobre el juego de planos",
+     "problema": "Un escalímetro trae graduaciones y números: el modelo los dibujará (veto de texto y números). Quitarlo o pedirlo liso. Resto del objeto compacto, centrado y en línea.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "10",
+     "donde": "«el tercio derecho queda con aire limpio» y franja de tramos",
+     "problema": "Composición de afiche con el sujeto corrido a la izquierda; la franja de módulos de distinto largo se lee como gráfico de barras, que es lenguaje de diagrama y no la ilustración isométrica de la línea.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "11",
+     "donde": "montones de paneles, tabiques y muebles alrededor del edificio izquierdo",
+     "problema": "Escena muy cargada de objetos chicos; el único acento turquesa (un ducto dentro del corte) es diminuto y no se lee a tamaño de feed. Dos sujetos compiten por el centro.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "12",
+     "donde": "pozo «algo descentrado»",
+     "problema": "El único punto de interés está fuera del centro: los recortes por máscara pueden dejarlo en el borde o fuera. Pedir el pozo dentro de la zona central. El campo de estacas es parejo y recortable, muy en línea con la retícula aprobada.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "general",
+     "donde": "toda la ronda",
+     "problema": "Es etapa de concepto, sin imagen ni formatos: el veredicto por formato no se puede dar todavía; lo dicho sobre bandas y 9:16 es previsión. Ninguna ficha pide personas, pantallas, robots, cerebros ni chips.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "8",
+   "mejor_por_post": {
+    "V": 3,
+    "M": 6,
+    "R": 8,
+    "T": 12
+   },
+   "veredicto": "sirve",
+   "resumen": "Por marca, todas las fichas caben en la línea isométrica plana de trazo fino y ninguna pide algo vetado de forma directa; los riesgos son de texto inducido (planos, escalímetro), turquesa que deja de ser acento, composición de afiche y escenas cargadas. Lo mejor es el hilo turquesa en la estructura densa (8): campo gráfico con presencia y un solo acento, con el carrete movido hacia dentro del cuadro. Por post elegiría: V, la nave de incidencias (3); M, el puente que no se encuentra (6), bajo, ancho y centrado; R, el hilo (8); T, el replanteo (12), con el pozo hacia el centro. La 10 no sirve tal cual: afiche corrido y lectura de gráfico de barras."
+  },
+  {
+   "lente": "monotonia",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 8,
+    "2": 4.5,
+    "3": 6.5,
+    "4": 6.5,
+    "5": 5,
+    "6": 7.5,
+    "7": 6,
+    "8": 7,
+    "9": 8.5,
+    "10": 4.5,
+    "11": 8,
+    "12": 6
+   },
+   "hallazgos": [
+    {
+     "opcion": "2",
+     "donde": "proceso y concepto",
+     "problema": "Toma el arnés de H021 tal cual y solo cambia la ciudad por losas: piezas sueltas que se unen en un recorrido continuo es la misma historia de «ciudad que se vuelve red». Unir con juntas hasta cerrar la vuelta también se acerca a la cremallera que la editorial ya propuso para este post.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "3",
+     "donde": "escena",
+     "problema": "Repite la retícula de piso con acentos turquesa de C51/C53. Además, un flujo que avanza rápido y se traba en pasos angostos es la misma estructura que la cremallera que avanza y se detiene; el objeto cambia, el mecanismo no.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "concepto",
+     "problema": "Cuenta el mismo arco que la cremallera (un paso rápido y luego el atasco), pero con un objeto del oficio nuevo y a escala de faena. Es el concepto más distinto del post V.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "4 y 5",
+     "donde": "composición",
+     "problema": "Las dos son la misma imagen con otro objeto: avance de izquierda a derecha por etapas (hecho, en curso, pendiente), con el turquesa en la etapa en curso. Además apuntan al mismo público (cliente). Las dos repiten la escalera de 3 peldaños que ya existía. Si David quiere progresión, sobra una; la 5 es la más repetida porque declara el arnés de H021.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "6",
+     "donde": "concepto",
+     "problema": "Es el único concepto de la ronda que muestra el defecto en vez del camino correcto. La dovela que no calza se acerca algo al «diente desalineado» de la cremallera, pero aquí el defecto es de acuerdo entre dos equipos, no de un paso.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "7",
+     "donde": "composición",
+     "problema": "Es otra vez el arnés de H021 (tres tiempos de izquierda a derecha), ahora al revés. Retirar piezas turquesa de un edificio se cruza con el desarme de la opción 11.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "8",
+     "donde": "escena",
+     "problema": "La línea turquesa que serpentea y rodea piezas dentro de una maraña corre el riesgo de leerse como trazado de red, la metáfora que la ficha misma pide evitar. Repite el campo denso que aparece en las opciones 3 y 12.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "9",
+     "donde": "estrategia",
+     "problema": "Es el único objeto cotidiano de la ronda, sin tránsito de izquierda a derecha ni campo denso. Es lo menos repetido de las doce. No tiene hallazgo de monotonía en contra.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "10",
+     "donde": "proceso y escena",
+     "problema": "Es la cuarta transformación de H021 de la ronda (una por post: 2, 5, 7 y 10). Una fila de tramos con uno solo más largo en turquesa también es la estructura de la opción 3 y se acerca al gráfico de barras que la ficha teme.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "11",
+     "donde": "estrategia",
+     "problema": "Es la única comparación de la ronda (gemelos con dos métodos). El corte de sección es un objeto nuevo. Solo cruza un poco con la opción 7 en lo de retirar piezas.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "12",
+     "donde": "escena",
+     "problema": "Es la tercera retícula densa con puntos turquesa (opciones 3, 12 y C51/C53). El replanteo como objeto sí es nuevo, pero la composición ya se vio.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "todas",
+     "donde": "ronda completa (defecto común, no desempata)",
+     "problema": "Dentro de cada post las tres fichas tienen estrategia, objeto y público distintos, pero en la ronda se reparten siempre las mismas tres o cuatro estrategias. Hay una transformación de H021 por post (2, 5, 7 y 10), tres campos densos (3, 8 y 12) y dos «escala del oficio» (1 y 4). Vistas en el feed seguidas, las transformaciones de izquierda a derecha cansan. El acento turquesa único es regla de marca y no lo puntúo.",
+     "gravedad": "media"
+    }
+   ],
+   "mejor": "9",
+   "mejor_por_post": {
+    "V": 1,
+    "M": 6,
+    "R": 9,
+    "T": 11
+   },
+   "veredicto": "sirve",
+   "resumen": "Con la lente de monotonía, cada post tiene al menos un concepto que no repite nada visto. En V elijo la grúa (1): las losas que se unen (2) son la ciudad que se vuelve red con otro material. En M elijo el puente (6): el túnel (4) y el plano por cuadrantes (5) son la misma progresión por etapas. En R elijo las pestañas (9), el único objeto cotidiano de la ronda. En T elijo la comparación de gemelos (11): la 10 es la cuarta transformación de H021 de la ronda. La mejor de toda la ronda es la 9. Aviso común: la fábrica pone una transformación de izquierda a derecha y un campo denso en casi todos los posts, y eso se nota al ver la ronda junta. Es una señal de concepto en texto: la elección final se hace sobre la imagen."
+  },
+  {
+   "lente": "prediccion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 7.5,
+    "2": 6.0,
+    "3": 6.5,
+    "4": 6.5,
+    "5": 8.0,
+    "6": 5.5,
+    "7": 7.0,
+    "8": 6.5,
+    "9": 4.5,
+    "10": 5.5,
+    "11": 6.5,
+    "12": 7.5
+   },
+   "hallazgos": [
+    {
+     "opcion": "1",
+     "donde": "idea",
+     "problema": "Se entiende sin saber de coordinación y le habla al gerente de constructora (prueba C54), a escala de faena. El riesgo es que se lea como mala planificación de obra y no como un paso acelerado que no mueve el conjunto; la pila tiene que verse como exceso.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "idea",
+     "problema": "La transformación imita el arnés que gustó, pero las losas a distintas alturas pueden leerse como paisaje abstracto; el reparto rampa/junta/última junta es un mecanismo didáctico que no se lee sin texto (C53). El público es alumno, no la mayoría de la audiencia.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "imagen",
+     "problema": "Es un campo denso con presencia (C53), pero los prismas abstractos y los tres pasos angostos pueden leerse como embudo o gráfico de flujo. Los cinco prismas turquesa pueden perderse en el celular. Le habla al coordinador más que al gerente.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4",
+     "donde": "imagen",
+     "problema": "Es obra pública a la escala del MOP y la regla de avanzar por tramos sostenidos se entiende. El corte de una montaña puede quedar técnico y con estratos que parezcan degradado (veto de marca), y el público, el contratista del MOP, es acotado.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "5",
+     "donde": "idea",
+     "problema": "Es la transformación más cercana a la que David elogió (de la ciudad al modelo): del plano 2D al modelo, cuadrante por cuadrante, y la adopción BIM se lee sin texto. El riesgo es que el modelo escriba en la lámina (veto de texto en la imagen) o que la transición en alambre se pierda en el celular.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "6",
+     "donde": "idea",
+     "problema": "Muestra el defecto opuesto al mensaje y se acerca al meme de obra mal hecha: es un mecanismo reconocible pero chico, que se lee y no engancha (C53). Además el desfase puede quedar sutil a tamaño de feed.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "7",
+     "donde": "idea",
+     "problema": "Traduce el Undo etiquetado a algo que un socio entiende (se quita solo lo de la IA y el edificio queda en pie). Tres tiempos del mismo edificio tiene algo de didáctico, y las piezas flotando pueden leerse como explosión o montaje.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "8",
+     "donde": "imagen",
+     "problema": "Es un campo denso de estructura con presencia, pero el hilo delgado puede perderse en el celular o leerse como cable. El journal y el BIM manager son nicho frente a la prueba del gerente (C54).",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "9",
+     "donde": "idea",
+     "problema": "El objeto cotidiano es literal y chico: un bloque de hojas con pestañas no engancha (C53) y arriesga leerse como resma de oficina o archivo burocrático; además cuenta planos impresos, no el modelo. Es alto el riesgo de que aparezcan letras en las pestañas.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "10",
+     "donde": "imagen",
+     "problema": "La metáfora de que el peso es en realidad recorrido es ingeniosa, pero sin texto la franja de tramos se lee como gráfico de barras o línea de montaje, y los tramos de contenido mezclado (losas, edificios, piezas) confunden la idea.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "11",
+     "donde": "idea",
+     "problema": "La comparación se entiende y apela al socio que paga horas, pero dos edificios gemelos dividen la atención, el desarme puede parecer construcción y el ducto turquesa es chico para el feed.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "12",
+     "donde": "imagen",
+     "problema": "Un campo denso de borde a borde con un solo foco turquesa se parece a la retícula con losas que enganchó; medir antes de intervenir es un criterio de obra que cualquier gerente reconoce. El riesgo es que se lea como plantación o que el pozo desaparezca en el celular.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "5",
+   "mejor_por_post": {
+    "V": 1,
+    "M": 5,
+    "R": 7,
+    "T": 12
+   },
+   "veredicto": "sirve con ajustes",
+   "resumen": "Por post elegiría V: 1 (la grúa, por escala del oficio y porque la entiende el gerente), M: 5 (el plano que se levanta por cuadrantes, la transformación más cercana a la que David elogió y la que cuenta la adopción BIM sin texto), R: 7 (la obra que se rebobina, deshacer sin demoler para el socio que duda) y T: 12 (el replanteo, un campo denso con un foco). La mejor de la ronda es la 5. La 9 no sirve tal cual: es un objeto chico y literal. La 6 y la 10 arriesgan leerse como meme o como gráfico. Ojo con la regla de que la imagen gana sobre el texto: esto predice qué filtraría David en texto, no asegura que le guste en imagen."
+  }
+ ]
+}

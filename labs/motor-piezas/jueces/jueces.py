@@ -62,6 +62,15 @@ def opciones(gid: str, seccion: int | None = None):
         ronda = json.loads((LAB / 'ideas' / 'rondas' / f'{gid}.json').read_text(encoding='utf-8'))
         por_id = {f['id']: f for f in ronda['fichas']}
         return {'titulo': f"Ideas {gid}", 'descripcion': ronda.get('intro', '')},             [{'id': n, 'nombre': por_id[i]['titulo'], 'piezas': []} for n, i in enumerate(ronda.get('presentadas', []), 1)]
+    if gid.startswith('C'):
+        # una ronda de ideas creativas (creativas/rondas/C01.json): los conceptos presentados de todos los posts,
+        # numerados 1..N en el orden de la página
+        ronda = json.loads((LAB / 'creativas' / 'rondas' / f'{gid}.json').read_text(encoding='utf-8'))
+        por_id = {f['id']: f for f in ronda['fichas']}
+        ids = [i for it in ronda['items'] for i in ronda.get('presentadas', {}).get(it['id'], [])]
+        return {'titulo': f"Ideas creativas {gid}", 'descripcion': ronda.get('intro', '')}, \
+            [{'id': n, 'nombre': por_id[i]['titulo'], 'ficha': i, 'item': por_id[i]['item'], 'piezas': []}
+             for n, i in enumerate(ids, 1)]
     if gid.startswith('M'):
         # una ronda de metáforas en texto (formula/demo/M01-metaforas.json): opciones sin piezas
         demo = LAB / 'formula' / 'demo'
@@ -120,10 +129,16 @@ def criterios_para(lente_completa: str, hasta: str | None):
     """Los criterios de David que tocan una lente, aprendidos antes de la galería `hasta`."""
     datos = leer_yaml(CRITERIOS, {}) or {}
     salida = []
+    # las lentes de la etapa concepto (v6) heredan los criterios de las lentes de imagen e idea que miran lo mismo
+    alias = {'concepto.relacion': {'imagen.contenido'},
+             'concepto.enganche': {'imagen.contenido', 'idea.enganche'},
+             'concepto.publico': {'idea.enganche', 'idea.alineacion'},
+             'concepto.marca': {'imagen.marca', 'imagen.forma', 'imagen.oficio'},
+             'concepto.monotonia': {'idea.monotonia'}}.get(lente_completa, set()) | {lente_completa}
     for c in datos.get('criterios', []):
         lentes = c.get('lentes', [])
         # el juez de predicción recibe todos los criterios; los demás, los de su lente
-        if lente_completa != 'eleccion.prediccion' and lente_completa not in lentes and 'todas' not in lentes:
+        if lente_completa != 'eleccion.prediccion' and not alias & set(lentes) and 'todas' not in lentes:
             continue
         if not lentes:
             continue
@@ -185,6 +200,15 @@ def preparar(a):
                     f"que él dice, la frase que queda, de dónde sale, la objeción y los canales: júzgala por eso, como la "
                     f"leería él en el celular. Lee las fichas con Read.\n"
                     + '\n'.join(f"Opción {o['id']}: {o['nombre']} (ficha {i})" for o, i in zip(ops, presentadas)))
+    if a.galeria.startswith('C'):
+        # ronda de ideas creativas: cada post de la editorial tiene sus conceptos; David elige uno por post
+        archivo = LAB / 'creativas' / 'rondas' / f'{a.galeria}.json'
+        contexto = (f"Ronda de ideas creativas {a.galeria}. Los posts de la editorial (campo items) y los conceptos "
+                    f"(campo fichas, por id) están en {archivo}; quién es David y su público, en "
+                    f"{LAB / 'ideas' / 'raiz-david.yaml'}. David elige un concepto por post. Puntúa cada opción por "
+                    f"sí misma (0 a 10) y en «mejor» da el número de la mejor de toda la ronda; en el resumen di cuál "
+                    f"elegirías en cada post. Lee las fichas con Read.\n"
+                    + '\n'.join(f"Opción {o['id']}: {o['nombre']} (post {o['item']}, ficha {o['ficha']})" for o in ops))
     encargos = []
     for etapa in a.etapas.split(','):
         for lente, regla in rub['etapas'][etapa]['lentes'].items():

@@ -1,5 +1,7 @@
 # Fábrica de ideas · etapa 1 del camino B
 
+> **En pausa desde el 2026-11-20.** David aclaró que las ideas de los posts las pone la editorial de UAS; el laboratorio trabaja después, con ideas creativas para la imagen (`../creativas/`). Lo aprendido aquí (C54 a C60) pasa a esa etapa.
+
 Pedido de David (2026-11-11): «Partamos en la producción de ideas primero como se origina la idea, luego al tener una
 fabrica de ideas alienadas con mi trabajo y mi estilo y mis principios, ahi recien pasamos a la siguienteetapa de ver como
 sacamos metaforas d eeso, una vez tengamos la maquna par ahacer metaforas aavanzamos con convertirlas en imagenes».

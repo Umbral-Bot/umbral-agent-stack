@@ -1,4 +1,7 @@
-# Rúbricas de los jueces del motor de piezas · versión 5 (2026-11-16).
+# Rúbricas de los jueces del motor de piezas · versión 6 (2026-11-20).
+# v6: etapa «concepto» para la fábrica de ideas creativas (creativas/): el concepto visual de un post de la editorial
+# de UAS, antes del prompt. David: las ideas creativas tienen que conectar con potenciales alumnos, seguidores y
+# clientes e incentivarlos a leer el post.
 # v5: tras I01, la etapa «idea» pide audiencia amplia (C54), deja fuera la docencia como tema (C55) y trata la
 # redacción como parte de la idea (C56). Los jueces eligieron la opción 1, que David descartó por ser de nicho técnico.
 # v4: etapa «idea» para la fábrica de ideas (premisa, alineación, voz, enganche, monotonía).
@@ -15,7 +18,7 @@
 # - Una lente que no aplica a la galería lo dice (no_aplica) y no cuenta en la suma.
 # - La suma se pondera con pesos.yaml: cada lente pesa según cuánto coincidió con David.
 # - Protocolo ciego: los jueces votan antes que David, el voto se sella y David elige sin verlo.
-version: 5
+version: 6
 
 escala: "0 a 10 por opción; 7 o más = sirve; 5 a 7 = sirve con ajustes; menos de 5 = no sirve"
 gravedad:
@@ -47,6 +50,23 @@ etapas:
         veto: []
       monotonia:
         mira: "dentro de la ronda: ¿repite la tesis de otra idea, o vuelve otra vez a «criterio antes que automatizar»?"
+        veto: []
+  concepto:          # la idea creativa de la imagen de un post de la editorial, en texto (creativas/)
+    lentes:
+      relacion:
+        mira: "¿la imagen contaría la misma tensión que el post (mismos términos, mismo momento, misma consecuencia)? ¿se puede decir cuál es la metáfora y cómo se relaciona con el titular? Metáfora, no ilustración literal de un sustantivo del titular (C47, C48)"
+        veto: ["cuenta otra historia que el post", "no hay metáfora: es el hecho técnico dibujado"]
+      enganche:
+        mira: "¿hace que alguien se detenga en el feed? Transformación a escala del oficio o campo denso con presencia (C51, C53), no un mecanismo chico y didáctico. ¿Se lee en un segundo sin texto?"
+        veto: []
+      publico:
+        mira: "¿el concepto le habla al público que declara (potencial alumno, seguidor en LinkedIn o cliente) y la persuasión es creíble para esa persona? ¿lo entiende alguien sin conocimiento técnico profundo (C54)?"
+        veto: []
+      marca:
+        mira: "¿se puede dibujar en la línea de marca: isométrica plana de trazo fino, fondo claro, turquesa solo como acento, sin personas, pantallas, texto, robots, cerebros, chips ni flechas (C31 a C33)? ¿el objeto queda centrado y entero para el motor (C34)?"
+        veto: ["pide algo que la línea de marca prohíbe"]
+      monotonia:
+        mira: "dentro de cada post: ¿los conceptos son de verdad distintos (estrategia, objeto, público)? ¿repiten una metáfora ya vista (cremallera, ciudad que se vuelve red)?"
         veto: []
   imagen:            # antes de meter una imagen en piezas
     lentes:

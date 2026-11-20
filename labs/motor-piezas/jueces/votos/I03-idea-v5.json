@@ -1,0 +1,438 @@
+{
+ "galeria": "I03",
+ "seccion": null,
+ "rubrica": "idea-v5",
+ "retro": false,
+ "criterios_hasta": null,
+ "sellado": "2026-11-20T15:04:26",
+ "hash_rubrica": "c470bb3ef507",
+ "hash_criterios": "cbce3c041e53",
+ "votos": [
+  {
+   "lente": "premisa",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 8,
+    "2": 7,
+    "3": 7,
+    "4": 8.5,
+    "5": 6.5
+   },
+   "hallazgos": [
+    {
+     "opcion": 1,
+     "donde": "respuesta",
+     "problema": "Mezcla dos promesas: lo que distingue al profesional y lo que le sirve al equipo. La premisa es sobre distinguirse, pero la respuesta termina en memoria del equipo, y ese salto queda sin defender.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": 1,
+     "donde": "contraargumento",
+     "problema": "La objeción de la memoria y los proyectos del proveedor pega fuerte contra la premisa y la ficha no la contesta. Si el chat ya guarda las reglas, el «el chat se va» se debilita. Conviene una línea que diga por qué un documento propio sigue valiendo más (es portable y lo lee el equipo).",
+     "gravedad": "media"
+    },
+    {
+     "opcion": 2,
+     "donde": "respuesta",
+     "problema": "La respuesta vuelve a decir la premisa con el caso puesto, sin agregar el mecanismo. La objeción circular (sin formación nadie construye la primera versión) es la más fuerte de la ronda y queda sin contestar.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": 2,
+     "donde": "evidencia",
+     "problema": "El caso viene de un programa corporativo y la postura se dirige a una pyme. La ficha lo marca, pero la premisa se aplica con más seguridad de la que permite la evidencia.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": 3,
+     "donde": "hipotesis",
+     "problema": "Un jefe de proyecto con experiencia difícilmente cree que «basta con mirar el total»: la hipótesis es medio de paja. La creencia de verdad es «si la tabla la armó el agente, está bien leída», y esa es la que conviene tensionar.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": 3,
+     "donde": "contraargumento",
+     "problema": "Si los productos ya enlazan la fuente, la exigencia está cumplida y la postura se queda sin tensión. La premisa con «solo sirve» es demasiado absoluta para ese riesgo.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": 4,
+     "donde": "respuesta",
+     "problema": "Suma una segunda tesis (fijar antes de partir la regla para escalar o cerrar) que la premisa no anuncia. Es buena, pero diluye una postura que se sostiene sola con «muéstrenle el paso que cambió».",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": 5,
+     "donde": "gancho",
+     "problema": "«Casi todos los estados de pago atrasados esperan un visto bueno de alguien que no revisa nada» infla la premisa y choca con su propio no_afirmado (muchos atrasos vienen del mandante). Eso es una premisa inflada, no blindada.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": 5,
+     "donde": "contraargumento",
+     "problema": "La objeción del mandante público ataca la hipótesis misma (el atraso no es del circuito interno), y la respuesta no la acota. Habría que reducir la premisa a «la parte del atraso que es interna».",
+     "gravedad": "media"
+    }
+   ],
+   "mejor": 4,
+   "veredicto": "sirve",
+   "resumen": "Las cinco tienen postura, ninguna es solo un tema y ninguna cae en un veto. La 4 es la más blindada: la hipótesis es algo que la gerencia hace de verdad (reportar uso), la respuesta la da vuelta con un criterio claro, la objeción es real y la ficha reconoce el valor del asistente que solo responde. La 1 es casi igual de sólida, pero la objeción de la memoria del proveedor queda sin contestar. La 2 y la 3 sirven con ajustes: a la 2 le falta contestar la objeción circular y la hipótesis de la 3 es medio de paja. La 5 infla su premisa en el gancho y la objeción del mandante la erosiona."
+  },
+  {
+   "lente": "alineacion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 8,
+    "2": 6,
+    "3": 6,
+    "4": 8.5,
+    "5": 7.5
+   },
+   "hallazgos": [
+    {
+     "opcion": 1,
+     "donde": "evidencia.referencia",
+     "problema": "Entre las cinco fuentes del patrón hay una bitácora «Planificado — 1:1 7 sep 2026». Lo planificado alimenta ideas, pero no prueba: «lo que veo en los equipos» tiene que sostenerse solo con los informes.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": 1,
+     "donde": "relato y premisa",
+     "problema": "Encaja con el problema de pérdida de conocimiento, con Citizen Developer y con empoderar usuarios sobre crear dependencias, y la entiende cualquiera que use IA. El marco «lo que te distingue» empuja hacia la productividad personal y la competencia entre profesionales. Su eje es más bien «IA sin flujo es humo», que la idea toca de refilón.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": 1,
+     "donde": "residuo",
+     "problema": "«El chat se va. La regla queda» se presenta como formulación de David en sala sin un informe que la cite literal: David tiene que confirmar que es su frase.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": 2,
+     "donde": "tema y escena",
+     "problema": "El tema es en qué orden comprar capacitación, y la escena es un alumno trabado en una sesión de un programa. Queda pegado al terreno de la formación (fuera_de_alcance), aunque la ficha intente contarlo como decisión de gasto.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": 2,
+     "donde": "gancho y persuasión",
+     "problema": "David vende formación corporativa y el Máster, y su oferta incluye formar champions. Un gancho contra «el curso de IA para todo el equipo» puede leerse como contradicción con su propia oferta si no se deja claro que el curso va después, no que sobra.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": 2,
+     "donde": "evidencia",
+     "problema": "La experiencia llega de segunda mano (el informe de perfil cita la sesión 4) y es de un programa corporativo, no de una pyme. Pega bien con «La resistencia no es el problema» y con quick wins / MVP, pero la transferencia a la pyme es inferencia.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": 3,
+     "donde": "evidencia y procedencia",
+     "problema": "La necesidad (nivelar ofertas de subcontratos) no sale del trabajo de David: el CV v6 no muestra experiencia en estimación ni en adjudicación. Lo que aporta David (cargar todo de golpe trae errores) es un patrón genérico de lectura de documentos traducido a un dominio ajeno, y el impulso lo dan Procore y Autodesk.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": 3,
+     "donde": "pilar",
+     "problema": "«BIM no basta si no conecta datos y decisiones» queda forzado. La idea encaja mejor con la tesis central (la tecnología no reemplaza el criterio), pero entonces la voz es la de un auditor de entregables, no la de quien diseña el proceso.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": 3,
+     "donde": "relato",
+     "problema": "Nombrar a Procore con lo que su página no dice arriesga leerse como crítica a un proveedor, cerca del «discurso de software» que David critica.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": 4,
+     "donde": "relato, primera frase",
+     "problema": "La autocorrección sobre sus propias notas de Público Objetivo es un documento comercial interno: David tiene que aceptar exponerla. Si no, la idea se sostiene igual con la distinción de la clase 32.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": 4,
+     "donde": "cadena_tesis",
+     "problema": "Es la más alineada: «IA sin flujo es humo» de forma literal, Puentes Digitales Datos↔Decisiones, «la oferta se lee por resultado», el segmento prioritario 1 y una pregunta que un gerente entiende sin saber de IA. La clase aparece como fuente de la distinción, no como tema.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": 5,
+     "donde": "gancho",
+     "problema": "«Casi todos los estados de pago atrasados están esperando un visto bueno de alguien que no revisa nada» es una generalización cuantificada que ninguna fuente respalda, y la propia ficha admite que muchos atrasos vienen del mandante. Choca con las reglas de verdad: hay que reformularla sin «casi todos».",
+     "gravedad": "media"
+    },
+    {
+     "opcion": 5,
+     "donde": "evidencia",
+     "problema": "Es muy de David: «no es un problema de software, es de proceso», Automatización Empática, diseñar desde el final, y OXXO nombrable. Pero la experiencia es sobre un diagrama de entregas, no sobre estados de pago, y la traducción tiene que decirse como tal en el texto.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": 4,
+   "veredicto": "sirve",
+   "resumen": "Por alineación gana la 4: nace de una distinción de David (el chatbot responde, el agente actúa), cae literal en «IA sin flujo es humo» y en Puentes Digitales, le habla al segmento prioritario y un gerente la entiende sin saber de IA. La 1 y la 5 también sirven. La 1 tiene buen respaldo en informes y es de público amplio. La 5 es muy de David (proceso antes que software), pero su gancho generaliza sin fuente y la experiencia está traducida de otro circuito. La 2 se acerca demasiado al tema de la formación y puede rozar su propia oferta. La 3 se apoya más en proveedores que en el trabajo de David."
+  },
+  {
+   "lente": "voz",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 6.5,
+    "2": 6,
+    "3": 8,
+    "4": 5.5,
+    "5": 7.5
+   },
+   "hallazgos": [
+    {
+     "opcion": 1,
+     "donde": "relato, apertura",
+     "problema": "Abre con la cifra del estudio y no con la escena: el lunes del proyectista que vuelve a explicar todo (que está en la ficha) no entra al relato. El concepto llega antes que la obra.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": 1,
+     "donde": "relato, «explica por qué no se suma» y «Lo que pido es simple:»",
+     "problema": "«No se suma» se lee ambiguo (¿no se acumula?) y «Lo que pido es simple:» es fórmula de presentación. Hay cambio de sujeto en «Cada semana parten de cero».",
+     "gravedad": "media"
+    },
+    {
+     "opcion": 1,
+     "donde": "título",
+     "problema": "La construcción «X ya no distingue; Y, sí» suena a titular de marketing más que a algo que David diría en una reunión.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": 2,
+     "donde": "relato, paso de la anécdota a la tesis",
+     "problema": "El caso del alumno trabado con lo técnico no cuenta lo mismo que la tesis (la empresa que compra un curso para todos). El puente se nota forzado y deja la idea sonando a tema de formación.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": 2,
+     "donde": "gancho y cierre",
+     "problema": "«La forma más cara de descubrir que…» es frase redonda de post. «El curso va a tener algo que mirar» se lee rara, y el residuo «El curso, después, alrededor de eso» queda trabado.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": 3,
+     "donde": "relato, frase del medio",
+     "problema": "«En los casos que he revisado con equipos, cargar todos los documentos de golpe trajo errores…» es el tramo más abstracto. Conviene decirlo con el caso del traspaso PDF→Excel, si David confirma que sirve.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": 3,
+     "donde": "escena",
+     "problema": "La escena del viernes, con el andamio excluido en una nota al pie, es mejor que la apertura actual y no está en el relato. Si el relato parte de ahí, gana.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": 4,
+     "donde": "relato, apertura «En mis notas sobre cómo calificar un piloto…»",
+     "problema": "Parte de un documento interno suyo: suena a nota interna visible y obliga a explicar qué notas son. «Lo separé con dos personajes» y «Hay piloto cuando…» se leen extraños.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": 4,
+     "donde": "relato, orden",
+     "problema": "La medición publicada entra tarde, entre el criterio y el cierre, y corta el hilo. Tampoco hay escena: la reunión de socios de la ficha no aparece. Todo es concepto.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": 5,
+     "donde": "gancho",
+     "problema": "«Casi todos los estados de pago atrasados están esperando un visto bueno de alguien que no revisa nada» generaliza más de lo que la ficha sostiene (no_afirmado dice que muchos atrasos vienen del mandante). Se lee como provocación de post.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": 5,
+     "donde": "relato, «Con el estado de pago pasa lo mismo»",
+     "problema": "El salto del diagrama de entregas al estado de pago está declarado, pero se nota como bisagra. Funciona, aunque menos fluido que la apertura y el cierre.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": 0,
+     "donde": "común a todas: premisa y arco",
+     "problema": "Todas las premisas abren con «Lo que sostengo es que…» y todos los arcos llevan los rótulos «punto de partida / tensión / cierre» (señales [a prueba] de I01). Si David los ve, conviene quitarlos. No desempata.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": 3,
+   "veredicto": "sirve",
+   "resumen": "Por voz gana la 3 (el número sin página): parte de la tarea de obra, afirma en vez de preguntar y cierra como lo diría David («a un estimador junior le pedirías lo mismo»; «Un número sin página no se revisa. Se cree.»). Le sigue de cerca la 5, con muy buena apertura y cierre, pero el gancho generaliza de más. La 1 y la 2 sirven con ajustes: la 1 parte del dato y no de la escena, y en la 2 el puente entre la anécdota y la tesis está forzado. La 4 es la más débil de voz: parte de una nota interna, usa giros raros y no tiene escena. Defecto común sin peso en la elección: la fórmula «Lo que sostengo es que…» y los rótulos del arco."
+  },
+  {
+   "lente": "enganche",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 8,
+    "2": 6.5,
+    "3": 7,
+    "4": 6,
+    "5": 8.5
+   },
+   "hallazgos": [
+    {
+     "opcion": 5,
+     "donde": "gancho",
+     "problema": "«Casi todos los estados de pago atrasados están esperando un visto bueno de alguien que no revisa nada» exagera y choca con su propio no_afirmado (muchos atrasos vienen del mandante). Un gerente de constructora lo discute en el primer comentario. Conviene bajarlo a algo que se sostenga, por ejemplo: «muchos estados de pago esperan un visto bueno que no revisa nada».",
+     "gravedad": "media"
+    },
+    {
+     "opcion": 5,
+     "donde": "relato y persuasión",
+     "problema": "Dice «sacar vistos buenos» sin aclarar en el mismo texto que solo se sacan los que no controlan nada, así que se puede leer como recomendación de saltarse controles. La aclaración está en la respuesta, pero no en el relato que se lee en el celular.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": 1,
+     "donde": "persuasión y cierre",
+     "problema": "La sorpresa del arranque (usar IA ya no distingue a nadie) es fuerte, pero la salida, copiar la regla a un documento, se queda en un consejo de productividad que sorprende poco. La tensión se arma bien y se resuelve en tono menor. El título «lo que dejas escrito» es algo abstracto mientras no se lee el relato.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": 1,
+     "donde": "gancho",
+     "problema": "El enganche depende de una cifra de prensa (9 de cada 10) que todavía no está verificada en el informe completo. Si la cifra se cae, el gancho se cae con ella.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": 3,
+     "donde": "por qué ahora y audiencia",
+     "problema": "La escena del andamio excluido es una tensión del oficio muy concreta, pero los agentes que nivelan ofertas todavía no están en manos del gerente chileno («la próxima demo»). La idea le responde a una tentación que buena parte del público aún no tiene, y solo le habla al segmento de contratistas. El título es enigmático en el feed.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": 2,
+     "donde": "relato (caso)",
+     "problema": "El caso que sostiene la idea, un alumno trabado en una sesión corporativa, es poco sorprendente y no es de una pyme. La creencia que mueve (capacitar primero) es real y amplia, pero el relato no trae un momento que la dé vuelta. Además puede leerse como tema de formación, que David no trata.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": 4,
+     "donde": "tesis",
+     "problema": "«Las métricas de uso no prueban valor» es un argumento conocido, y lo de «el chatbot responde, el agente actúa» ya circula mucho. El público es más estrecho (quien presenta un piloto al directorio). La autocorrección de David es buen recurso, pero el título no deja ver la sorpresa.",
+     "gravedad": "media"
+    }
+   ],
+   "mejor": "5",
+   "veredicto": "sirve",
+   "resumen": "Gana la 5 por enganche. El estado de pago atrasado y el subcontratista que llama son una tensión del oficio que cualquier gerente de constructora entiende al tiro y le duele, sin saber nada técnico, y la idea da vuelta una creencia común (digitalizar es acelerar). Hay que ajustar el gancho, que exagera («casi todos»). La 1 queda muy cerca: público más amplio, dato de este mes y buena sorpresa inicial, pero cierra con un consejo de productividad de poco filo. La 3 tiene la mejor escena, pero llega antes de que el público tenga el problema. La 2 y la 4 mueven creencias conocidas con casos de poca sorpresa."
+  },
+  {
+   "lente": "monotonia",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 8,
+    "2": 7,
+    "3": 6,
+    "4": 6.5,
+    "5": 4.5
+   },
+   "hallazgos": [
+    {
+     "opcion": 5,
+     "donde": "premisa, relato y residuo («Antes de automatizar, revisen cada visto bueno»)",
+     "problema": "Es la vuelta más directa a «criterio antes que automatizar»: revisar el proceso antes de digitalizarlo, la misma tesis de «no es un problema de software, es de proceso». El estado de pago cambia la escena, pero la idea se reconoce a la primera línea.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": 3,
+     "donde": "premisa y residuo («Un número sin página no se revisa. Se cree.»)",
+     "problema": "Cae en la otra cara del mismo comodín: no confiar en lo que entrega la IA y poner el criterio humano antes de firmar. La regla de la página es más fresca que el enunciado general, pero la tesis de fondo es criterio antes que automatización.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": 3,
+     "donde": "audiencia y escena, frente a la opción 5",
+     "problema": "La opción 3 y la opción 5 comparten audiencia (gerentes de operaciones y jefes de proyecto de contratistas), mundo (subcontratos, oficina técnica, viernes o fin de mes con plazo) y estructura de persuasión («antes de adjudicar / antes de digitalizar, exija o revise»). Publicadas cerca se leen como la misma pieza dos veces.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": 4,
+     "donde": "tesis, frente a la opción 2",
+     "problema": "Se roza con la opción 2: las dos dicen que el valor se prueba con un cambio que se ve funcionando y no con actividad (curso para todos, consultas del chat). Cambian audiencia y momento (directorio frente a gasto en capacitación), así que la repetición es parcial.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": 2,
+     "donde": "persuasión («antes de pagar un curso… tenga andando»)",
+     "problema": "Repite el molde «antes de X, haga Y» que también usan las opciones 3 y 5; tres de cinco persuasiones con la misma forma hacen sonar la ronda en un solo tono.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": 1,
+     "donde": "evidencia y pilar",
+     "problema": "Comparte con la opción 4 el pilar «IA sin flujo es humo» y con la opción 3 los mismos informes S1 y S3 como evidencia. La tesis es distinta (lo que queda escrito fuera del chat), así que es solo reuso de fuentes.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "1",
+   "veredicto": "sirve",
+   "resumen": "La opción 1 es la que menos se parece a las demás y la que más se aleja de «criterio antes que automatizar»: su tesis es que el aprendizaje con IA tiene que quedar escrito fuera del chat. La 2 y la 4 son distintas entre sí, pero se rozan (las dos dicen que el valor se muestra con algo andando). La 3 y sobre todo la 5 vuelven al comodín (revisar o exigir antes de automatizar) y además comparten audiencia, mundo de subcontratos y molde de persuasión. Si se publican juntas, conviene quedarse con una de las dos."
+  },
+  {
+   "lente": "prediccion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 8,
+    "2": 5.5,
+    "3": 7,
+    "4": 6,
+    "5": 7.5
+   },
+   "hallazgos": [
+    {
+     "opcion": 1,
+     "donde": "gancho y relato",
+     "problema": "Es la que más gente entiende y le importa de inmediato (cualquiera que usa ChatGPT o Copilot, gerente incluido), parte de un dato chileno de este mes y cierra con la frase más pegajosa de la ronda («El chat se va. La regla queda.»). Riesgo de predicción: el consejo de guardar las reglas en un documento puede sonarle obvio o ya dicho en sus clases, y la ficha marca que David tiene que confirmar si la frase de cierre es suya.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": 1,
+     "donde": "evidencia",
+     "problema": "El vínculo entre el chat usado como cuaderno y la brecha del estudio UC–CChC es inferencia del agente, y las cifras vienen de la nota de prensa, no del informe. Está bien declarado, pero el relato las enlaza con más seguridad que la cadena de tesis («explica por qué no se suma»).",
+     "gravedad": "media"
+    },
+    {
+     "opcion": 2,
+     "donde": "tema y riesgo",
+     "problema": "Habla de cursos y capacitación, demasiado cerca del tema de la docencia que David dejó fuera en I01, aunque se cuente como gasto. El caso es de un programa corporativo y no de una pyme, y la escena es una sesión de clase. Es probable que lo lea como «otra vez sobre enseñar».",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": 2,
+     "donde": "relato, cierre",
+     "problema": "«El curso va a tener algo que mirar» se lee raro. Es el tipo de cierre abstracto que David rechazó por la narrativa.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": 3,
+     "donde": "escena y residuo",
+     "problema": "La escena del andamio excluido en una nota al pie y el residuo «Un número sin página no se revisa. Se cree.» enganchan con un gerente de constructora. Pero la evidencia de David viene de sesiones donde se cargaban documentos en general, no de licitaciones, y el relato la usa como si cubriera el caso. Además depende de nombrar productos (Procore, Autodesk).",
+     "gravedad": "media"
+    },
+    {
+     "opcion": 4,
+     "donde": "relato, apertura",
+     "problema": "Abre con «En mis notas sobre cómo calificar un piloto…»: le muestra al público un documento comercial interno y obliga a David a validar esa frase. La idea (el chatbot responde, el agente actúa) es suya y le habla al segmento prioritario, pero el relato es más abstracto que los de las opciones 1, 3 y 5 y la escena es imaginada.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": 5,
+     "donde": "gancho",
+     "problema": "«Casi todos los estados de pago atrasados están esperando un visto bueno de alguien que no revisa nada» generaliza sin respaldo y choca con su propia cadena de tesis, que dice que muchos atrasos vienen del mandante. Hay que bajarlo de tono. Fuera de eso, es el dolor más sentido por un gerente de constructora en Chile, y se apoya en su experiencia con flujos (OXXO, Automatización Empática).",
+     "gravedad": "media"
+    },
+    {
+     "opcion": 5,
+     "donde": "evidencia",
+     "problema": "La experiencia es sobre un diagrama de entregas, traducida al estado de pago. Está bien marcada como traducción, pero David puede notar que su caso no es del tema.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "1",
+   "veredicto": "sirve",
+   "resumen": "Predigo que David elige la 1. Es la idea con la audiencia más amplia, le da un dato chileno del mes como gancho y cierra con una frase que queda, y su respuesta ya es la que él da en sala (capitalizar lo que funciona). Muy cerca está la 5: el estado de pago es un dolor que cualquier gerente de constructora reconoce, aunque el gancho exagera y hay que bajarlo. La 3 engancha con la escena del andamio, pero su evidencia no cubre bien las licitaciones. La 4 es suya y le habla al segmento prioritario, pero el relato abre con notas internas y queda abstracto. La 2 roza el tema de la capacitación, que David dejó fuera, y la descartaría. Propongo la 1 y la 5 como las dos que pasan."
+  }
+ ]
+}

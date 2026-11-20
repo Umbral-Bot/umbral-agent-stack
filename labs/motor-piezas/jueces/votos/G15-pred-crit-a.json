@@ -1,0 +1,71 @@
+{
+ "galeria": "G15",
+ "seccion": null,
+ "rubrica": "pred-crit-a",
+ "retro": true,
+ "criterios_hasta": "G15",
+ "sellado": "2026-11-11T00:43:05",
+ "hash_rubrica": "2afef7084991",
+ "hash_criterios": "fd98b8707561",
+ "votos": [
+  {
+   "id": "G15-pca-prediccion",
+   "galeria": "G15",
+   "version": "pred-crit-a",
+   "lente": "prediccion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 7,
+    "2": 8,
+    "3": 4
+   },
+   "hallazgos": [
+    {
+     "opcion": "3",
+     "donde": "logo, esquina inferior izquierda («BIM» en turquesa sobre el panel claro)",
+     "problema": "«BIM» del logotipo mide 2,82:1 sobre el panel claro (medido en el PNG: turquesa 15,169,148 sobre 250,250,249). Queda bajo el mínimo de 4,5:1, y David cuenta el logo como texto chico. La medida del código (mínimo 4,63) no lo recoge.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "3",
+     "donde": "bajada gris sobre el panel claro",
+     "problema": "La bajada queda en 4,63:1, dentro del rango de 4,6 a 6,3:1 que a David ya le pareció flojo. A unos 12 px CSS en el celular se ve lavada; es la debilidad de lectura que David pide corregir antes de aprobar.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "unión entre la imagen y la banda de texto",
+     "problema": "El filo crema de abajo de la imagen (246,233,206) casi se confunde con el panel blanco roto (250,250,249). Se pierde el corte entre la imagen y el panel liso, que es lo que David prefiere, y la pieza entera se ve más pálida en el feed.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "bajada gris de marca sobre la banda oscura",
+     "problema": "Con 7,2:1 sobre un fondo liso pasa la norma, pero a tamaño de celular (unos 12 px CSS) se ve más apagada que el titular y que el llamado en turquesa. A David le pesa que el texto secundario se vea lavado, y aquí la opción 2 lee con más holgura sin cambiar el tamaño.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "bajada blanca bajo el titular",
+     "problema": "La bajada blanca separa el titular solo por tamaño y peso, sin diferencia de color. Por su tamaño sigue claramente secundaria, así que la jerarquía de G13 se mantiene, pero conviene vigilar que no gane peso si el titular se achica en otros textos.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "llamado «LEE EL ARTÍCULO · umbralbim.io», kicker y «BIM» del logo (bandas oscuras)",
+     "problema": "Defecto común: en las opciones 1 y 2, el turquesa mide 9,92:1. Queda justo bajo la referencia de 10:1 del laboratorio, que no es veto. No cambia la elección.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "imagen superior",
+     "problema": "Defecto común, ya elegido en G14 y fuera de discusión aquí. Hay grandes campos turquesa de fondo y textura de grano, el estilo es un collage más que la línea isométrica plana de referencia, el brazo robótico está cargado a la derecha y la imagen deja un filo crema arriba y abajo que no llega al borde.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "2",
+   "veredicto": "sirve",
+   "resumen": "Predigo que David elige la 2. Mantiene la banda oscura, que separa limpio la imagen del texto, y sube la bajada a 15,8:1. Es lo que David viene pidiendo («aumentar contraste en las letras»), y la jerarquía no se rompe porque el titular sigue mandando por tamaño. La 1 sirve muy cerca: la bajada gris en 7,2:1 sobre fondo liso cumple, pero en el celular se ve algo apagada. La 3 no sirve tal cual por dos lecturas flojas: «BIM» del logo mide 2,82:1 y la bajada 4,63:1, justo en el rango que David ya llamó flojo. Además, el panel claro se funde con el filo crema de la imagen. Defectos comunes, sin efecto en la elección: turquesas en 9,92:1, bajo la referencia de 10:1, y una imagen con fondo turquesa y grano."
+  }
+ ]
+}

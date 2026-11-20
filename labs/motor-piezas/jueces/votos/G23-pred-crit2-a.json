@@ -1,0 +1,65 @@
+{
+ "galeria": "G23",
+ "seccion": null,
+ "rubrica": "pred-crit2-a",
+ "retro": true,
+ "criterios_hasta": "G23",
+ "sellado": "2026-11-11T00:51:31",
+ "hash_rubrica": "b71ce177d875",
+ "hash_criterios": "11070cf84d18",
+ "votos": [
+  {
+   "id": "G23-raa-prediccion",
+   "galeria": "G23",
+   "version": "pred-crit2-a",
+   "lente": "prediccion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 6.6,
+    "2": 8,
+    "3": 5.4
+   },
+   "hallazgos": [
+    {
+     "opcion": "1",
+     "donde": "botón «LEE EL ARTÍCULO / umbralbim.io», al pie de la columna",
+     "problema": "Un 12 % menos apenas se nota frente a la 1° de G22. El botón sigue siendo una masa turquesa de casi el mismo ancho que «ARTÍCULO» y le disputa peso al kicker. David pidió achicarlo dos veces seguidas (G19 y G22), así que esta reducción probablemente le parezca insuficiente.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "relleno interno del botón",
+     "problema": "Con un módulo menos de relleno, «LEE EL ARTÍCULO» casi toca el borde superior y los laterales del botón, y la URL queda pegada abajo. El botón se ve apretado y mal proporcionado: es justo el tipo de detalle de proporción que David castiga. Reducir el texto ya bastaba; el relleno no debía cambiar.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "texto del botón",
+     "problema": "7,1 px CSS en la vista de 390 px, bajo la referencia de 11 px. Es solo un aviso, no un veto: es texto de botón y es la imagen de LinkedIn pensada para computador. En computador se lee bien.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "texto del botón",
+     "problema": "Tiene los mismos 7,1 px CSS que la 2°, pero con el relleno mínimo se ve más chico y amontonado. Es un aviso, no un veto.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "borde derecho del botón",
+     "problema": "El borde derecho del botón ya no coincide con el final de «ARTÍCULO» (en la 1° casi coincidía) ni con otra línea del texto. Solo se nota de cerca.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "cruces de registro del lado derecho, sobre la ilustración",
+     "problema": "Las cruces de arriba y abajo a la derecha casi desaparecen sobre el turquesa y el crema de la imagen. No es una diferencia entre opciones ni un motivo para quitarlas.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "2",
+   "veredicto": "sirve",
+   "resumen": "Lo único que cambia entre las opciones es el botón, y David ya pidió achicarlo dos veces. La 2° (texto un 24 % más chico y el mismo relleno) lo vuelve claramente secundario y conserva un botón bien proporcionado: el titular manda y la columna sigue cerrando abajo con la marca arriba. La 1° cambia demasiado poco para su pedido. La 3° achica más, pero el relleno mínimo deja las letras pegadas a los bordes y se ve descuidada. En las tres, el contraste mínimo es de 9,92:1 y no hay choques. Los 7,1 px CSS del botón son solo un aviso, porque es la imagen de LinkedIn pensada para computador."
+  }
+ ]
+}

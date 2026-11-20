@@ -1,0 +1,72 @@
+{
+ "galeria": "G05",
+ "seccion": null,
+ "rubrica": "pred-sin-a",
+ "retro": true,
+ "criterios_hasta": null,
+ "sellado": "2026-11-11T00:45:35",
+ "hash_rubrica": "2afef7084991",
+ "hash_criterios": "fd98b8707561",
+ "votos": [
+  {
+   "id": "G05-qa-prediccion",
+   "galeria": "G05",
+   "version": "pred-sin-a",
+   "lente": "prediccion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 8,
+    "2": 6.5,
+    "3": 6.5,
+    "4": 5
+   },
+   "hallazgos": [
+    {
+     "opcion": "1",
+     "donde": "etiquetas FECHA / HORA / LUGAR",
+     "problema": "Las etiquetas grises de 14 px CSS se pierden en el celular, aunque cumplen su papel secundario y dejan que mande el dato fuerte.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "etiquetas FECHA / HORA / LUGAR",
+     "problema": "En blanco, las etiquetas compiten con el valor de abajo (fecha, hora, lugar). La jerarquía etiqueta → dato queda más plana justo en el bloque de datos fuertes que ya se fijó.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "kicker, subtítulo, números 01-03 e INSCRÍBETE",
+     "problema": "El turquesa claro #99F6E4 sale pastel y deja de rimar con el turquesa saturado de la imagen y del isotipo. La pieza pierde el golpe de marca, aunque gana contraste que no hacía falta.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "logo, palabra 'BIM'",
+     "problema": "El 'BIM' del logo cambia a un tono más azul y se separa del turquesa del isotipo y del resto de los acentos.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "4",
+     "donde": "panel de texto y unión con la imagen",
+     "problema": "El azul violáceo #1A1A2E choca con los negros neutros de la tinta de la imagen. Se nota la costura entre panel e imagen y el conjunto se ve menos unificado.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4",
+     "donde": "contraste del texto",
+     "problema": "El contraste mínimo baja a 6,69:1, el más bajo de la galería, sin ganar nada a cambio en lectura.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "",
+     "donde": "galería completa a tamaño de feed",
+     "problema": "A tamaño de feed, las opciones 1, 2 y 3 son casi indistinguibles. Solo la 4 cambia la lectura de la pieza, porque el panel se ve azul.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "1",
+   "veredicto": "sirve",
+   "resumen": "Predigo que David elige la 1. El panel neutro casa con los negros de la imagen, el turquesa de marca rima con la mancha turquesa y con el isotipo, y las etiquetas grises dejan mandar a los datos fuertes. La 2 aplana la jerarquía del bloque de datos. La 3 se ve pastel y pierde fuerza de marca. La 4 mete un azul violáceo que se despega de la imagen y además baja el contraste. Entre la 1, la 2 y la 3 casi no hay diferencia a tamaño de feed."
+  }
+ ]
+}

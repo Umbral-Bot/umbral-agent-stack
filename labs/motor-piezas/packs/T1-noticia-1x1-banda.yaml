@@ -1,0 +1,9 @@
+id: T1
+nombre: "1:1 · Banda 5/8: imagen arriba, titular y bajada abajo"
+alternativa: p02-formatos
+paso: formatos
+hereda: packs/P02-noticia-4x5.yaml
+decision_david: null
+valores:
+  formato: cuadrado
+  division_fraccion: 0.625   # en 1:1, con la mitad el titular bajaría a 65 px

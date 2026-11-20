@@ -1,0 +1,71 @@
+{
+ "galeria": "G09",
+ "seccion": null,
+ "rubrica": "pred-ej-b",
+ "retro": true,
+ "criterios_hasta": "G09",
+ "sellado": "2026-11-11T01:09:45",
+ "hash_rubrica": "b71ce177d875",
+ "hash_criterios": "c375ba4695d4",
+ "votos": [
+  {
+   "id": "G09-ejb-prediccion",
+   "galeria": "G09",
+   "version": "pred-ej-b",
+   "lente": "prediccion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 6.5,
+    "2": 7.5,
+    "3": 6
+   },
+   "hallazgos": [
+    {
+     "opcion": "2",
+     "donde": "panel de texto, entre el título y la fila de la fecha",
+     "problema": "Queda un vacío de casi un tercio del panel, que no cumple ninguna función. Además, la fecha baja de tamaño respecto de la 1 y pierde algo del «datos fuertes» elegido en G03. Es un ajuste corregible: subir un poco la fecha o la fila de datos.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "pie: logo y llamado en la misma línea",
+     "problema": "El texto del logotipo «Umbral BIM» queda muy chico a 555 px CSS (unos 8 px estimados). Mide bien en contraste porque cae sobre el panel liso, pero es la pieza de texto más débil.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1",
+     "donde": "fila de la fecha y llamado",
+     "problema": "«Jueves 19 nov 2026» llega casi al borde derecho del panel, sin margen. El llamado, a tamaño grande, compite en peso con la fecha. El título tuvo que reducirse de 102 a 94 px. Pensada para celular, contradice la preferencia de David por una pieza de LinkedIn pensada para computador y con aire.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "banda de imagen superior",
+     "problema": "El recorte en banda pierde el sujeto: la masa oscura central desaparece y la imagen queda solo como textura con un resto de silueta abajo a la derecha. Es justo el riesgo del requisito de recorte por máscara.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "estructura general",
+     "problema": "Es la banda con los tres datos, la alternativa que David ya dejó atrás en LinkedIn frente a «solo la fecha con aire» (G08). Además, abandona el sangrado lateral elegido en G04. Está bien resuelta y es más compleja, pero predice menos su elección.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "subtítulo y columna de datos; logo abajo a la izquierda",
+     "problema": "«TALLER PRÁCTICO · UMBRAL BIM» queda casi pegado a la columna de datos. El logo queda solo en el pie, con un vacío encima.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "imagen",
+     "problema": "Defecto común, no desempata: la imagen es pictórica, con salpicaduras y manchas turquesa extensas, y no sigue la línea isométrica plana de Magnific One aprobada como dirección.",
+     "gravedad": "media"
+    }
+   ],
+   "mejor": "2",
+   "veredicto": "sirve",
+   "resumen": "Predigo la 2. En LinkedIn, David ya prefirió «solo la fecha con aire» a la banda con los tres datos y eligió una imagen pensada para computador. La 2 cumple las dos cosas y mantiene el sangrado lateral, la trama y el color del preset (7,24:1, 11 px CSS). Su único ajuste es el vacío entre el título y la fecha. La 1 es la misma idea a tamaño de celular, más apretada y sin aire. La 3 es la más compleja y la que muestra los datos con más fuerza, pero recorta la imagen hasta perder el sujeto y repite la banda que David no eligió en LinkedIn. La imagen pictórica, fuera de la línea isométrica de Magnific One, es un defecto común a las tres."
+  }
+ ]
+}

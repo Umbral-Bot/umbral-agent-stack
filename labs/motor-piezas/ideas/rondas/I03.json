@@ -1,0 +1,744 @@
+{
+ "id": "I03",
+ "fecha": "2026-11-20",
+ "intro": "Tercera ronda. Esta vez cada idea parte de una audiencia concreta y de lo que necesita, y después busca tu caso que le responde. Cada una trae la persuasión (qué conducta busca cambiar) y el proceso que la produjo, paso a paso.",
+ "base": "material de I01 sin el informe de la masterclass (33 semillas) y búsqueda web por audiencia; lecciones C54–C60",
+ "material_de": "I01",
+ "fichas": [
+  {
+   "id": "I03-P1",
+   "titulo": "La cuenta personal se lleva lo aprendido",
+   "persuasion": "Que antes de comprar una herramienta de IA pida a su equipo guardar, en un documento de la empresa, las instrucciones que ya le funcionan.",
+   "proceso": [
+    "Me puse en la semana del dueño de una constructora o una oficina de ingeniería pequeña: no tiene TI, su gente ya usa IA por su cuenta y él lo ve como un avance que no le cuesta nada.",
+    "Leí la cobertura chilena del estudio Work: InProgress 2026 de Google Cloud (El Ecosistema Startup, 30-oct-2026, https://ecosistemastartup.com/chile-86-avanza-con-agentes-de-ia-solo-9-los-gobierna/): usar agentes personales en el trabajo es habitual y muy pocas organizaciones lo gobiernan. La nota no informa muestra ni tamaño de empresa, así que la tomo como señal y no como dato de pymes.",
+    "Necesidad detectada, de tipo dolor oculto: que lo que el equipo aprende a hacer con IA no se vaya con la persona. Una pyme depende de pocas personas clave y lo siente cada vez que alguien renuncia.",
+    "En el material de David elegí el patrón de «se olvida» de los informes S1, S3 y S4 y del diagnóstico del 7-sep-2026, porque trae una escena vista por él: la cuenta personal agotada que obliga a abrir otra y empezar de cero.",
+    "Sumé la fila D7 del mismo diagnóstico, donde la automatización que funciona vive en pocas manos y no consta dónde está, para pasar del chat de una persona a la memoria de la empresa.",
+    "Descarté el ángulo de la filtración de datos: es real, pero asusta sin decir qué hacer y David no tiene un caso propio que lo sostenga."
+   ],
+   "relato": "En una consultora de ingeniería me tocó ver algo que se repite en muchas oficinas. Alguien usa la IA en su cuenta personal, se le acaba el cupo, abre otra con otro correo y empieza de cero. Pierde el historial, los archivos y todas las instrucciones que había ido afinando. Lo mismo pasa, en grande, el día que esa persona se va de la empresa. Muchos dueños ven con buenos ojos que el equipo use la IA por su cuenta, porque avanza y no cuesta. Pero lo que la empresa necesita no está en la conversación. Está en la instrucción que funcionó: cómo se pide el informe, qué se revisa antes de mandarlo. Eso cabe en un documento compartido. Antes de comprar nada, pidan que quede escrito. El chat se va con la persona.",
+   "tema": "Dónde queda lo que un equipo aprende a hacer con IA cuando cada uno la usa en su cuenta personal",
+   "manantial": "dolor",
+   "formula": "sintesis",
+   "evidencia": {
+    "tipo": "dolor repetido en informes de sesión y en un diagnóstico, más una señal de prensa traída por el agente",
+    "referencia": "Informe sesión S1 Fundamentos Copilot 365, 28-may-2026: https://app.notion.com/p/722eb19995b646738642437a6160d723 · Informe sesión S3 Acompañamiento Mes 1, 30-jun-2026: https://app.notion.com/p/35fbaf55447c43bc80257707b3a25bcd · Informe sesión S4 «Excel, retención y tutor Power BI», 2-sep-2026: https://app.notion.com/p/830e8178919a40c0b054c1482b81e24c · bitácora «Planificado — 1:1 7 sep 2026 (Diagnóstico IA)», matriz D7, de una consultora de ingeniería: https://app.notion.com/p/3d45f443fb5c81e28bd6e4712df85d7b · señal web (agente): nota de El Ecosistema Startup sobre agentes de IA y su gobierno en Chile, 30-oct-2026, sobre el estudio Work: InProgress 2026 de Google Cloud: https://ecosistemastartup.com/chile-86-avanza-con-agentes-de-ia-solo-9-los-gobierna/ (cobertura secundaria; no informa muestra ni tamaño de empresa)",
+    "afirmacion": "hecho en cada informe; el patrón conjunto es inferencia; la señal web es cobertura secundaria de un estudio de profesionales en general"
+   },
+   "premisa": "Lo que sostengo es que, si cada persona usa la IA en su cuenta personal, la empresa no se ahorra una licencia: pierde lo que esa persona aprendió a pedirle, y lo pierde el día que cambia de cuenta o se va.",
+   "hipotesis": "Que el equipo use ChatGPT o similares por su cuenta es bueno para una pyme: la gente avanza sola y la empresa no paga nada.",
+   "respuesta": "En las sesiones de David se repite que el chat olvida reglas, borra hilos por retención y, cuando alguien agota su cuenta personal y abre otra, pierde historial y archivos. Lo valioso nunca fue la conversación, sino la instrucción que funcionó. Esa instrucción tiene que vivir en un documento o un agente de la empresa, con nombre y responsable.",
+   "cadena_tesis": {
+    "evidencia": "Informes S1 (28-may-2026), S3 (30-jun-2026) y S4 (2-sep-2026): alumnos y equipos cuentan que el chat pierde reglas en conversaciones largas y que la política de retención borra hilos. Diagnóstico del 7-sep-2026 en una consultora de ingeniería: quien agota una cuenta personal abre otro correo y pierde historial y archivos; la automatización que funciona vive en pocas manos y no consta dónde está.",
+    "inferencia": "Lo que un equipo aprende a hacer con IA queda guardado en lugares que la empresa no controla: una cuenta, un hilo, la memoria de una persona.",
+    "salto": "El dueño de una pyme tiene que pedir que las instrucciones que funcionan se guarden en un lugar de la empresa antes de pensar en comprar algo nuevo; el ahorro de la cuenta personal es aparente.",
+    "no_afirmado": "No se afirma que usar cuentas personales deba prohibirse ni que sea un riesgo legal. No se dice cuántas pymes lo hacen: la señal web es de profesionales en general y no se lee como dato de pymes. El caso de la cuenta agotada es uno, en una consultora anónima."
+   },
+   "contraargumento": "Prohibir las cuentas personales frena a quienes más avanzan, y una pyme no tiene caja para licencias corporativas para todos. Además, escribir las instrucciones en un documento es una tarea más que nadie tiene tiempo de hacer, y un documento que nadie abre tampoco guarda nada.",
+   "residuo": "El chat se va con la persona. Lo que funcionó tiene que quedarse en la empresa.",
+   "gancho": {
+    "tipo": "dolor oculto",
+    "texto": "Cuando alguien de la oficina técnica se va, se lleva también todo lo que aprendió a pedirle a su IA."
+   },
+   "arco": "En una consultora de ingeniería, que cada uno usara la IA en su cuenta personal se veía como un avance gratis (punto de partida: la gente aprende sola y la empresa no paga). Quien agotaba su cuenta abría otra con otro correo y perdía historial, archivos e instrucciones, y lo que funcionaba vivía en pocas manos (tensión: lo aprendido se va con la cuenta o con la persona). El dueño pide que la instrucción que funcionó quede en un documento de la empresa antes de comprar nada (cierre: el chat se va con la persona y lo que funcionó se queda).",
+   "escena": "Diagnóstico de IA en una consultora de ingeniería. Al repasar dónde queda el trabajo, aparece una persona que agotó su cuenta personal de IA, abrió otra con otro correo y perdió el historial y los archivos. En la misma conversación sale que las automatizaciones que funcionan las conocen pocas personas y nadie sabe bien dónde quedó lo que armaron.",
+   "arquitectura": "dolor",
+   "pilar": "IA sin flujo es humo",
+   "marco": "Empoderar usuarios sobre crear dependencias (Framework Metodológico): lo que el usuario construye sirve si queda en la empresa y no en su cuenta",
+   "audiencia": "PYMEs AECO: dueños y gerentes generales de constructoras y oficinas de ingeniería o arquitectura medianas y pequeñas en Chile y Latinoamérica",
+   "canales": {
+    "linkedin": "Post de dolor oculto en primera persona: la cuenta agotada que obliga a empezar de cero, lo que se pierde cuando alguien renuncia y el pedido simple al equipo.",
+    "x": "Tesis: la IA en cuenta personal no ahorra, se lleva lo aprendido; condición: cuando la persona cambia de cuenta o se va; cierre: el chat se va, lo que funcionó se queda.",
+    "blog": "Historias y casos: dónde quedaba el trabajo con IA en una consultora anónima y un documento compartido para que lo aprendido se quede en la empresa.",
+    "clase": "Cada alumno escribe en un documento compartido las instrucciones de IA que más le han servido y quién más de su equipo las usaría."
+   },
+   "por_que_ahora": "A fines de octubre circuló en Chile la cobertura del estudio Work: InProgress 2026 de Google Cloud, que pone nombre al uso de agentes personales en el trabajo, y Microsoft empezó a mostrar agentes con memoria propia del proceso en Copilot Studio (15-oct-2026, acceso anticipado). La pregunta de dónde vive lo aprendido llega antes que la de qué comprar.",
+   "riesgo": "Que se lea como llamado a prohibir o como venta de licencias corporativas. La señal web es secundaria y no habla de pymes. El caso de la cuenta agotada es uno solo, en una consultora anónima: sin rubro fino ni cargo que la identifique.",
+   "procedencia": {
+    "david": "Los informes de sesión S1 (28-may-2026), S3 (30-jun-2026) y S4 (2-sep-2026) con el patrón de que el chat «perdió la memoria», el diagnóstico IA del 7-sep-2026 (cuenta personal agotada y fila D7) y su respuesta en sala: capitalizar lo que funciona en un documento o un agente.",
+    "agente": "La necesidad de partida desde el dueño de pyme, la señal web traída por mí (El Ecosistema Startup, 30-oct-2026, sobre Work: InProgress 2026), el relato, el residuo, el gancho y la persuasión."
+   },
+   "validacion": {
+    "errores": [],
+    "avisos": []
+   }
+  },
+  {
+   "id": "I03-P2",
+   "titulo": "El primer dueño es de la casa",
+   "persuasion": "Que antes de contratar a un proveedor para su primer proyecto de IA, nombre a una persona de su equipo como dueña de ese proceso.",
+   "proceso": [
+    "Miré al dueño de una pyme AECO sin área de TI que siente la presión de «hacer algo con IA». Su reflejo, cuando no hay quien lo haga adentro, es buscar a quién encargárselo afuera.",
+    "Leí la nota de Diario Financiero sobre la encuesta Chile Nos Habla de la USS a socios y gerentes (13-feb-2026, https://www.df.cl/encuesta-de-la-uss-muestra-alta-adopcion-de-ia-en-empresas-pero-con): más de la mitad dice que le falta conocimiento técnico, las áreas técnicas están sobrecargadas y muchas empresas recurren a proveedores especializados. Eso confirma el reflejo.",
+    "Necesidad, de tipo decisión de compra: a quién le encarga una pyme sin TI su primer proyecto con IA, y qué le queda cuando el proveedor se va.",
+    "Busqué en el material de David y elegí tres piezas: la objeción «No contamos con TI para mantener» que él ya tiene anotada en Público Objetivo, el mecanismo que se repite en sus casos (diagnóstico, solución rápida, escalado y entrega a TI al final) y OXXO contado desde el lado de quien estaba adentro.",
+    "Sumé el blog de n8n del 29-oct-2026, que ya estaba en el material, porque es una empresa con todos los ingenieros que dejó de construir a pedido.",
+    "Descarté volver al ángulo de la licencia que ya pagan, que salió en la ronda anterior: aquí OXXO sirve solo para mostrar quién lo armó.",
+    "Dejé a la vista la tensión con la propia oferta de David (soporte, Fractional CTO), porque un gerente la va a notar."
+   ],
+   "relato": "Cuando el dueño de una constructora me dice que no tiene TI, casi siempre viene la frase siguiente: entonces que lo haga un proveedor. Lo entiendo, nadie tiene tiempo. Pero en OXXO el flujo que aprobó la gerencia lo armé desde adentro, como coordinador BIM, lo piloté y recién ahí lo llevé a la mesa. En los casos que acompaño el orden se repite. La primera versión la hace quien sufre el problema, y el que sabe de sistemas llega al final, a recibir algo que ya anda. Hasta el equipo de automatización de n8n terminó midiéndose por cuántas áreas ya no lo necesitan. Yo también vendo acompañamiento, y por eso lo digo claro: si nadie de la casa es dueño del primer flujo, lo que compraron es una dependencia.",
+   "tema": "A quién le encarga una pyme sin TI su primer proyecto con IA",
+   "manantial": "pilar",
+   "formula": "contraria",
+   "evidencia": {
+    "tipo": "experiencia de David (OXXO, CV v6 y clase 32), su mecanismo recurrente y una objeción anotada en su segmentación, más una señal de prensa traída por el agente",
+    "referencia": "CV v6, línea «Coordinador BIM | OXXO Chile, jul 2022 – sep 2024» · Máster AEC 4.0 V1, clase 32 «Azure AI + Escalabilidad» (31-mar-2026): https://app.notion.com/p/634d57f6119d4bd19647d154435d4ae1 · Notion «Público Objetivo y Segmentación» (2026-03-09), segmento 3, objeción «No contamos con TI para mantener» · Notion «Informe de análisis del perfil docente y comunicador» (2026-05-04), §0 «Mecanismo recurrente» · blog de n8n, «Why we're moving n8n's automation team beyond the service desk model», 29-oct-2026: https://blog.n8n.io/why-were-moving-n8ns-automation-team-beyond-the-service-desk-model/ · señal web (agente): Diario Financiero, «Encuesta de la USS muestra alta adopción de IA en empresas, pero con brechas en estrategia y capacitación», 13-feb-2026: https://www.df.cl/encuesta-de-la-uss-muestra-alta-adopcion-de-ia-en-empresas-pero-con",
+    "afirmacion": "experiencia (OXXO) y hecho (objeción anotada, blog de n8n, nota de DF); que el orden valga para una pyme es inferencia"
+   },
+   "premisa": "Lo que sostengo es que una pyme sin TI no necesita contratar a alguien que le haga la IA: necesita que una persona de adentro, la que sufre el problema, sea dueña del primer flujo. El externo acompaña, pero no se queda con la llave.",
+   "hipotesis": "Sin área de TI no podemos sostener nada digital, así que lo sensato es pagarle a un proveedor que lo implemente y lo mantenga.",
+   "respuesta": "En OXXO, el flujo que aprobó la gerencia lo armó y lo pilotó alguien de adentro. En los casos de David el orden se repite: quien siente el dolor hace la primera versión y TI, o un proveedor, recibe al final algo probado. Hasta n8n, con ingenieros de sobra, mide a su equipo central por cuántas áreas ya no lo necesitan. Contratar ayuda sirve; entregar la propiedad del proceso, no.",
+   "cadena_tesis": {
+    "evidencia": "CV v6: David fue coordinador BIM en OXXO Chile entre 2022 y 2024. Clase 32 (31-mar-2026): el primer intento con ACC para las áreas que no eran AEC se cayó por licencias; él rehízo el flujo en SharePoint, Power Automate y Teams, lo pilotó con ayuda de IA y la gerencia lo aprobó. Público Objetivo anota la objeción «No contamos con TI para mantener». El informe de perfil describe el mecanismo de sus casos: diagnóstico, solución rápida sobre el cuello de botella, escalado y entrega a TI con un marco. n8n cuenta que su equipo central dejó de construir a pedido porque se había vuelto el cuello de botella.",
+    "inferencia": "Una solución digital sobrevive cuando su dueño está adentro y la usa; el que la construye desde afuera se lleva el conocimiento cuando termina el contrato.",
+    "salto": "Antes de firmar con un proveedor, la pyme nombra a una persona de su equipo como dueña del primer proceso, y al externo lo mide por cuánto deja de necesitarlo.",
+    "no_afirmado": "No se afirma que los proveedores sobren ni que una pyme deba arreglárselas sola. No se afirma que cualquiera pueda armar un flujo sin apoyo. No se dice cuántas implementaciones externas fracasan. OXXO es una empresa grande: el salto a pyme es inferencia."
+   },
+   "contraargumento": "En una pyme nadie tiene tiempo libre: quien sufre el problema es justo quien está apagando incendios. Y lo que arma alguien de adentro, sin documentar ni versiones, muere cuando esa persona se va; el propio material de David lo muestra con flujos guardados en espacios personales. Además, David vende acompañamiento y soporte, así que la idea toca su propia oferta.",
+   "residuo": "Si nadie de la casa es dueño del primer flujo, lo que compraron es una dependencia.",
+   "gancho": {
+    "tipo": "creencia equivocada",
+    "texto": "La pyme sin TI es la que más pierde cuando le entrega su primer proyecto de IA entero a un externo."
+   },
+   "arco": "Una pyme sin TI siente la presión de hacer algo con IA y busca a quién encargárselo (punto de partida: sin área de sistemas, lo sensato parece contratar afuera). En OXXO el flujo que aprobó la gerencia lo armó y lo pilotó alguien de adentro, y hasta n8n mide a su equipo central por cuántas áreas ya no lo necesitan (tensión: el externo resuelve rápido, pero se queda con la llave). Antes de firmar, el dueño nombra a una persona de su equipo como responsable del primer proceso y le pide al externo que la acompañe (cierre: si nadie de la casa es dueño del primer flujo, compraron una dependencia).",
+   "escena": "OXXO Chile. El intento de llevar a ACC la coordinación con las áreas que no eran AEC se cae porque no se justifican las licencias. El coordinador BIM rehace el flujo con SharePoint, Power Automate y Teams, lo pilota con ayuda de IA y recién entonces lo presenta a la gerencia, que lo aprueba sin comprar nada nuevo.",
+   "arquitectura": "postura",
+   "pilar": "No todo debe pasar por TI",
+   "marco": "Citizen Developer: profesionales que no son de TI construyen la primera versión y TI o el proveedor llegan a recibir algo probado",
+   "audiencia": "PYMEs AECO: dueños y gerentes generales de constructoras y oficinas de ingeniería o arquitectura medianas y pequeñas en Chile y Latinoamérica",
+   "canales": {
+    "linkedin": "Post de postura en primera persona: OXXO contado desde adentro, el orden que se repite en mis casos y la tensión con lo que yo mismo vendo.",
+    "x": "Tesis: sin TI, la primera versión la arma alguien de la casa; condición: antes de contratar a un externo; cierre: si nadie de adentro es dueño, compraron una dependencia.",
+    "blog": "Opinión: qué pedirle a un proveedor de IA cuando la empresa no tiene TI, empezando por quién es el dueño interno del proceso.",
+    "clase": "Gestión del cambio: cada alumno nombra al dueño interno del primer proceso de su empresa y lo que un externo le tendría que dejar al irse."
+   },
+   "por_que_ahora": "A fin de año se arman los presupuestos del siguiente y llegan propuestas de «implementar IA» como servicio. El blog de n8n del 29-oct-2026 muestra que hasta una empresa de automatización dejó de construir a pedido, y la encuesta de la USS deja ver que muchas empresas resuelven la falta de conocimiento contratando afuera.",
+   "riesgo": "Toca la oferta de David (soporte, Fractional CTO): si no lo dice él primero, se lee como incoherente. Puede leerse como ataque a los proveedores. OXXO es una empresa grande y el salto a pyme es inferencia. Su propio material muestra el límite: flujos sin dueño ni versiones que mueren con su autor.",
+   "procedencia": {
+    "david": "El caso OXXO (CV v6 y clase 32 del 31-mar-2026), la objeción «No contamos con TI para mantener» de Público Objetivo, el mecanismo recurrente del informe de perfil, el pilar «No todo debe pasar por TI» y la tensión con su oferta del Plan de Estrategia Comercial.",
+    "agente": "La necesidad de partida desde el dueño de pyme sin TI, la nota de Diario Financiero sobre la encuesta USS (13-feb-2026) traída por mí, el uso del blog de n8n como contraste, el relato, el residuo, el gancho y la persuasión."
+   },
+   "validacion": {
+    "errores": [],
+    "avisos": []
+   }
+  },
+  {
+   "id": "I03-P3",
+   "titulo": "Primero algo andando, después el curso",
+   "persuasion": "Que antes de pagar un curso de IA para todo el equipo, tenga andando una solución pequeña sobre un dolor que el equipo reconozca.",
+   "proceso": [
+    "Pensé en el gerente de una oficina de arquitectura o ingeniería pequeña al que le ofrecen cursos de IA por todos lados y que tiene que decidir en qué gasta la poca plata de capacitación.",
+    "Revisé dos piezas. La nota de Diario Financiero sobre la encuesta de la USS (13-feb-2026, https://www.df.cl/encuesta-de-la-uss-muestra-alta-adopcion-de-ia-en-empresas-pero-con) trata la falta de un plan formal de capacitación como un problema crítico. El blog de Talana (16-nov-2026, https://web.talana.com/blog/cursos-sence-de-habilidades-digitales-excel-e-ia) recomienda cursos prácticos ligados al trabajo y recuerda que la ley 21.850 bajó el tope de la franquicia; Talana vende su propio módulo de capacitación, así que la leo como señal comercial.",
+    "Necesidad, de tipo decisión de gasto: en qué orden invertir la plata de capacitación cuando llega la presión por la IA.",
+    "En el material de David elegí la sesión 4 del programa corporativo de Power Automate (23-abr-2026), porque es una decisión suya tomada en vivo que da vuelta el orden: versión mínima primero, cambio de costumbres después.",
+    "Descarté volver a quién capacitar según la edad o el miedo a ser medido: ya estuvo en la ronda anterior.",
+    "Dejé fuera el debate sobre la franquicia: es político y no es un tema de David."
+   ],
+   "relato": "Cuando llega la presión por la IA, lo primero que hace mucha empresa es inscribir a todo el equipo en un curso. Parece lo prudente. Al tiempo nadie lo usa, y se dice que hay resistencia al cambio. En un programa corporativo de automatización tuve a un alumno trabado con la parte técnica de su caso, y la salida no fue más clase. Fue construir una versión mínima que funcionara, mostrarla al equipo y pedir cambios de costumbre recién cuando se viera el beneficio. Con poca caja, ese orden importa. Elijan un dolor que todos reconozcan, como el informe que se arma a mano cada semana, y hagan que una persona lo resuelva en pequeño. Cuando el equipo lo vea andar, el curso va a tener algo que mirar.",
+   "tema": "En qué orden gasta una pyme en capacitación de IA y en la primera solución",
+   "manantial": "experiencia",
+   "formula": "experiencia_a_criterio",
+   "evidencia": {
+    "tipo": "experiencia de David en una sesión de un programa corporativo, más dos señales de prensa y de proveedor traídas por el agente",
+    "referencia": "Notion «Informe de análisis del perfil docente y comunicador — David Moreira (basado en evidencia)» (editado 2026-05-04), §4.1 y §4.2, que cita el informe de la sesión 4 de un programa corporativo de Power Automate (23-abr-2026) · pilar «La resistencia no es el problema» (Plan de Estrategia Comercial, 2026-03-10) · señales web (agente): Diario Financiero, «Encuesta de la USS muestra alta adopción de IA en empresas, pero con brechas en estrategia y capacitación», 13-feb-2026: https://www.df.cl/encuesta-de-la-uss-muestra-alta-adopcion-de-ia-en-empresas-pero-con · blog de Talana, «Cursos SENCE de habilidades digitales: Excel e IA», 16-nov-2026: https://web.talana.com/blog/cursos-sence-de-habilidades-digitales-excel-e-ia (fuente comercial)",
+    "afirmacion": "experiencia (la decisión en la sesión 4); que el orden sirva a una pyme es inferencia"
+   },
+   "premisa": "Lo que sostengo es que una pyme no debería pagar un curso de IA para todo el equipo antes de tener andando una cosa pequeña que resuelva un dolor que el equipo reconozca. El curso rinde cuando hay algo que mirar.",
+   "hipotesis": "Para que la IA entre en la empresa primero hay que capacitar a todos; si después no la usan, es resistencia al cambio.",
+   "respuesta": "En la sesión 4 de un programa corporativo, un alumno se trabó con lo técnico y David cambió el orden: construir primero una versión mínima que funcione, mostrar su valor al equipo y pedir cambios de costumbre solo cuando el beneficio ya se vea. Con poca caja, el curso de todos va después de esa primera versión. Lo que se llama resistencia suele ser falta de algo andando.",
+   "cadena_tesis": {
+    "evidencia": "El informe del perfil (2026-05-04, §4.1 y §4.2) cita la sesión 4 de un programa corporativo de Power Automate (23-abr-2026): un alumno se trabó con lo técnico y David propuso construir primero una versión mínima que funcione, mostrar su valor al equipo y pedir cambios culturales solo cuando el beneficio ya se viera. La sesión dejó el plan y trabajó sobre los casos de los alumnos, con compromisos individuales.",
+    "inferencia": "La disposición del equipo cambia después de ver algo que funciona sobre su propio trabajo, no antes.",
+    "salto": "Con poca plata, la pyme invierte primero en una versión mínima sobre un cuello de botella que todos reconocen y forma al resto después, alrededor de eso.",
+    "no_afirmado": "No se afirma que capacitar sobre ni que un curso general no le sirva a nadie. No se midió la adopción después de la sesión. El caso es de un programa corporativo, no de una pyme. No se opina sobre la franquicia de capacitación."
+   },
+   "contraargumento": "Sin formación previa nadie del equipo sabe construir esa primera versión, así que el orden se vuelve circular. Y los beneficios de capacitación tienen plazos y requisitos propios que pueden empujar a inscribir a todos de una vez.",
+   "residuo": "Primero algo que funcione. El curso, después, alrededor de eso.",
+   "gancho": {
+    "tipo": "error caro",
+    "texto": "El curso de IA para todo el equipo es la forma más cara de descubrir que nadie sabía para qué lo iba a usar."
+   },
+   "arco": "Con la presión de la IA, la empresa inscribe a todo el equipo en un curso (punto de partida: capacitar primero parece lo prudente). En un programa corporativo, la salida de un alumno trabado fue una versión mínima que funcionara, mostrada al equipo antes de pedir cambios de costumbre (tensión: sin algo andando, el curso forma para un uso que nadie pidió). La pyme elige un dolor que todos reconozcan, lo resuelve en pequeño y forma después alrededor de eso (cierre: primero algo que funcione y el curso después).",
+   "escena": "Sesión 4 de un programa corporativo de Power Automate. Un alumno está trabado con la parte técnica de su caso. En vez de quedarse en ese bloqueo, se acuerda construir primero una versión mínima que funcione, mostrarla al equipo y dejar el cambio de costumbres para cuando el beneficio se vea. La sesión termina con compromisos individuales sobre los casos de cada uno.",
+   "arquitectura": "transformacion",
+   "pilar": "La resistencia no es el problema",
+   "marco": "Automatización Empática: la primera versión ataca la frustración que todo el equipo reconoce, y eso es lo que mueve a los demás",
+   "audiencia": "PYMEs AECO: dueños y gerentes generales de constructoras y oficinas de ingeniería o arquitectura medianas y pequeñas en Chile y Latinoamérica",
+   "canales": {
+    "linkedin": "Post de error caro en primera persona: el curso para todos antes de tener nada andando y el orden inverso que propuse en un programa corporativo.",
+    "x": "Tesis: primero algo que funcione, después el curso; condición: cuando la caja de capacitación es poca; cierre: el curso tiene que tener algo que mirar.",
+    "blog": "Historias y casos: cómo ordenar el gasto en IA de una pyme, del dolor reconocido a la versión mínima y de ahí al curso.",
+    "clase": "Cada alumno elige el dolor de su equipo que serviría como primera versión antes de pedir un curso para todos."
+   },
+   "por_que_ahora": "Fin de año es cuando muchas empresas cierran el plan de capacitación del siguiente, la oferta de cursos de IA está en todas partes (la guía de Talana es del 16-nov-2026) y, según esa misma guía, la ley 21.850 bajó el tope de la franquicia: hay menos plata y conviene gastarla en orden.",
+   "riesgo": "Que se lea como un tema de formación o de cómo dar un curso, que David no trata: hay que contarla como decisión de gasto y de orden de implementación. El caso es de un programa corporativo y no de una pyme. Talana es fuente comercial. No entrar en el debate de la franquicia.",
+   "procedencia": {
+    "david": "La decisión de la sesión 4 del programa corporativo de Power Automate (23-abr-2026), recogida en el informe de su perfil, y su pilar «La resistencia no es el problema».",
+    "agente": "La necesidad de partida desde el gasto en capacitación de una pyme, las dos señales web traídas por mí (Diario Financiero, 13-feb-2026, y Talana, 16-nov-2026), el relato, el residuo, el gancho y la persuasión."
+   },
+   "validacion": {
+    "errores": [],
+    "avisos": []
+   }
+  },
+  {
+   "id": "I03-J1",
+   "titulo": "El acuerdo que vuelve cada lunes",
+   "persuasion": "Que la reunión de coordinación abra con los acuerdos de la semana anterior y que ninguno salga sin un nombre y una fecha.",
+   "proceso": [
+    "Me puse en la semana de un jefe de proyecto de contratista: el momento que se repite y que todos sus pares reconocen es la reunión de coordinación, donde los mismos pendientes vuelven una y otra vez. Necesidad de gestión, no técnica: que lo acordado se cumpla sin perseguir a nadie.",
+    "Busqué qué le están ofreciendo a esa audiencia para ese dolor: Procore vende en español un agente que convierte grabaciones y notas de reunión en actas con elementos de acción (https://www.procore.com/es-es/ai/agents/meeting-minutes-publisher), y Microsoft anunció agentes de Copilot Studio para procesos compartidos que se mencionan desde Teams (https://www.microsoft.com/en-us/copilot/blog/copilot-studio/delegate-shared-business-processes-to-agents-that-are-more-persistent-and-proactive-with-microsoft-copilot-studio/). La promesa que va a escuchar el jefe de proyecto es «el acta se hace sola».",
+    "Busqué en el material qué tiene David sobre seguimiento de compromisos entre personas que no comparten oficina: el sistema de seguimiento entre áreas de OXXO con SharePoint, Power Automate y Kanban (CV v6). Es su experiencia más cercana a coordinar gente que no responde al mismo jefe.",
+    "Tomé de la semilla de Copilot Studio la tensión que ya traía: el agente solo recuerda el proceso que le enseñaron; si el seguimiento vive en la cabeza del coordinador, el agente memoriza el desorden.",
+    "Descarté el informe semanal al mandante porque I02 ya giró sobre la planilla del viernes, y descarté el plano vigente en terreno porque la evidencia de David sobre control documental es solo una inferencia en el material.",
+    "La persuasión la dejé en una conducta que se puede hacer el próximo lunes sin comprar nada: abrir la reunión con la lista anterior."
+   ],
+   "relato": "En cualquier obra hay una reunión de coordinación semanal, y en muchas los mismos pendientes vuelven cada lunes. Ahora se ofrecen agentes que escriben el acta solos, y es fácil pensar que el problema era el acta. Yo no lo creo. El acta termina en un correo que nadie abre antes de la siguiente reunión. En OXXO armé el seguimiento entre Comercial, Operaciones, Legal y otras áreas con SharePoint, Power Automate y un tablero Kanban. Lo que ordenó la coordinación no fue el registro de lo conversado. Fue que cada pendiente quedó a la vista de todas las áreas, en un solo lugar. Por eso empezaría por algo más chico que un agente: que la reunión abra con la lista de la semana pasada. Si un acuerdo no tiene nombre y fecha, no salió de la reunión.",
+   "tema": "El seguimiento de los acuerdos de la reunión de coordinación de obra, ahora que llegan agentes que escriben el acta",
+   "manantial": "dolor",
+   "formula": "senal_a_angulo",
+   "evidencia": {
+    "tipo": "experiencia de David (sistema de seguimiento entre áreas en OXXO) cruzada con dos señales de proveedores que el agente trajo",
+    "referencia": "CV v6 (Drive 1cwAXTttXBymiS_ZXFES_IAhYQTyQMc5S), línea «Coordinador BIM | OXXO Chile, jul 2022 – sep 2024»: seguimiento con Power Automate, SharePoint y Kanban entre Comercial, Operaciones, Marketing, Desarrollo Inmobiliario y Legal · Microsoft, «Delegate shared business processes to agents that are more persistent and proactive with Microsoft Copilot Studio», 15-oct-2026: https://www.microsoft.com/en-us/copilot/blog/copilot-studio/delegate-shared-business-processes-to-agents-that-are-more-persistent-and-proactive-with-microsoft-copilot-studio/ · Procore, página del agente de actas de reunión (sin fecha, © 2026): https://www.procore.com/es-es/ai/agents/meeting-minutes-publisher",
+    "afirmacion": "experiencia (el sistema de seguimiento que dice el CV); hecho (lo que anuncian los proveedores); que el acta no sea el cuello de botella es opinión de David"
+   },
+   "premisa": "Lo que sostengo es que los acuerdos de la reunión de coordinación no se pierden por un acta mal escrita, sino porque no quedan a la vista con un dueño y una fecha, y la reunión siguiente no parte por ellos.",
+   "hipotesis": "Los pendientes se repiten porque el acta se escribe tarde o incompleta; con un agente que la levante solo, el seguimiento de la obra se ordena.",
+   "respuesta": "El acta automática ahorra el tiempo de redactarla, pero el acuerdo se sigue perdiendo si queda en un correo. Lo que ordena la coordinación es una lista compartida, a la vista de todos, con una persona y una fecha por acuerdo, que la reunión siguiente abre primero. Eso se arma con lo que la empresa ya tiene, y el agente sirve después.",
+   "cadena_tesis": {
+    "evidencia": "Según el CV v6, en OXXO David montó un sistema de seguimiento con Power Automate, SharePoint y Kanban entre cinco áreas que no compartían oficina. Microsoft anuncia agentes que se encargan de procesos compartidos desde Teams y Procore ofrece un agente que convierte reuniones en actas con elementos de acción.",
+    "inferencia": "Los proveedores apuntan al registro de la reunión. La experiencia de David apunta a otra cosa: un lugar común donde cada pendiente se ve, que es lo que sostiene el seguimiento entre áreas que no responden al mismo jefe.",
+    "salto": "Antes de comprar un agente que escriba actas, la obra tiene que tener una lista de acuerdos con dueño y fecha que la reunión revise primero; sin esa lista, el agente solo resume mejor lo mismo que no se cumple.",
+    "no_afirmado": "No se afirma que los agentes de actas no sirvan ni que el caso OXXO haya sido en una obra: fue entre áreas de una cadena de retail. No se afirma cuánto mejoró el cumplimiento en OXXO; el CV no trae ese dato."
+   },
+   "contraargumento": "En muchas obras los acuerdos no se cumplen por falta de autoridad o de capacidad, no de lista: el subcontrato no responde al jefe de proyecto o no tiene cuadrilla. Una lista visible no arregla eso. Además, quien redactaba el acta a mano sí recupera horas con un agente, y eso no es menor.",
+   "residuo": "Si un acuerdo no tiene nombre y fecha, no salió de la reunión.",
+   "gancho": {
+    "tipo": "creencia equivocada",
+    "texto": "Los pendientes de la reunión de obra no vuelven cada lunes por culpa del acta."
+   },
+   "arco": "Los mismos pendientes vuelven cada lunes a la reunión de coordinación y llegan agentes que prometen escribir el acta solos (punto de partida: el problema parece ser la redacción del acta). El acta queda en un correo, y lo que ordenó el seguimiento entre áreas en OXXO fue un tablero común donde cada pendiente estaba a la vista (tensión: el registro de lo conversado no es lo que hace cumplir). La reunión abre con la lista de la semana pasada y cada acuerdo sale con nombre y fecha (cierre: si no tiene nombre y fecha, no salió de la reunión).",
+   "escena": "Lunes en la caseta de faena. Jefe de proyecto, jefe de terreno, oficina técnica y tres subcontratos. Alguien pregunta por la consulta de las pasadas de ductos y el de clima dice que pensaba que la iba a mandar la oficina técnica. El acta de la semana anterior está en un correo, con el punto anotado y sin nombre.",
+   "arquitectura": "postura",
+   "pilar": "IA sin flujo es humo",
+   "marco": "Puentes Digitales: Datos ↔ Decisiones; el acuerdo tiene que llegar a un lugar donde quien decide lo vea, no quedarse en el registro de la reunión",
+   "audiencia": "Jefes de proyecto, jefes de obra y gerentes de operaciones de contratistas (segmento «Project Managers y gerentes de operaciones de contratistas»)",
+   "canales": {
+    "linkedin": "Post de postura: la reunión de los lunes, la promesa del acta automática y la regla de abrir con la lista anterior, contada con el seguimiento de OXXO.",
+    "x": "Tesis: los acuerdos de obra no se pierden por el acta; condición: cuando no tienen dueño ni fecha a la vista; cierre: si no tiene nombre y fecha, no salió de la reunión.",
+    "blog": "Historias y casos: cómo se ordenó el seguimiento entre áreas en OXXO y qué haría igual en una reunión de obra antes de pensar en un agente.",
+    "clase": "Cada alumno toma el acta de una reunión de su trabajo y la convierte en lista de acuerdos con dueño y fecha; se cuenta cuántos puntos no tenían ninguno de los dos."
+   },
+   "por_que_ahora": "En octubre Microsoft anunció agentes para procesos compartidos que se mencionan desde Teams, y Procore ya vende en español un agente de actas. El jefe de proyecto va a escuchar que el acta se hace sola antes de fin de año.",
+   "riesgo": "El caso OXXO no es de obra, y conviene decirlo para no estirarlo. David tiene que confirmar el detalle de que el tablero dejaba cada pendiente a la vista de todas las áreas; el CV solo dice Kanban entre áreas. Puede leerse como ataque a los agentes de actas: el punto es el orden, no la herramienta.",
+   "procedencia": {
+    "david": "El sistema de seguimiento entre áreas de OXXO con Power Automate, SharePoint y Kanban (CV v6) y su pilar «IA sin flujo es humo».",
+    "agente": "La audiencia y la necesidad elegidas primero, la señal de Procore (agente de actas, traída por el agente), el uso de la semilla de Copilot Studio, la escena de la caseta, la regla de abrir con la lista anterior, el residuo y la persuasión."
+   },
+   "validacion": {
+    "errores": [],
+    "avisos": []
+   }
+  },
+  {
+   "id": "I03-J2",
+   "titulo": "El número que no dice de qué página salió",
+   "persuasion": "Que antes de adjudicar con un cuadro comparativo hecho con IA exija que cada número indique la página de la oferta de donde salió.",
+   "proceso": [
+    "Pensé en la decisión con plazo que más pesa en la semana de un gerente de operaciones o un jefe de proyecto: adjudicar un subcontrato. Comparar ofertas que llegan en PDF, cada una con su formato y sus exclusiones, se come días, y el error caro es la exclusión que nadie vio.",
+    "Revisé qué le están vendiendo para eso: Procore ofrece en español un agente de nivelación de ofertas que arma una tabla unificada con alcance, partidas y costos, y que según su página no dice que cada dato se vincule a su documento de origen (https://www.procore.com/es/ai/agents/bid-leveling). Autodesk presentó en AU 2026 un agente que pasa a datos de licitación las propuestas de subcontratos en PDF y otro que compara documentos mostrando la evidencia (semilla 15 del material).",
+    "Busqué en el material la respuesta de David: el patrón de sus sesiones con equipos que preguntan si el agente lee los archivos enteros, donde cargar todo de golpe trajo errores y la mejora vino de extraer solo lo necesario (informes S1 y S3 de Copilot 365 y Evaluación 1 del Máster V2).",
+    "Elegí esa evidencia porque responde a la necesidad sin pedirle al lector saber de IA: lo que tiene que exigir es una referencia a la página, igual que se la pediría a un estimador junior.",
+    "Descarté el ángulo de la licencia que habilita el agente de Autodesk porque I02 ya trabajó «la licencia que ya pagan» y «cuenten cuántos lo van a poder abrir»."
+   ],
+   "relato": "Comparar ofertas de subcontratos es de las tareas que se comen una semana. Cada empresa manda su PDF con su formato, sus exclusiones metidas en la letra chica y sus partidas con otro nombre. Ahora hay agentes que prometen la tabla nivelada en minutos, y la tentación es mandar los PDF y confiar en la planilla que vuelve. En los casos que he revisado con equipos, cargar todos los documentos de golpe trajo errores, y lo que mejoró el resultado fue extraer solo lo necesario y poder volver al original. A un estimador junior le pedirías que te muestre de dónde sacó cada valor. Al agente, lo mismo. Antes de adjudicar, cada número del cuadro tiene que decir de qué página salió. Un número sin página no se revisa. Se cree.",
+   "tema": "Adjudicar subcontratos con un cuadro comparativo de ofertas armado por IA",
+   "manantial": "senal",
+   "formula": "senal_a_angulo",
+   "evidencia": {
+    "tipo": "señal de proveedores (agentes de nivelación de ofertas) cruzada con el patrón que David vio en sus sesiones con equipos",
+    "referencia": "Procore, página del agente de nivelación de ofertas (sin fecha, © 2026): https://www.procore.com/es/ai/agents/bid-leveling · «Autodesk University 2026: Forma Product Highlights Across the Construction Lifecycle», Digital Builder, 16-sep-2026: https://www.autodesk.com/blogs/construction/autodesk-university-2026-forma-product-highlights-across-the-construction-lifecycle/ · Informe sesión S1 Fundamentos Copilot 365, 28-may-2026: https://app.notion.com/p/722eb19995b646738642437a6160d723 · Informe sesión S3 «Acompañamiento Mes 1», 30-jun-2026, caso de un traspaso PDF→Excel: https://app.notion.com/p/35fbaf55447c43bc80257707b3a25bcd · Informe de la sesión Evaluación 1 Máster AEC 4.0 V2, 25-jun-2026, §8: https://app.notion.com/p/a59b39af50b14f9f9dfa14bc0b1c1343",
+    "afirmacion": "hecho (lo que anuncian los proveedores y lo que registra cada informe); el patrón de las sesiones es inferencia; aplicarlo al cuadro de subcontratos es opinión de David"
+   },
+   "premisa": "Lo que sostengo es que un cuadro comparativo de ofertas hecho con IA solo sirve para adjudicar si cada número apunta a la página de la oferta de donde salió; si no, el jefe de proyecto no lo revisa, lo cree.",
+   "hipotesis": "Si un agente nivela las ofertas de subcontratos y entrega la tabla, el trabajo de comparación ya está hecho y basta con mirar el total.",
+   "respuesta": "El agente ahorra el tecleo, pero la exclusión escondida sigue siendo el riesgo, y solo se detecta volviendo al documento. Por eso la condición para usar la tabla es que cada valor traiga su página; así revisar toma poco y el error se ve antes de firmar el contrato.",
+   "cadena_tesis": {
+    "evidencia": "Procore y Autodesk ofrecen agentes que pasan las propuestas de subcontratos a una tabla comparable. La página de Procore no indica que cada dato se vincule a su documento. En las sesiones de David con equipos, cargar todos los documentos de golpe trajo errores y la mejora vino de extraer solo lo necesario.",
+    "inferencia": "Si el agente se equivoca al leer un PDF largo, el error no se nota en la tabla: se nota cuando se vuelve al original. Sin el vínculo a la página, volver cuesta lo mismo que hacer el cuadro a mano.",
+    "salto": "La exigencia que tiene que poner el jefe de proyecto no es sobre el agente sino sobre el entregable: cada número con su página. Es la misma regla que aplicaría a un estimador junior.",
+    "no_afirmado": "No se afirma que los agentes de Procore o Autodesk se equivoquen ni que no muestren la fuente en su uso: solo que la página de Procore no lo dice. No se afirma cuánto tiempo ahorran; no se usan cifras de proveedores."
+   },
+   "contraargumento": "Con proveedores conocidos y partidas estándar, el riesgo de exclusión es bajo y revisar página por página es perder el tiempo que el agente ahorró. Y varios productos sí enlazan la fuente: la exigencia puede estar ya cumplida.",
+   "residuo": "Un número sin página no se revisa. Se cree.",
+   "gancho": {
+    "tipo": "error caro",
+    "texto": "La exclusión que se come el margen de una partida no aparece en la tabla nivelada: aparece en la página once del PDF."
+   },
+   "arco": "Llegan las ofertas de subcontratos en PDF y un agente promete la tabla nivelada en minutos (punto de partida: la comparación parece resuelta). Cargar todos los documentos de golpe trae errores que no se ven en la tabla, y sin volver al original la exclusión escondida pasa (tensión: el ahorro del tecleo deja intacto el riesgo de la letra chica). Antes de adjudicar, cada número del cuadro dice de qué página salió, como se le pediría a un estimador junior (cierre: un número sin página no se revisa, se cree).",
+   "escena": "Viernes en la oficina técnica, con la adjudicación de las terminaciones para el lunes. Llegaron cuatro ofertas en PDF, una con el andamio incluido y otra con el andamio excluido en una nota al pie. El cuadro comparativo que devolvió el asistente pone las cuatro en la misma fila y el total más bajo en verde.",
+   "arquitectura": "dolor",
+   "pilar": "BIM no basta si no conecta datos y decisiones",
+   "marco": "Puentes Digitales: Datos ↔ Decisiones; el dato que sostiene una adjudicación tiene que llevar consigo de dónde salió",
+   "audiencia": "Gerentes de operaciones, jefes de proyecto y jefes de oficina técnica de contratistas que adjudican subcontratos (segmento «Project Managers y gerentes de operaciones de contratistas»)",
+   "canales": {
+    "linkedin": "Post de dolor: el viernes antes de adjudicar, la tabla nivelada en verde y la nota al pie que no aparece; la regla de la página.",
+    "x": "Tesis: un cuadro de ofertas hecho con IA solo sirve si cada número trae su página; condición: cuando se adjudica con plazo; cierre: un número sin página no se revisa, se cree.",
+    "blog": "Expertise: qué pedirle a un cuadro comparativo de subcontratos armado por IA antes de adjudicar, con lo que muestran las páginas de los proveedores.",
+    "clase": "Con tres ofertas de ejemplo en PDF, cada alumno pide a la IA el cuadro comparativo con la página de cada valor y revisa una exclusión escondida."
+   },
+   "por_que_ahora": "Autodesk mostró en septiembre su agente para propuestas de subcontratos y Procore ya publica en español sus agentes de nivelación de ofertas. Es la próxima demo que va a ver un gerente de operaciones.",
+   "riesgo": "Que se lea como crítica a Procore: se cita lo que dice su página, no su desempeño. El patrón de las sesiones viene de oficinas técnicas y alumnos, no de licitaciones de subcontratos; David tiene que confirmar que el traspaso PDF→Excel de S3 sirve como ejemplo. El número de página del gancho es ilustrativo.",
+   "procedencia": {
+    "david": "El patrón de sus sesiones con equipos (cargar todo de golpe trae errores; extraer lo necesario y volver al original) en los informes S1, S3 y Evaluación 1; la señal de Autodesk ya estaba en el material.",
+    "agente": "La audiencia y la necesidad (adjudicar un subcontrato) elegidas primero, la página del agente de Procore (traída por el agente), la comparación con el estimador junior, la escena del andamio, el residuo y la persuasión."
+   },
+   "validacion": {
+    "errores": [],
+    "avisos": []
+   }
+  },
+  {
+   "id": "I03-J3",
+   "titulo": "El visto bueno que solo pasaba el papel",
+   "persuasion": "Que antes de digitalizar el circuito del estado de pago revise cada visto bueno y saque los que no controlan nada.",
+   "proceso": [
+    "Miré a la audiencia por el lado del dinero: el gerente de operaciones recibe la llamada del subcontratista que no ha cobrado, y el jefe de proyecto tiene que contestar dónde está su estado de pago. Necesidad administrativa con costo directo en la relación con los subcontratos.",
+    "Busqué si es un tema que el sector está discutiendo en Chile: una nota de Diario Estrategia del 9-sep-2026, con la voz de una empresa de gestión de contratos, dice que en construcción e infraestructura las obligaciones no se siguen después de firmar y que la trazabilidad del estado de pagos y compromisos pasó a ser condición de operación (https://www.diarioestrategia.cl/texto-diario/mostrar/6008518/dificultades-trazabilidad-pagos-compromisos-suman-presion-sectores-construccion-e-infraestructura). No uso sus cifras.",
+    "Busqué en el material qué tiene David sobre circuitos de aprobación: la tutoría donde una líder BIM le mostró el diagrama de entregas de su departamento y él respondió que se diseña desde el final y que en digital algunos pasos pierden función, como el área que solo pasa información. Es experiencia con informe.",
+    "La elegí porque responde a la tentación de esta audiencia cuando le ofrecen automatizar: copiar el circuito tal cual con un flujo que manda correos. La traduje del diagrama de entregas al estado de pago, y lo marco como traducción.",
+    "Descarté hablar de quién firma el entregable porque I02 ya tuvo tres ideas sobre el borrador y la firma; por eso uso «visto bueno» y hablo del circuito, no de la responsabilidad profesional."
+   ],
+   "relato": "Pregunten en una constructora dónde está el estado de pago de un subcontrato y casi siempre la respuesta es que espera un visto bueno. Cuando se decide digitalizar ese circuito, lo normal es copiar el dibujo tal cual: los mismos pasos, ahora con un flujo que manda correos. En una tutoría, una líder BIM me mostró el diagrama de entregas de su departamento y me preguntó por dónde empezar a automatizar. Le dije que se diseña desde el final, desde lo que se necesita al cerrar, y que en digital algunos pasos se quedan sin función, como el área que solo recibe y reenvía. Con el estado de pago pasa lo mismo. Antes de automatizar, revisen cada visto bueno y pregúntense qué controla. El que solo pasaba el papel no se automatiza. Se saca.",
+   "tema": "El circuito de aprobación del estado de pago a subcontratistas y qué pasa cuando se digitaliza tal como está dibujado",
+   "manantial": "experiencia",
+   "formula": "traduccion",
+   "evidencia": {
+    "tipo": "experiencia de David (tutoría sobre un diagrama de entregas) traducida al estado de pago, con una señal de prensa chilena que el agente trajo",
+    "referencia": "Diplomado BIM + IA, informe «Sesión de Tutorización 3: Power Automate, Flujos y Práctica» (página creada el 30-ene-2026), secciones «Caso práctico: flujo de entregas» y «Metodología mostrada»: https://app.notion.com/p/22d8dbdcccc54889872abd895e6beae0 · CV v6, línea «Coordinador BIM | OXXO Chile, jul 2022 – sep 2024» (seguimiento entre áreas con Power Automate y SharePoint) · Diario Estrategia, «Dificultades de trazabilidad de pagos y compromisos suman presión a los sectores de construcción e infraestructura», 9-sep-2026 (fuente con voz de un proveedor de gestión de contratos): https://www.diarioestrategia.cl/texto-diario/mostrar/6008518/dificultades-trazabilidad-pagos-compromisos-suman-presion-sectores-construccion-e-infraestructura",
+    "afirmacion": "experiencia (lo que David respondió en la tutoría); hecho (lo que publica la nota); aplicarlo al estado de pago es inferencia"
+   },
+   "premisa": "Lo que sostengo es que digitalizar el circuito del estado de pago tal como está dibujado solo acelera los mismos atrasos: primero hay que revisar cada visto bueno y sacar los que existían para mover el papel.",
+   "hipotesis": "El estado de pago se atrasa porque el circuito es manual; si se pasa a un flujo digital con avisos automáticos, el subcontratista cobra a tiempo.",
+   "respuesta": "Un flujo que copia todos los pasos manda los mismos documentos a las mismas bandejas, ahora con correos. Algunos vistos buenos controlan algo, como la cubicación o el avance; otros solo existían porque el papel tenía que pasar de mano en mano. El diseño empieza desde lo que se necesita para pagar y deja solo los pasos que revisan algo.",
+   "cadena_tesis": {
+    "evidencia": "En la tercera tutoría del Diplomado BIM + IA, ante el diagrama de entregas de una líder BIM, David explicó que el diseño se piensa desde el final y la implementación desde el desencadenador, y señaló que en digital algunos hitos pierden sentido, por ejemplo un área de coordinación que solo pasa información. Una nota de Diario Estrategia de septiembre de 2026 dice que en construcción las obligaciones no se siguen después de firmar el contrato.",
+    "inferencia": "El circuito del estado de pago se parece a ese diagrama: pasa por varias manos y algunas solo reciben y reenvían. Si se digitaliza sin revisarlo, cada una de esas manos sigue siendo una espera.",
+    "salto": "Antes de pedir un flujo para el estado de pago, el gerente de operaciones tiene que preguntar qué controla cada visto bueno y sacar el que no controla nada. El ahorro de días sale de esa revisión más que del flujo.",
+    "no_afirmado": "No se afirma que David haya digitalizado un estado de pago ni que los atrasos de pago en Chile vengan sobre todo del circuito interno: muchos vienen del mandante. No se afirma ninguna cifra de días ni de montos."
+   },
+   "contraargumento": "Muchos vistos buenos existen por control interno, auditoría o contrato con el mandante, y sacarlos puede terminar en pagar un avance que no se ejecutó. Además, gran parte del atraso que reclama el sector en Chile viene de mandantes públicos que no liberan los pagos, y eso no se arregla con un flujo interno.",
+   "residuo": "El visto bueno que solo pasaba el papel no se automatiza. Se saca.",
+   "gancho": {
+    "tipo": "dolor oculto",
+    "texto": "Casi todos los estados de pago atrasados están esperando un visto bueno de alguien que no revisa nada."
+   },
+   "arco": "El subcontratista llama porque no ha cobrado y la respuesta es que el estado de pago espera un visto bueno (punto de partida: el atraso parece culpa del circuito manual). Si el circuito se copia tal cual a un flujo con correos, cada mano que solo reenviaba sigue siendo una espera, como el área que solo pasaba información en el diagrama de entregas de la tutoría (tensión: digitalizar acelera el mismo dibujo). Se diseña desde lo que se necesita para pagar y se revisa qué controla cada visto bueno (cierre: el que solo pasaba el papel no se automatiza, se saca).",
+   "escena": "Fin de mes. El gerente de operaciones abre el correo del dueño de la empresa de moldajes, que pregunta por tercera vez por su estado de pago. El jefe de proyecto lo firmó hace días; después pasó por la oficina técnica, por administración de obra y por la oficina central, y está en la bandeja de alguien que lo reenvía sin abrir la cubicación.",
+   "arquitectura": "transformacion",
+   "pilar": "Innovar no es saber código, es saber dónde duele",
+   "marco": "Automatización Empática: la mejor automatización elimina frustración, no trabajo; aquí la frustración es la espera del subcontratista y del jefe de proyecto que tiene que dar la cara",
+   "audiencia": "Gerentes de operaciones y jefes de proyecto de contratistas que responden por los pagos a subcontratos (segmento «Project Managers y gerentes de operaciones de contratistas»)",
+   "canales": {
+    "linkedin": "Post de transformación: la llamada del subcontratista, el circuito copiado a un flujo y la revisión de cada visto bueno, contada con la tutoría del diagrama.",
+    "x": "Tesis: digitalizar el estado de pago tal cual acelera los mismos atrasos; condición: cuando hay vistos buenos que no revisan nada; cierre: el que solo pasaba el papel se saca.",
+    "blog": "Historias y casos: del diagrama de entregas de una tutoría al circuito del estado de pago, y cómo distinguir el visto bueno que controla del que solo reenvía.",
+    "clase": "Cada alumno dibuja el circuito de aprobación de un documento de su empresa y marca, paso por paso, qué controla cada firma o visto bueno."
+   },
+   "por_que_ahora": "En septiembre la prensa de negocios en Chile puso la trazabilidad de pagos y compromisos como problema del sector, y a fin de año se acumulan los cierres de estados de pago con los subcontratos.",
+   "riesgo": "La experiencia de David es sobre un diagrama de entregas, no sobre estados de pago: la traducción tiene que decirse como tal. La nota de Estrategia trae la voz de un proveedor de software; se cita la idea, no sus cifras. Sacar controles suena irresponsable si no se aclara que solo se saca lo que no revisa nada.",
+   "procedencia": {
+    "david": "Su respuesta en la tutoría 3 del Diplomado BIM + IA (diseñar desde el final, pasos que pierden función en digital) y el seguimiento entre áreas de OXXO (CV v6).",
+    "agente": "La audiencia y la necesidad (el estado de pago que no avanza) elegidas primero, la nota de Diario Estrategia (traída por el agente), la traducción del diagrama de entregas al estado de pago, la escena de fin de mes, el uso de «visto bueno», el residuo y la persuasión."
+   },
+   "validacion": {
+    "errores": [],
+    "avisos": []
+   }
+  },
+  {
+   "id": "I03-L1",
+   "titulo": "Lo que se le muestra al directorio",
+   "persuasion": "Que deje de reportar al directorio cuántas consultas respondió el asistente y muestre qué paso del proceso ocurre distinto desde el piloto.",
+   "proceso": [
+    "Miré a quien firma el piloto de IA ante el directorio o los socios en noviembre, cuando se arma el presupuesto del año siguiente: su pregunta no es qué agente elegir, sino qué muestra para seguir pagando.",
+    "Leí la nota de Diario Financiero del 4-ago-2026 sobre el Índice de Transformación Digital en IA (CCS, Corfo y PMG Chile): la mayoría de las empresas no mide el retorno de su IA y muy pocas tienen criterios para escalar o descartar un piloto. https://www.df.cl/df-lab/tech-empresas/empresas-en-chile-no-logran-escalar-la-ia-por-falta-de-gobernanza-datos",
+    "Necesidad, de tipo justificación: un indicador que le sirva al directorio y que no se desarme con la primera pregunta de un socio.",
+    "En el material elegí la distinción de la clase 32 entre el chatbot que responde y el agente que actúa, y el indicador de consultas atendidas que proponen las propias notas de segmento de David. La elegí porque es una autocorrección suya, no una crítica a otros.",
+    "Descarté el caso OXXO aprobado sin licencias nuevas: ya se contó en I02 como «la licencia que ya pagan» y «el plato del día».",
+    "No usé las cifras de la nota: son de todos los rubros y la pieza funciona sin ellas."
+   ],
+   "relato": "En mis notas sobre cómo calificar un piloto de IA aparece un indicador: las consultas que atiende el asistente. Es el indicador equivocado. Ese número dice cuánto se usó el chat, no si algo cambió en la empresa. En una clase del máster lo separé con dos personajes: el chatbot responde, el agente actúa. Hay piloto cuando la respuesta termina en algo que antes no pasaba: un registro que se crea, un responsable que recibe el aviso, una consulta que ya no cae en el correo del coordinador. Una medición publicada en Chile este año dice que la mayoría de las empresas no mide el retorno de su IA, y muy pocas definieron cuándo escalar o cerrar un piloto. Al directorio no le muestren el chat. Muéstrenle el paso que cambió.",
+   "tema": "Cómo justifica una gerencia ante el directorio que un piloto de IA merece seguir",
+   "manantial": "pilar",
+   "formula": "senal_a_angulo",
+   "evidencia": {
+    "tipo": "pilar y experiencia de David (distinción entre chatbot y agente en la clase 32; indicador propuesto en sus notas de segmento) cruzados con una medición publicada en prensa",
+    "referencia": "Notion «Informe de análisis del perfil docente…» (2026-05-04), §4.3, que cita el informe de la clase 32 del Máster AEC 4.0 «Azure AI + Escalabilidad» (31-mar-2026) · Notion «Público Objetivo y Segmentación» (2026-03-09), segmento 1, «KPIs de calificación» · pilar «IA sin flujo es humo» (Plan de Estrategia Comercial, 2026-03-10) · fuente web nueva: «Empresas en Chile no logran escalar la IA por falta de gobernanza, datos centralizados y brechas de gestión», Diario Financiero, 4-ago-2026, sobre el Índice de Transformación Digital en IA 2026 de CCS, Corfo y PMG Chile: https://www.df.cl/df-lab/tech-empresas/empresas-en-chile-no-logran-escalar-la-ia-por-falta-de-gobernanza-datos",
+    "afirmacion": "experiencia (la distinción en clase) e inferencia (que el indicador de consultas mide actividad y no operación); el dato de la nota es un hecho de la fuente, de empresas de todos los rubros"
+   },
+   "premisa": "Lo que sostengo es que el número de consultas que respondió un asistente mide cuánto se usó el chat, no si cambió la operación. Al directorio se le muestra un paso del proceso que ahora ocurre distinto: un registro que se crea, un responsable que recibe, un aviso que llega.",
+   "hipotesis": "Un piloto de IA se justifica mostrando cuánto se usó: consultas respondidas, usuarios activos, buena evaluación de quienes lo probaron.",
+   "respuesta": "El uso no prueba que la operación cambió. Lo que justifica seguir es un paso del proceso que ahora ocurre distinto, comparado contra cómo ocurría antes, por ejemplo una consulta que termina en un registro con responsable. Y la regla para escalar o cerrar el piloto se escribe antes de partir, no después de ver el gráfico.",
+   "cadena_tesis": {
+    "evidencia": "En la clase 32 del Máster AEC 4.0 (31-mar-2026) David separó con una analogía el LLM personalizado, que responde, del agente, que actúa. Sus notas de Público Objetivo proponen calificar los pilotos de este segmento con indicadores como las consultas que atiende el asistente. La nota de Diario Financiero del 4-ago-2026 informa que la mayoría de las empresas chilenas encuestadas no mide el retorno de su IA y que muy pocas tienen criterios para escalar o descartar un piloto.",
+    "inferencia": "Si el indicador del piloto son las consultas atendidas, lo que llega al directorio es actividad del chat. Y si la regla para seguir no está escrita antes, se decide mirando un gráfico que casi siempre sube.",
+    "salto": "Un piloto se presenta por el paso del proceso que cambió frente a cómo se hacía antes, y con la condición para escalarlo o cerrarlo fijada al inicio.",
+    "no_afirmado": "No se afirma que un asistente que solo responde no sirva: ahorra búsquedas y ayuda a quien recién llega. No se da ninguna cifra de retorno. La medición de la nota es de todos los rubros, no del sector AEC."
+   },
+   "contraargumento": "Un asistente que solo responde ya ahorra búsquedas en el CDE y acorta la llegada de la gente nueva, y eso es valor aunque no dispare nada. Además, medir el cambio de un paso del proceso toma más tiempo que un piloto corto, y el directorio quiere una señal pronto.",
+   "residuo": "Al directorio no le muestren el chat. Muéstrenle el paso que cambió.",
+   "gancho": {
+    "tipo": "creencia equivocada",
+    "texto": "El indicador favorito de los pilotos de IA, las consultas respondidas, mide el chat y no a la empresa."
+   },
+   "arco": "Un gerente llega al directorio con el gráfico de consultas del asistente subiendo mes a mes (punto de partida: el uso se presenta como prueba de valor). Un socio pregunta qué cambió en la obra o en la oficina, y el gráfico no lo dice, porque mide cuánto se habló con el chat (tensión: la medición publicada en Chile muestra que casi nadie mide retorno ni fijó cuándo escalar o cerrar). La presentación que resiste esa pregunta muestra un paso que antes no ocurría así y la regla que se escribió al partir (cierre: el chatbot responde, el agente actúa, y al directorio le importa lo segundo).",
+   "escena": "Reunión de socios de una constructora mediana en noviembre. El gerente de innovación proyecta el uso del asistente que responde preguntas sobre los documentos del proyecto: más consultas cada mes. Uno de los socios pregunta qué dejó de pasar por el correo del coordinador desde que está el asistente, y nadie lo midió.",
+   "arquitectura": "comparacion",
+   "pilar": "IA sin flujo es humo",
+   "marco": "Puentes Digitales (Datos ↔ Decisiones): el piloto se mide donde la respuesta se vuelve una acción con responsable",
+   "audiencia": "Empresas que quieren implementar agentes o copilotos: gerentes generales, gerentes de innovación o de TI y CTO de constructoras, ingenierías y oficinas de arquitectura (segmento 1 de Público Objetivo)",
+   "canales": {
+    "linkedin": "Post de postura: el indicador que yo mismo tenía anotado, por qué mide el chat y qué paso del proceso mostrar en su lugar.",
+    "x": "Tesis: las consultas respondidas miden el chat, no la empresa; condición: cuando el piloto se presenta al directorio; cierre: muestren el paso que cambió.",
+    "blog": "Tendencias y opinión: qué dice la medición publicada en Chile sobre pilotos de IA y cómo armar la lámina que resiste la pregunta de un socio.",
+    "clase": "Ejercicio de evaluación de pilotos: cada alumno reemplaza el indicador de uso de su prototipo por un paso del proceso que cambia y escribe la regla para escalarlo o cerrarlo."
+   },
+   "por_que_ahora": "Fin de noviembre: las gerencias arman el presupuesto del próximo año y tienen que decidir qué pilotos siguen. La medición de CCS, Corfo y PMG salió en agosto y sigue circulando.",
+   "riesgo": "Que se lea como un ataque a los asistentes que solo responden, que sí sirven. La escena del directorio es ilustrativa, no un caso de David, y en el texto final tiene que contarse como imaginada. La frase sobre sus notas de segmento la tiene que validar David: es su propio documento comercial. Las cifras de la nota no se usan.",
+   "procedencia": {
+    "david": "La distinción entre chatbot que responde y agente que actúa (clase 32), el indicador de consultas atendidas en sus notas de Público Objetivo, el pilar «IA sin flujo es humo» y el marco Puentes Digitales.",
+    "agente": "La búsqueda y lectura de la nota de Diario Financiero del 4-ago-2026 sobre el Índice de Transformación Digital en IA, el foco en la reunión de presupuesto con el directorio, la escena de la reunión de socios y la regla para escalar o cerrar escrita antes."
+   },
+   "validacion": {
+    "errores": [],
+    "avisos": []
+   }
+  },
+  {
+   "id": "I03-L2",
+   "titulo": "Hay que preguntarle mejor",
+   "persuasion": "Que cuando un agente falle, deje de pedir un curso de prompts y pida revisar qué podía consultar el agente y qué datos le llegaron.",
+   "proceso": [
+    "Miré al gerente de innovación o de TI que ya tiene un piloto andando y no convence. Su decisión de fin de año es dónde poner la plata siguiente: capacitar en prompts, cambiar de proveedor o trabajar los datos.",
+    "Revisé la nota sobre la Guía de Uso de IA para procesos AECO que CTEC presentó en Edifica 2026 con la Comisión de Productividad de la CChC y la CDT (El Desconcierto, 3-nov-2026): para elegir casos de uso pone la disponibilidad de datos, la gobernanza de la información y los riesgos. https://eldesconcierto.cl/hoja-ruta/ctec-presento-guia-ia-y-plataforma-comparar-obras-industrializadas-edifica-2026-n5463721",
+    "Necesidad, de tipo diagnóstico: saber por qué falló el piloto antes de gastar en corregirlo.",
+    "Elegí la semilla del agente de incidencias de la evaluación del 3-nov-2026 porque es un error de David contado por él: en vivo culpó a las comas y la revisión posterior encontró otra cosa. Le da autoridad sin dar lecciones.",
+    "Sumé la semilla de los documentos cargados «a lo bruto» para que no fuera un caso aislado.",
+    "Descarté el copiloto que funcionaba en una habitación y no en otra: ya se usó en I02. Saqué los nombres técnicos del fallo para que lo entienda un gerente."
+   ],
+   "relato": "En la evaluación final del máster, un agente que consultaba incidencias de obra respondió bien por una obra y falló cuando le preguntaron por tres a la vez. En plena clase yo le eché la culpa a las comas del mensaje. Después lo revisé con calma y esa explicación no se sostenía: el agente había pedido un dato distinto del que se le preguntaba. Me pasó a mí, en vivo, y lo veo en las sesiones con equipos de empresas. Cuando un piloto falla, la primera explicación es que hay que preguntarle mejor, y la tentación es pagar un curso de prompts. Otras veces el error venía de cargarle todos los documentos de una vez. Antes de pagar por redactar mejor, revisen qué podía abrir el agente y qué le llegó.",
+   "tema": "Qué hace una gerencia cuando su piloto de IA responde mal",
+   "manantial": "experiencia",
+   "formula": "experiencia_a_criterio",
+   "evidencia": {
+    "tipo": "experiencia de David (un error propio en la evaluación final del Máster V2, revisado después) más un patrón de sesiones con equipos de empresa, cruzados con una guía gremial",
+    "referencia": "Análisis privado «M05_C07 — Evaluación de prototipos y revisión de conexiones ACC» (editado el 4-nov-2026), tabla «Revisión de lo enseñado» y «Contraste con la transcripción»: https://app.notion.com/p/40e5f443fb5c8113859ffba88029bf72 · ficha «Evaluación 5 · Prototipo Cloud Funcional» (3-nov-2026), «Qué faltó y qué cambiar»: https://app.notion.com/p/2edbfb381b9c4a8c86a3e78ff45af5fe · Informe sesión S1 Fundamentos Copilot 365, 28-may-2026: https://app.notion.com/p/722eb19995b646738642437a6160d723 · Informe sesión S3 Acompañamiento Mes 1, 30-jun-2026: https://app.notion.com/p/35fbaf55447c43bc80257707b3a25bcd · fuente web nueva: «CTEC presentó guía de IA y plataforma para comparar obras industrializadas en Edifica 2026», El Desconcierto, 3-nov-2026: https://eldesconcierto.cl/hoja-ruta/ctec-presento-guia-ia-y-plataforma-comparar-obras-industrializadas-edifica-2026-n5463721",
+    "afirmacion": "experiencia (el fallo y la revisión); la causa exacta del fallo sigue sin confirmar; que el patrón valga en general es inferencia"
+   },
+   "premisa": "Lo que sostengo es que, cuando un agente falla, la explicación más cómoda es que se le preguntó mal, y muchas veces es la equivocada. Antes de pagar un curso de prompts hay que revisar qué podía consultar el agente y qué datos le llegaron.",
+   "hipotesis": "Si el piloto de IA responde mal, el problema está en cómo la gente le escribe: falta capacitación en prompts o un proveedor que los redacte mejor.",
+   "respuesta": "En los fallos revisados el defecto estaba en lo que el agente podía consultar y en lo que recibía: un dato pedido distinto de la pregunta, documentos cargados de más. Reescribir la pregunta tapa ese defecto y lo deja intacto. La inversión que corrige va a lo que el agente puede abrir y a cómo le llega la información.",
+   "cadena_tesis": {
+    "evidencia": "En la evaluación final del Máster V2 (3-nov-2026) un agente que consultaba incidencias respondió bien por una obra y falló con tres. En clase se atribuyó el fallo a las comas del mensaje. La revisión posterior de David deja esa causa sin confirmar y anota que el agente había pedido un parámetro distinto de lo preguntado. En sesiones con equipos de empresa y del máster, cargar todos los documentos de una vez trajo errores y la mejora vino de abrir solo lo necesario.",
+    "inferencia": "El reflejo de corregir la redacción aparece incluso en quien construyó el agente, y si se sigue, el defecto de diseño queda donde estaba.",
+    "salto": "La plata que sigue a un piloto que falla va primero a revisar qué podía consultar el agente y qué datos le llegaban, y solo después a cómo se le escribe.",
+    "no_afirmado": "No se afirma que la redacción nunca importe. No se afirma la causa exacta del fallo de la evaluación: queda sin confirmar. No se afirma que la guía de CTEC trate este caso; solo que pone los datos y su gobierno entre los criterios para elegir casos de uso."
+   },
+   "contraargumento": "A veces sí es la redacción: instrucciones ambiguas o reglas que se pierden en conversaciones largas. Y revisar lo que el agente puede consultar exige a alguien técnico que muchas empresas no tienen, mientras que un curso de prompts se compra fácil.",
+   "residuo": "Antes de corregir la pregunta, revisen qué podía abrir el agente.",
+   "gancho": {
+    "tipo": "error caro",
+    "texto": "Cuando un agente de IA falla, lo primero que se corrige es la pregunta, y muchas veces no era la pregunta."
+   },
+   "arco": "Un agente responde bien por una obra y falla cuando le preguntan por tres (punto de partida: el piloto parece andar hasta que se le pide un poco más). En vivo la culpa cae en la redacción, y fue el mismo David quien la puso ahí, aunque la revisión encontró que el agente había pedido un dato distinto (tensión: corregir la pregunta es barato y deja el defecto donde estaba). Antes de pagar por escribir mejor se revisa qué podía abrir el agente y qué le llegó, como hace con los datos la guía que el gremio presentó en Edifica (cierre: el fallo casi siempre está en lo que se le dio, no en cómo se le habló).",
+   "escena": "Evaluación final de un máster. Una alumna muestra su agente que cuenta incidencias de obra: con una obra responde bien; con tres, el resultado no cuadra. Frente a todos, la explicación apunta a las comas del mensaje. Días después, revisando la grabación, aparece que el agente había pedido otro dato.",
+   "arquitectura": "dolor",
+   "pilar": "Innovar no es saber código, es saber dónde duele",
+   "marco": "«Enamorarse del Problema» (Framework Metodológico): mirar dónde se rompió antes de cambiar la solución",
+   "audiencia": "Empresas que quieren implementar agentes o copilotos: gerentes generales, gerentes de innovación o de TI y CTO de constructoras, ingenierías y oficinas de arquitectura (segmento 1 de Público Objetivo)",
+   "canales": {
+    "linkedin": "Post de historia con error propio: culpé a las comas en vivo, la revisión encontró otra cosa, y qué revisar antes de pagar un curso de prompts.",
+    "x": "Tesis: cuando el agente falla, casi nunca era la pregunta; condición: si nadie revisó qué podía consultar; cierre: revisen qué podía abrir antes de reescribir.",
+    "blog": "Historias y casos: el agente que contaba bien una obra y mal tres, la explicación equivocada y las preguntas para diagnosticar un piloto que falla.",
+    "clase": "Diagnóstico de prototipos: ante un fallo, cada grupo revisa primero qué consulta el agente y qué datos recibe, y recién después toca la redacción."
+   },
+   "por_que_ahora": "A fin de año se revisan los pilotos lanzados en el año y se decide dónde poner el presupuesto siguiente; la guía de CTEC acaba de presentarse en Edifica y pone los datos en el centro.",
+   "riesgo": "Que se lea como un caso técnico de nicho: el detalle del parámetro se queda fuera y se cuenta como «un dato distinto». La causa del fallo no está confirmada y no se puede contar como resuelta. Puede sonar a defensa de los proveedores; el foco es dónde invierte la gerencia. La alumna de la escena queda anónima.",
+   "procedencia": {
+    "david": "El fallo del agente en la evaluación del 3-nov-2026, su atribución a las comas y la revisión posterior; el patrón de documentos cargados de más en sus sesiones; el criterio de revisar el contrato de la herramienta y los datos antes de la redacción.",
+    "agente": "La lectura de la nota sobre la guía de IA de CTEC en Edifica 2026, el foco en la decisión de presupuesto después de un piloto que no convence, la traducción del fallo a lenguaje de gerencia y el contraste con el curso de prompts."
+   },
+   "validacion": {
+    "errores": [],
+    "avisos": []
+   }
+  },
+  {
+   "id": "I03-L3",
+   "titulo": "Lo que sabe su equipo cuando el proveedor se va",
+   "persuasion": "Que antes de firmar con un implementador de IA, deje escrito qué va a poder hacer su equipo sin él y le pida demostrarlo.",
+   "proceso": [
+    "Miré al gerente general o de TI que recibe propuestas de implementación llave en mano y tiene que elegir entre contratar a un externo o armar con su gente.",
+    "Leí «Six questions contractors should ask before buying AI systems» (Construction Management, 2-sep-2026): pregunta qué se compra exactamente, si se puede seguir usando cuando la relación termina y qué se puede exportar. Habla de datos y licencias, no de lo que sabe hacer el equipo propio. https://constructionmanagement.co.uk/six-questions-contractors-should-ask-before-buying-ai-systems/",
+    "Necesidad, de tipo decisión de compra: no quedar atado a quien implementa, aunque el piloto haya funcionado.",
+    "En el material encontré la postura de David (empoderar usuarios antes que crear dependencias) y el choque con su propia oferta de soporte. La elegí porque decirlo en voz alta le da credibilidad frente a un comprador que desconfía de los consultores.",
+    "La apoyé con lo que hizo en la sesión 4 de un programa corporativo (23-abr-2026) y con la señal del equipo de automatización de n8n del 29-oct-2026.",
+    "Descarté «quién guarda el porqué» (el contexto dentro de la plataforma del proveedor) porque ya salió en I01."
+   ],
+   "relato": "Les digo algo incómodo, porque mi propia oferta contempla soporte. Cuando una empresa contrata a un externo para que le arme su IA, suele evaluar lo que el proveedor entrega. Casi nunca evalúa lo que su gente va a poder hacer cuando el proveedor se vaya. El equipo interno de automatización de n8n contó hace poco que dejó de construir a pedido y ahora mide su éxito por cuántos equipos ya no lo necesitan. En un programa con una empresa, cuando un participante se trabó, no me quedé en destrabarlo: le propuse armar primero una versión mínima con su caso, mostrarla a su equipo y recién después pedir cambios. Antes de firmar, escriban qué va a saber hacer su equipo sin el proveedor. Y pídanle que lo demuestre.",
+   "tema": "Cómo contrata una empresa AEC una implementación de IA sin quedar atada a quien la hace",
+   "manantial": "pilar",
+   "formula": "contraria",
+   "evidencia": {
+    "tipo": "opinión y marco de David, con una experiencia suya en un programa corporativo y dos señales externas",
+    "referencia": "Notion «Framework Metodológico» (editado 2026-04-29), paso 2 «Diseño desde el Terreno» · Notion «Posicionamiento y Propuesta de Valor» (2026-03-09), «Propuesta de valor» · Notion «Plan de Estrategia Comercial y de Marketing» (2026-03-10), días 61-90 · Notion «Público Objetivo y Segmentación» (2026-03-09), segmento 3, objeciones · Notion «Informe de análisis del perfil docente…» (2026-05-04), §4.1 y §4.2, que cita el informe de la sesión 4 de un programa corporativo (23-abr-2026) · «Why we're moving n8n's automation team beyond the service desk model», blog de n8n, 29-oct-2026: https://blog.n8n.io/why-were-moving-n8ns-automation-team-beyond-the-service-desk-model/ · fuente web nueva: «Six questions contractors should ask before buying AI systems», Construction Management, 2-sep-2026: https://constructionmanagement.co.uk/six-questions-contractors-should-ask-before-buying-ai-systems/",
+    "afirmacion": "opinión (la postura de David) con experiencia (la sesión del programa corporativo) y hechos de las fuentes externas"
+   },
+   "premisa": "Lo que sostengo es que una implementación de IA se evalúa también por lo que el equipo propio sabe hacer cuando el proveedor se va. Si al terminar nadie adentro puede cambiar una regla, la empresa compró una dependencia, aunque el piloto haya funcionado.",
+   "hipotesis": "Lo más seguro es que un experto externo construya y mantenga la solución de IA, porque el equipo propio no sabe y no tiene tiempo.",
+   "respuesta": "Lo que construye el externo sin dejar capacidad adentro dura lo que dura el contrato. Antes de firmar se deja escrito qué va a poder hacer el equipo sin el proveedor, y se le pide que lo demuestre: que alguien de la empresa cambie una regla con él mirando. Eso vale también para la oferta de soporte del propio David.",
+   "cadena_tesis": {
+    "evidencia": "El Framework Metodológico de David pide empoderar a los usuarios antes que crear dependencias, y su plan comercial proyecta una oferta de soporte y de Fractional CTO. En la sesión 4 de un programa corporativo (23-abr-2026), ante un participante trabado, propuso construir primero una versión mínima con su caso y mostrarla al equipo. El equipo de automatización de n8n escribió el 29-oct-2026 que mide su éxito por cuántos equipos ya no lo necesitan. Construction Management (2-sep-2026) recomienda preguntar qué se compra exactamente y qué pasa al terminar la relación.",
+    "inferencia": "Las guías de compra cuidan los datos y las licencias al salir del proveedor, pero no lo que sabe hacer el equipo propio, que es lo que decide si la solución sigue viva cuando el contrato termina.",
+    "salto": "La capacidad que queda adentro se pone en el contrato como entregable, y se prueba antes del cierre con alguien de la empresa haciendo un cambio sin ayuda.",
+    "no_afirmado": "No se afirma que contratar externos sea un error ni que el soporte sobre. No se afirma que el modelo de n8n esté resuelto: su propio texto deja pendientes la documentación y el manejo de errores. No se afirma un resultado medido del programa corporativo."
+   },
+   "contraargumento": "Muchas empresas no tienen gente con tiempo ni interés en aprender, y para ellas depender de un buen proveedor es una decisión sensata, como tercerizar la contabilidad. Además, dejar capacidad adentro alarga y encarece la implementación, y el propio David vende soporte.",
+   "residuo": "Evalúen al proveedor por lo que su equipo sabe hacer cuando él se va.",
+   "gancho": {
+    "tipo": "dolor oculto",
+    "texto": "La implementación de IA que funcionó perfecto puede ser la que más ata: nadie adentro sabe cambiarle una regla."
+   },
+   "arco": "Una empresa contrata a un externo para su IA y lo evalúa por lo que entrega (punto de partida: lo más seguro parece que lo haga quien sabe). Cuando el contrato termina, nadie adentro sabe cambiar una regla, y las guías de compra solo preguntan por los datos y las licencias (tensión: el propio David vende soporte, así que la crítica lo alcanza). El contrato pone como entregable lo que el equipo sabrá hacer solo, y se prueba con alguien de la empresa haciendo un cambio antes del cierre (cierre: un proveedor bueno se mide por cuánto menos se lo necesita).",
+   "escena": "Cierre de una implementación en una oficina de ingeniería. El proveedor muestra el agente funcionando y entrega el acta. Al mes cambia el formato de la planilla de origen, el agente deja de leerla y nadie de la oficina sabe dónde se ajusta: hay que abrir una orden de trabajo y esperar.",
+   "arquitectura": "postura",
+   "pilar": "No todo debe pasar por TI",
+   "marco": "Citizen Developer: la capacidad queda en profesionales que no son de TI y que pueden cambiar lo que usan",
+   "audiencia": "Empresas que quieren implementar agentes o copilotos: gerentes generales, gerentes de innovación o de TI y CTO de constructoras, ingenierías y oficinas de arquitectura (segmento 1 de Público Objetivo)",
+   "canales": {
+    "linkedin": "Post de postura con la incomodidad a la vista: yo también vendo soporte, y aun así esta es la cláusula que pondría antes de firmar con cualquier implementador.",
+    "x": "Tesis: una implementación se mide por lo que su equipo sabe hacer sin el proveedor; condición: si nadie adentro puede cambiar una regla; cierre: pídanle que lo demuestre.",
+    "blog": "Tendencias y opinión: las preguntas de compra que ya circulan, la que les falta y cómo escribirla en el contrato con un implementador.",
+    "clase": "Gestión de proyectos de IA: cada alumno redacta la cláusula de capacidad interna para la propuesta de su prototipo y define la prueba de cierre."
+   },
+   "por_que_ahora": "Fin de año es temporada de propuestas de implementación para el próximo año. La pieza de Construction Management circula desde septiembre y n8n publicó su cambio de modelo a fines de octubre.",
+   "riesgo": "Choca con la oferta comercial de David (soporte y Fractional CTO): David tiene que decidir si lo dice así y dónde pone su propio límite. Puede leerse como ataque a los consultores. La escena del cierre es ilustrativa, no un caso de David. El blog de n8n es de un proveedor y habla de sí mismo.",
+   "procedencia": {
+    "david": "La postura de empoderar usuarios antes que crear dependencias, la tensión con su propia oferta de soporte, lo que hizo en la sesión 4 del programa corporativo y el marco Citizen Developer.",
+    "agente": "La lectura de la pieza de Construction Management del 2-sep-2026, el vacío que deja (no pregunta por la capacidad del equipo propio), la cláusula de capacidad interna como entregable con prueba de cierre y la escena del agente que deja de leer la planilla."
+   },
+   "validacion": {
+    "errores": [],
+    "avisos": []
+   }
+  },
+  {
+   "id": "I03-A1",
+   "titulo": "Antes del curso de programación, el proceso escrito desde el final",
+   "persuasion": "Que antes de inscribirse en un curso de programación, escriba un proceso suyo que se repite, desde lo que tiene que entregar hacia atrás.",
+   "proceso": [
+    "Me puse en la semana de un arquitecto o ingeniero con diez o quince años de carrera que lee notas sobre IA y profesiones: la pregunta que más se repite es qué tiene que aprender, y la primera respuesta que le llega es programar.",
+    "Busqué prensa chilena: La Tercera (18-ago-2025) recoge al presidente del Colegio de Ingenieros de Chile, que pone la programación entre las competencias que pide, y El Desconcierto (3-nov-2026) cuenta que la guía de IA para procesos AECO del CTEC orienta a elegir casos de uso y avanzar de a poco. Elegir un caso de uso exige conocer el proceso propio.",
+    "La necesidad, de tipo decisión de carrera: «¿tengo que aprender a programar para no quedarme atrás?». La reconoce sin que nadie se la explique.",
+    "En el material elegí la tutoría 3 del Diplomado BIM + IA porque tiene informe y es una escena de trabajo: una líder BIM muestra el diagrama de entregas de su departamento y pregunta por dónde automatizar. La respuesta de David (diseñar desde el final, construir desde el primer paso) responde a la necesidad sin hablar de código.",
+    "Sumé el pilar «Innovar no es saber código, es saber dónde duele» y dejé el guion de pensamiento algorítmico solo como respaldo, porque es material planificado y no prueba.",
+    "Descarté responder con OXXO y las licencias (salió en I02) y el ángulo de cómo se aprende en un curso, que queda fuera de los temas de David."
+   ],
+   "relato": "Una líder BIM me mostró el diagrama de entregas de su departamento y me preguntó si convenía automatizar por el principio o por el final. Es la misma duda de fondo que escucho cuando alguien me pregunta si tiene que aprender a programar para no quedarse atrás. Le dije que el diseño se piensa desde el final: qué tiene que llegar, a quién y en qué momento. Recién después se construye desde el primer paso. Al redibujarlo así apareció un área que solo pasaba información de una mano a otra. En digital, ese paso sobra. Nada de eso pedía código. Pedía conocer el proceso mejor que nadie, y eso ella ya lo tenía. El código se lo pueden pedir a un copiloto. Saber qué tiene que salir al final, no.",
+   "tema": "Qué tiene que aprender un profesional AEC no programador para no quedarse atrás con la IA",
+   "manantial": "experiencia",
+   "formula": "experiencia_a_criterio",
+   "evidencia": {
+    "tipo": "experiencia de David (tutoría con informe) cruzada con dos piezas de prensa chilena que traje yo",
+    "referencia": "Diplomado BIM + IA, informe «Sesión de Tutorización 3: Power Automate, Flujos y Práctica» (página creada el 30-ene-2026), secciones «Caso práctico: flujo de entregas» y «Metodología mostrada»: https://app.notion.com/p/22d8dbdcccc54889872abd895e6beae0 · pilar «Innovar no es saber código, es saber dónde duele» (Plan de Estrategia Comercial, 2026-03-10) · Notion «Informe de análisis del perfil docente…» (2026-05-04), §4.2–4.3, guion «Pensamiento algorítmico para profesionales AEC» (planificado, solo respaldo) · fuente web nueva: La Tercera, «¿Nos reemplazará la Inteligencia Artificial? Analizamos su impacto en cuatro profesiones», Ricardo Olave, 18-ago-2025: https://www.latercera.com/lt-board/noticia/nos-reemplazara-la-inteligencia-artificial-analizamos-su-impacto-en-cuatro-profesiones/ · fuente web nueva: El Desconcierto, nota sobre la Guía de Uso de IA para procesos AECO del CTEC presentada en Edifica 2026, Pablo Oyarzún, 3-nov-2026: https://eldesconcierto.cl/hoja-ruta/ctec-presento-guia-ia-y-plataforma-comparar-obras-industrializadas-edifica-2026-n5463721",
+    "afirmacion": "experiencia (la tutoría); que el diagrama desde el final sea lo primero que conviene aprender es opinión de David"
+   },
+   "premisa": "Lo que sostengo es que lo primero que un profesional AEC necesita aprender para trabajar con IA no es código, sino escribir su propio proceso desde lo que tiene que entregar hacia atrás. Eso no se lo puede pedir a un copiloto.",
+   "hipotesis": "Para no quedarse atrás con la IA, un arquitecto o ingeniero tiene que aprender a programar, y quien no programa queda fuera.",
+   "respuesta": "Cuando una líder BIM preguntó por dónde automatizar sus entregas, lo que destrabó el caso fue redibujar el proceso desde el resultado: apareció un paso que solo pasaba información y que en digital sobra. Eso lo sabe quien conoce el proceso, no quien sabe programar. El código se le puede pedir a un copiloto; qué tiene que salir al final, no.",
+   "cadena_tesis": {
+    "evidencia": "En la tutoría 3 del Diplomado BIM + IA, una líder BIM mostró el diagrama de entregas de su departamento y preguntó si automatizar desde el principio o desde el final. David respondió que el diseño se piensa desde el final y la implementación se construye desde el desencadenador, mostró cómo pasar a un diagrama separado por área y etapa, y señaló que en digital algunos hitos pierden sentido, como un área que solo pasa información. En prensa chilena, el presidente del Colegio de Ingenieros pone la programación entre las competencias que pide, y la guía del CTEC orienta a elegir casos de uso.",
+    "inferencia": "Lo que hizo avanzar el caso fue conocer el proceso y ordenarlo desde el resultado, algo que la líder BIM ya traía y que ninguna línea de código le habría dado.",
+    "salto": "Para quien no es especialista en software, el primer aprendizaje útil frente a la IA es escribir su proceso desde la entrega hacia atrás; la programación llega después, si llega, y buena parte se puede pedir prestada a un copiloto.",
+    "no_afirmado": "No se afirma que programar no sirva ni que haya que dejar de aprenderlo. No se afirma que un copiloto escriba siempre código correcto: alguien tiene que saber qué debía hacer. No se afirma que la líder BIM haya implementado el flujo después de la tutoría."
+   },
+   "contraargumento": "Quien sabe algo de programación entiende mejor qué puede y qué no puede hacer un copiloto, y detecta antes un código malo. David mismo dirige un área de programación BIM. Y en ingeniería el gremio sí pide programación de forma explícita.",
+   "residuo": "El código se lo pueden pedir a un copiloto. Saber qué tiene que salir al final, no.",
+   "gancho": {
+    "tipo": "creencia equivocada",
+    "texto": "Una líder BIM me preguntó por dónde automatizar sus entregas. Lo que le faltaba no era código."
+   },
+   "arco": "Una líder BIM muestra el diagrama de entregas de su departamento y pregunta si automatizar por el principio o por el final (punto de partida: la misma duda de quien se pregunta si debe aprender a programar). Al redibujarlo desde lo que tiene que llegar aparece un área que solo pasa información, un paso que en digital sobra (tensión: lo que destraba el caso es conocer el proceso, no escribir código). El código se le puede pedir a un copiloto, y saber qué tiene que salir al final queda en manos de quien conoce el trabajo (cierre: antes del curso de programación, el proceso escrito desde la entrega hacia atrás).",
+   "escena": "Videollamada de trabajo. La líder BIM de una ingeniería comparte en pantalla el diagrama de entregas de su departamento, con flechas entre áreas y etapas. Pregunta por dónde empezar a automatizar. Se redibuja desde la entrega final y una de las cajas, un área que recibe y reenvía, se queda sin flechas propias.",
+   "arquitectura": "postura",
+   "pilar": "Innovar no es saber código, es saber dónde duele",
+   "marco": "Citizen Developer: profesionales que no son de TI construyen sus soluciones porque conocen su proceso, y piden prestado el código",
+   "audiencia": "Profesionales AEC que no son especialistas en software (arquitectos, ingenieros, constructores, técnicos, proyectistas) con cinco a veinte años de carrera; mensaje del posicionamiento para quienes aprenden",
+   "canales": {
+    "linkedin": "Post en primera persona: la pregunta de la líder BIM, el diagrama redibujado desde el final y la caja que sobró; cierra con el ejercicio de escribir un proceso propio hacia atrás.",
+    "x": "Tesis: lo primero que hay que aprender no es código, es el proceso escrito desde la entrega; condición: cuando el código se puede pedir a un copiloto; cierre: qué tiene que salir al final no se delega.",
+    "blog": "Tendencias y opinión: qué pide la prensa del sector (programación, casos de uso) y por qué escribir el proceso desde el final va antes que cualquier lenguaje.",
+    "clase": "Cada alumno escribe un proceso propio que se repite, desde la entrega hacia atrás, y marca los pasos que solo pasan información."
+   },
+   "por_que_ahora": "El CTEC acaba de presentar en Edifica 2026 una guía de IA para procesos AECO que pide elegir casos de uso, y elegir uno supone saber escribir el proceso propio. Al mismo tiempo, la lista de competencias que circula en prensa sigue poniendo programación arriba.",
+   "riesgo": "Puede leerse como «no aprendan a programar», que contradice el área que David dirige; la pieza tiene que decir que programar llega después, no nunca. La nota de La Tercera es de 2025: usarla como señal de lo que se repite, no como noticia. La líder BIM y su ingeniería van anónimas.",
+   "procedencia": {
+    "david": "La tutoría 3 del Diplomado BIM + IA (diseñar desde el final, construir desde el desencadenador, el área que solo pasa información) y su pilar «Innovar no es saber código, es saber dónde duele».",
+    "agente": "Las dos piezas de prensa chilena (La Tercera y El Desconcierto sobre la guía del CTEC), la necesidad formulada como «¿tengo que aprender a programar?», el relato en primera persona, el residuo, el gancho y la persuasión."
+   },
+   "validacion": {
+    "errores": [],
+    "avisos": []
+   }
+  },
+  {
+   "id": "I03-A2",
+   "titulo": "Usar IA ya no distingue a nadie; lo que dejas escrito, sí",
+   "persuasion": "Que cada vez que la IA le resuelva algo, copie la regla que funcionó a un documento propio en vez de dejarla en el historial del chat.",
+   "proceso": [
+    "Miré al profesional de la audiencia que ya usa ChatGPT o Copilot a diario y se pregunta si con eso basta para no quedarse atrás.",
+    "Busqué qué se discute en Chile y encontré en Portal Innova (5-nov-2026) el diagnóstico de la UC y la CChC sobre IA en construcción: nueve de cada diez profesionales declaran usar IA en su trabajo y nueve de cada diez empresas no la tienen incorporada en procesos relevantes; el estudio habla de una brecha entre el uso individual y la madurez de la organización.",
+    "La necesidad, de tipo dolor oculto: «uso la IA todos los días y no me queda nada; cada vez parto de cero, y eso no me distingue de nadie».",
+    "En el material encontré el dolor repetido en cinco informes de David (el chat «se olvida» de las reglas, la retención borra hilos, quien agota la cuenta personal abre otra y pierde todo) y la respuesta que ya da en sala: capitalizar lo que funciona en un documento o un agente. Lo elegí porque explica el porqué de la brecha que mide el estudio.",
+    "Descarté el ángulo de gobernanza de la empresa, que le habla al gerente y no al profesional, y el de cuánto cargar al agente, que es más técnico."
+   ],
+   "relato": "Un diagnóstico de la UC y la Cámara Chilena de la Construcción, presentado este mes, dice que nueve de cada diez profesionales del sector ya usan IA en su trabajo y que nueve de cada diez empresas todavía no la tienen en sus procesos importantes. Usarla ya no distingue a nadie. Lo que veo en los equipos con los que trabajo explica por qué no se suma. La gente usa el chat como cuaderno. El chat se olvida de las reglas en conversaciones largas, la política de retención borra los hilos y quien agota su cuenta personal abre otra y pierde todo. Cada semana parten de cero. Lo que pido es simple: cuando algo te funcione, saca la regla del chat y escríbela en un documento tuyo o del equipo. El chat se va. La regla queda.",
+   "tema": "Qué le queda al profesional AEC de usar IA todos los días, y qué lo distingue cuando todos la usan",
+   "manantial": "dolor",
+   "formula": "sintesis",
+   "evidencia": {
+    "tipo": "dolor repetido en informes de David (patrón inferido) cruzado con un estudio sectorial chileno que traje yo",
+    "referencia": "Informe sesión S4 «Excel, retención y tutor Power BI», 2-sep-2026: https://app.notion.com/p/830e8178919a40c0b054c1482b81e24c · Informe sesión S1 Fundamentos Copilot 365, 28-may-2026: https://app.notion.com/p/722eb19995b646738642437a6160d723 · Informe sesión S3 Acompañamiento Mes 1, 30-jun-2026: https://app.notion.com/p/35fbaf55447c43bc80257707b3a25bcd · bitácora «Planificado — 1:1 7 sep 2026 (Diagnóstico IA)», matriz D7, de una consultora de ingeniería: https://app.notion.com/p/3d45f443fb5c81e28bd6e4712df85d7b · Informe S16 Edición de imágenes con IA, 28-jul-2026: https://app.notion.com/p/f080dd72fefa4affb55b31b7d1c05122 · fuente web nueva: Portal Innova, «Construcción: 9 de cada 10 profesionales ya usan la IA, pero la misma proporción de empresas aún no la incorpora en procesos relevantes», 5-nov-2026, sobre el «Diagnóstico del uso de la IA en la cadena de valor del sector construcción 2026» (DIGC UC y CChC): https://portalinnova.cl/?p=260776",
+    "afirmacion": "hecho en cada informe y en la nota de prensa; que el chat usado como cuaderno explique la brecha del estudio es inferencia del agente"
+   },
+   "premisa": "Lo que sostengo es que, cuando casi todos los profesionales del sector ya usan IA, lo que distingue a uno no es usarla, sino lo que deja escrito fuera del chat para que le sirva a él la próxima vez y a su equipo.",
+   "hipotesis": "Usar ChatGPT o Copilot todos los días ya pone al profesional del lado de los que no se quedan atrás.",
+   "respuesta": "Casi todos la usan, así que usarla no distingue. Lo aprendido en el chat se pierde: el chat olvida reglas, la retención borra hilos y la cuenta personal se va con su historial. Lo que distingue es sacar del chat la regla que funcionó y dejarla en un documento propio o del equipo, donde sigue sirviendo.",
+   "cadena_tesis": {
+    "evidencia": "El diagnóstico UC–CChC de 2026, según Portal Innova, encuentra que nueve de cada diez profesionales declaran usar IA en su trabajo, que nueve de cada diez empresas no la tienen incorporada en procesos relevantes y que hay una marcada brecha entre la adopción individual y la madurez de la organización. En cinco informes de sesiones de David, alumnos y equipos cuentan que el chat pierde reglas en conversaciones largas, que la retención borra hilos y que quien agota una cuenta personal abre otra y pierde historial y archivos.",
+    "inferencia": "Una parte de la brecha entre el uso individual y lo que queda en la empresa se explica porque lo aprendido vive en historiales de chat que se compactan, se borran o se pierden con la cuenta.",
+    "salto": "Para el profesional, el hábito que lo distingue es sacar del chat la regla que funcionó y escribirla en un documento que él controla y que el equipo puede leer.",
+    "no_afirmado": "No se afirma que esa sea la única causa de la brecha que mide el estudio, ni que el estudio hable de cuentas personales o de historiales de chat: no lo dice. No se afirma que un documento de reglas reemplace la gobernanza de la empresa."
+   },
+   "contraargumento": "Si la empresa no tiene política ni lugar común, el documento de cada uno se vuelve otra isla. Y algunas plataformas ya ofrecen memoria y proyectos que guardan instrucciones, así que el problema podría resolverlo el proveedor.",
+   "residuo": "El chat se va. La regla queda.",
+   "gancho": {
+    "tipo": "dolor oculto",
+    "texto": "Nueve de cada diez profesionales de la construcción ya usan IA. Por eso usarla ya no los distingue."
+   },
+   "arco": "Un diagnóstico de la UC y la CChC muestra que casi todos los profesionales del sector ya usan IA y casi ninguna empresa la tiene en sus procesos (punto de partida: usar IA ya no distingue a nadie). En los equipos con los que David trabaja, lo aprendido vive en el chat, que olvida reglas, borra hilos o se pierde con la cuenta personal, y cada semana se parte de cero (tensión: el uso diario no se acumula). Cuando algo funciona, la regla sale del chat y queda escrita en un documento propio o del equipo (cierre: el chat se va, la regla queda).",
+   "escena": "Lunes en la oficina técnica. Un proyectista abre el chat para pedir otra vez la memoria de especificaciones con el formato de la empresa. La conversación de la semana pasada, donde había ajustado las reglas, ya no está, o el asistente ya no las respeta. Vuelve a explicarlo todo desde el principio.",
+   "arquitectura": "dolor",
+   "pilar": "IA sin flujo es humo",
+   "marco": "Citizen Developer y la regla de empoderar usuarios sobre crear dependencias: lo aprendido queda en manos de quien trabaja, no del historial de un proveedor",
+   "audiencia": "Profesionales AEC que no son especialistas en software y ya usan IA a diario (arquitectos, ingenieros, constructores, técnicos, proyectistas), con cinco a veinte años de carrera",
+   "canales": {
+    "linkedin": "Post de dolor: el dato del diagnóstico UC–CChC, por qué usar IA ya no distingue, las tres formas en que el chat pierde lo aprendido y el hábito de sacar la regla.",
+    "x": "Tesis: si todos usan IA, lo que distingue es lo que dejas escrito; condición: cuando lo aprendido vive en un chat que olvida; cierre: el chat se va, la regla queda.",
+    "blog": "Tendencias y opinión: el estudio UC–CChC leído desde el profesional, con un modelo de documento de reglas para una tarea repetida.",
+    "clase": "Cada alumno toma una tarea que le pide a la IA cada semana y escribe fuera del chat las reglas que hacen que salga bien."
+   },
+   "por_que_ahora": "El diagnóstico UC–CChC se presentó el 3-nov-2026 y la nota es del 5-nov: es el dato que el sector está comentando este mes, y pone en cifras que el uso individual ya es casi total.",
+   "riesgo": "Las cifras son del estudio según la nota de prensa, no del informe completo: citarlas como «según el diagnóstico UC–CChC» y con el enlace. El patrón de los informes es inferencia del agente y mezcla sesiones de distintos clientes: van anónimos. «El chat se va; la regla no» viene del material como formulación de lo que David responde en sala: David confirma si es su frase.",
+   "procedencia": {
+    "david": "El dolor registrado en sus informes de sesiones (el chat que «perdió la memoria», la retención, la cuenta personal agotada) y su respuesta de capitalizar lo que funciona en un documento o un agente.",
+    "agente": "La nota de Portal Innova sobre el diagnóstico UC–CChC, el cruce entre el uso individual casi total y lo que no queda en la empresa, el relato, el gancho, la escena del lunes y la persuasión."
+   },
+   "validacion": {
+    "errores": [],
+    "avisos": []
+   }
+  },
+  {
+   "id": "I03-A3",
+   "titulo": "Una tarea propia para medir cada lanzamiento",
+   "persuasion": "Que deje de elegir qué IA aprender por la lista o la demo, y pruebe cada una con una tarea suya que ya sabe resolver a mano.",
+   "proceso": [
+    "Miré al profesional que abre LinkedIn y ve cada semana un lanzamiento o una lista de herramientas de IA para su rubro, y que no sabe cuál vale su tiempo.",
+    "La señal fue una de esas listas: «Las Mejores Herramientas de IA para Arquitectos en 2026: 14 Herramientas…» (Rework, actualizada el 16-jul-2026). Dice que la mejor herramienta depende de la parte del trabajo y recomienda probar el ajuste al flujo con un nivel gratuito, pero no dice cómo hacer esa prueba. A eso sumé los agentes que Autodesk mostró en AU 2026, del material.",
+    "La necesidad, de tipo decisión: «¿cuál de todas aprendo sin perder tiempo ni plata?».",
+    "En el material elegí la clase C33 del Máster V2 (22-oct-2026), donde David compara dos copilotos dentro de Revit con la misma tarea y el mensaje de éxito no basta: hubo que mirar el modelo. Es el cómo que la lista no trae. Sumé el riesgo anotado en su informe de perfil: lo que depende de plataformas de terceros hay que rehacerlo cuando cambian.",
+    "Cuidé no repetir «Pruébalo en la habitación de al lado» (I02, probar una solución con otra entrada): aquí la tarea propia sirve para elegir entre herramientas antes de aprender una.",
+    "Descarté el ángulo de los créditos de IA de Autodesk que no se pueden presupuestar (AEC Magazine), por técnico para esta audiencia."
+   ],
+   "relato": "Cada semana aparece una lista nueva: catorce herramientas de IA para arquitectos, el agente que Autodesk mostró en su congreso, el copiloto que llega a Revit. Y la pregunta que me hacen es cuál aprender. Lo vivo de cerca, porque cada vez que cambia una plataforma tengo que rehacer parte de mi material. Lo que no cambia es la tarea. Hace poco comparé dos copilotos dentro de Revit con el mismo encargo: una vista recortada de una habitación. La primera petición no resolvió todo, aunque el asistente avisó que sí. Lo vi en el modelo, no en el mensaje. Elijan una tarea suya que conozcan de memoria, una cubicación, un informe de avance, una vista, y pásensela a cada novedad que les ofrezcan. La que no la resuelve, todavía no se aprende.",
+   "tema": "Cómo decide un profesional AEC qué herramienta de IA vale su tiempo cuando sale una nueva cada semana",
+   "manantial": "senal",
+   "formula": "senal_a_angulo",
+   "evidencia": {
+    "tipo": "señal externa que traje yo (lista comercial de herramientas) traducida con una experiencia de David con informe",
+    "referencia": "Máster AEC 4.0 V2, C33 «Copilotos BIM (…): comparar y reutilizar» (22-oct-2026), secciones «La demostración de la clase» y «Cómo comprobar el aprendizaje»: https://app.notion.com/p/06c33a0f8bb94fd8aff6a58953ec97aa · contraste con la transcripción en el «Informe provisional · revisión documental» (4-nov-2026): https://app.notion.com/p/40e5f443fb5c81e398d9fae5ff70d4b6 · Notion «Informe de análisis del perfil docente…» (2026-05-04), §8 «Dependencia de plataformas de terceros» · «Autodesk University 2026: Forma Product Highlights Across the Construction Lifecycle», Digital Builder, 16-sep-2026: https://www.autodesk.com/blogs/construction/autodesk-university-2026-forma-product-highlights-across-the-construction-lifecycle/ · fuente web nueva: Rework, «Las Mejores Herramientas de IA para Arquitectos en 2026: 14 Herramientas para Diseño, Viabilidad y Presentaciones», Victor Hoang, actualizada el 16-jul-2026 (fuente comercial): https://resources.rework.com/es/tools/ai-tools/best-ai-tools-for-architects-2026",
+    "afirmacion": "hecho (la lista y lo que dice); experiencia (la comparación de C33); que una tarea propia sea la mejor vara para elegir es opinión de David"
+   },
+   "premisa": "Lo que sostengo es que, frente a la avalancha de lanzamientos de IA, la decisión de qué aprender no sale de una lista ni de una demo, sino de una tarea propia que uno ya sabe resolver y le pasa a cada novedad.",
+   "hipotesis": "Para no quedarse atrás hay que seguir las listas de las mejores herramientas del año y aprender las que están de moda.",
+   "respuesta": "Las listas cambian cada mes y las plataformas también; la tarea de cada uno, no. Con una tarea propia que se conoce de memoria se mide cualquier novedad en una tarde, y se mira el resultado en el modelo o en el documento, no en el mensaje de éxito. La que no resuelve esa tarea puede esperar.",
+   "cadena_tesis": {
+    "evidencia": "La lista de Rework presenta catorce herramientas de IA para arquitectos, dice que la mejor depende de qué parte del trabajo se toque y recomienda probar el ajuste al flujo con un nivel gratuito, sin decir cómo. En la clase C33 del Máster V2, David comparó dos copilotos dentro de Revit con la misma tarea; la primera petición no resolvió todos los detalles y el mensaje de éxito del asistente no bastó: hubo que comprobar en el modelo. Su informe de perfil anota que el material que depende de plataformas de terceros hay que rehacerlo cuando cambian.",
+    "inferencia": "Si la plataforma cambia y la tarea queda, la tarea es la vara estable para comparar, y solo sirve si quien la usa sabe reconocer el resultado correcto sin creerle al mensaje del asistente.",
+    "salto": "Cada profesional debería tener una tarea propia de prueba, que ya sabe resolver a mano, y pasársela a cada herramienta antes de invertir tiempo en aprenderla.",
+    "no_afirmado": "No se afirma cuál de los dos copilotos fue mejor ni se nombran. No se afirma que una sola tarea muestre todo lo que una herramienta puede hacer. No se afirma nada sobre precios ni disponibilidad de los agentes de Autodesk."
+   },
+   "contraargumento": "Una sola tarea puede dejar fuera una herramienta que brilla en otra parte del trabajo, y algunas necesitan semanas de uso para rendir. Además, a veces la empresa decide la plataforma y el profesional no elige.",
+   "residuo": "La plataforma cambia. Tu tarea, no.",
+   "gancho": {
+    "tipo": "mecanismo real",
+    "texto": "Comparé dos copilotos dentro de Revit con el mismo encargo, y el mensaje de éxito no coincidía con el modelo."
+   },
+   "arco": "Cada semana llega una lista nueva de herramientas de IA y un lanzamiento más, y la pregunta es cuál aprender (punto de partida: la avalancha de novedades sin forma de elegir). David comparó dos copilotos dentro de Revit con el mismo encargo y el aviso de éxito no coincidía con lo que había en el modelo (tensión: la demo y el mensaje no dicen si sirve para el trabajo de uno). Una tarea propia que se sabe resolver a mano, pasada a cada novedad y revisada en el resultado, decide qué vale la pena aprender (cierre: la plataforma cambia, la tarea no).",
+   "escena": "Viernes por la tarde. Un arquitecto tiene abierta en una pestaña la lista de las catorce herramientas del año y en otra el modelo de Revit. Le pide a un copiloto la vista recortada de una habitación que él hace en diez clics. El asistente responde que está lista. Él abre la vista y falta un detalle que sabe que tenía que estar.",
+   "arquitectura": "comparacion",
+   "pilar": "IA sin flujo es humo",
+   "marco": "Tesis central: la tecnología amplifica el criterio cuando se integra a un proceso; aquí el proceso propio es la vara para elegir la tecnología",
+   "audiencia": "Profesionales AEC que no son especialistas en software (arquitectos, ingenieros, constructores, técnicos, proyectistas) con cinco a veinte años de carrera, que ven llegar lanzamientos de IA cada semana",
+   "canales": {
+    "linkedin": "Post de comparación en primera persona: la lista de catorce, los dos copilotos con el mismo encargo, el mensaje de éxito contra el modelo y la invitación a elegir una tarea propia de prueba.",
+    "x": "Tesis: no elijas qué IA aprender por la lista, elígela con una tarea tuya; condición: cuando sale una novedad cada semana; cierre: la plataforma cambia, tu tarea no.",
+    "blog": "Expertise técnico: cómo armar una tarea de prueba propia (qué tarea, cómo saber que salió bien, dónde mirar) y aplicarla a dos herramientas.",
+    "clase": "Cada alumno define su tarea de prueba y el resultado correcto, se la pasa a dos asistentes y compara lo que entregan contra lo que dicen."
+   },
+   "por_que_ahora": "Después de Autodesk University 2026, de los anuncios de agentes de Microsoft en octubre y de las listas de herramientas del año, el profesional recibe más novedades que nunca y en noviembre empieza a decidir en qué invertir su tiempo del próximo año.",
+   "riesgo": "La lista de Rework es comercial: citarla como ejemplo de lo que circula, no como autoridad. Que David rehace su material cuando cambia una plataforma es una anotación de su informe de perfil, no una frase suya: David confirma si lo cuenta en primera persona. No nombrar ni rankear los copilotos de la clase. Cuidar que no se lea como «pruébalo en otra habitación», ya propuesta en I02.",
+   "procedencia": {
+    "david": "La comparación de dos copilotos con la misma tarea en la clase C33 del Máster V2 y la comprobación en el modelo; el riesgo anotado en su informe de perfil sobre la dependencia de plataformas de terceros.",
+    "agente": "La lista de Rework como señal, la necesidad «¿cuál aprendo?», la idea de la tarea propia como vara para elegir, el relato, la escena del viernes, el residuo y la persuasión."
+   },
+   "validacion": {
+    "errores": [],
+    "avisos": []
+   }
+  }
+ ],
+ "presentadas": [
+  "I03-A2",
+  "I03-P3",
+  "I03-J2",
+  "I03-L1",
+  "I03-J3"
+ ],
+ "monotonia": [],
+ "editor": {
+  "quien": "Claude (sesión principal)",
+  "elegidas": [
+   "I03-A2",
+   "I03-P3",
+   "I03-J2",
+   "I03-L1",
+   "I03-J3"
+  ],
+  "motivo": "Doce fichas de cuatro audiencias. Se eligió una o dos por audiencia, sin pares que digan lo mismo. A2 (profesionales): la necesidad más amplia, con un estudio chileno verificado en la fuente (Portal Innova, 5-nov-2026). P3 (dueños de pymes): decide un gasto concreto. J2 (jefes de proyecto): adjudicar un subcontrato es una decisión de todas las semanas. L1 (quienes deciden la compra): reportar al directorio en noviembre. J3 (jefes de proyecto): el estado de pago toca el dinero, y la frase final se recuerda.",
+  "descartes": {
+   "P1": "dice lo mismo que A2 (lo aprendido se va con la persona); A2 le habla a más gente",
+   "P2": "misma tesis que L3 (no depender del proveedor)",
+   "L3": "misma tesis que P2",
+   "J1": "vuelve al caso OXXO, que ya estuvo en I02",
+   "L2": "más técnico (qué datos le llegan al agente)",
+   "A1": "usa la misma tutoría que J3",
+   "A3": "cerca de «Pruébalo en la habitación de al lado» de I02"
+  },
+  "verificado": "cifras de A2 contrastadas con la nota de Portal Innova del 5-nov-2026 (DIGC UC y CChC, II Encuentro DIGC UC, 3-nov-2026)"
+ }
+}

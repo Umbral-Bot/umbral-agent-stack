@@ -1,0 +1,11 @@
+id: T4
+nombre: "LinkedIn · computador: columna en la mitad con titular y bajada, imagen a la derecha"
+alternativa: p02-formatos
+paso: formatos
+hereda: packs/P02-noticia-4x5.yaml
+decision_david: null
+valores:
+  formato: linkedin
+  vista_css: 555            # supuesto: feed de LinkedIn en el computador
+  division: mitad           # en 1200×627 una banda abajo deja el titular muy chico
+  division_fraccion: null

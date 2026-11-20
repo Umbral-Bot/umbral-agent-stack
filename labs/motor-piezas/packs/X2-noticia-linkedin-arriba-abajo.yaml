@@ -1,0 +1,10 @@
+id: X2
+nombre: "LinkedIn sin bajada · el mensaje arriba; botón y logo juntos abajo"
+alternativa: sin-bajada-linkedin-distribucion
+paso: distribución del texto
+hereda: packs/T5-noticia-linkedin-celular.yaml
+decision_david: null
+valores:
+  margen_proporcional: 0.1
+  # el logo sigue en el mínimo (120 px de ancho): más grande, el botón de dos líneas ya no cabe a su lado
+  cta_pie_lineas_max: 2      # el botón en dos líneas (como en G18 5°) cabe junto al logo

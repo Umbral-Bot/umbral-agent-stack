@@ -1,0 +1,17 @@
+id: B3
+nombre: "Contenido primero · LinkedIn oscuro · título manda, datos al lado"
+alternativa: B
+contenido: contenido/workshop-bim-ia.yaml
+corrige: "12°: fondo carbón de marca (no el azul de portadas), título de un solo tamaño"
+decision_david: null
+valores:
+  proceso: B_contenido
+  formato: linkedin
+  modo: oscuro
+  columnas: 6
+  texto_ancho_max_relativo: 0.5
+  filas_ubicacion: columna_derecha
+  ilustracion_zona: ninguna
+  titulo_altura_relativa: 0.13
+  logo_altura_relativa: 0.06
+  modulo_proporcional: 0.012

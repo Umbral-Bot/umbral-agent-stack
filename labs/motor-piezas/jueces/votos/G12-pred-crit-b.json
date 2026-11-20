@@ -1,0 +1,84 @@
+{
+ "galeria": "G12",
+ "seccion": null,
+ "rubrica": "pred-crit-b",
+ "retro": true,
+ "criterios_hasta": "G12",
+ "sellado": "2026-11-11T00:43:04",
+ "hash_rubrica": "2afef7084991",
+ "hash_criterios": "fd98b8707561",
+ "votos": [
+  {
+   "id": "G12-pcb-prediccion",
+   "galeria": "G12",
+   "version": "pred-crit-b",
+   "lente": "prediccion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 8,
+    "2": 6.5,
+    "3": 4.5,
+    "4": 6
+   },
+   "hallazgos": [
+    {
+     "opcion": "3",
+     "donde": "franja de imagen a la derecha",
+     "problema": "El recorte en franja pierde el brazo robótico: solo queda la pinza, cortada contra el borde derecho, y la imagen se lee como bloques abstractos. El sujeto, que da sentido a «La IA entra a la obra», desaparece. Es el caso de objeto mal ubicado en la máscara que David ya había reclamado.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "3",
+     "donde": "columna de texto, desde el llamado hasta el logo",
+     "problema": "Entre «umbralbim.io» y el logo queda un vacío oscuro de cerca de un tercio de la altura, sin función. El texto se amontona arriba y la columna se ve sin terminar.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "titular",
+     "problema": "El titular baja a 107 px, contra 156 en las otras opciones. La bajada queda en torno al 38 % de su tamaño: está dentro de la regla del 45 %, pero muy cerca, y la jerarquía pierde fuerza frente a las demás opciones.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4",
+     "donde": "velo bajo el texto",
+     "problema": "Con 0,86 de opacidad, el velo deja un panel gris y turbio, no el oscuro de marca del Preset 01. Se pierde la trama del panel y detrás del titular y la bajada asoman los bloques de la imagen. El contraste medido llega a 10,19:1, pero la textura sigue compitiendo con la lectura.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4",
+     "donde": "borde inferior, bajo el logo y el llamado",
+     "problema": "El margen crema de la imagen queda bajo el velo y forma una franja gris más clara a todo el ancho, al pie de la pieza. A tamaño de feed se ve como un error.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4",
+     "donde": "imagen a sangre",
+     "problema": "El recorte corta la cabeza del brazo contra el borde superior derecho y el círculo negro contra el izquierdo. La mitad baja de la imagen queda tapada por el velo y la ilustración se aprovecha mal.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "logo y llamado a mitad del lienzo",
+     "problema": "La firma (logo, «LEE EL ARTÍCULO» y umbralbim.io) queda en el centro de la pieza y no la cierra abajo. Además el kicker queda pegado al borde superior, sin el aire que tiene la opción 1.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1",
+     "donde": "unión entre la imagen y la banda oscura",
+     "problema": "El margen crema de la propia imagen deja una franja clara entre la ilustración y el panel. Funciona como un paspartú, pero conviene decidir si se mantiene o se recorta.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "bajada en gris secundario (opciones 1 a 3)",
+     "problema": "Aspecto común a todas, que no desempata: el mínimo de 7,24:1 corresponde a la bajada gris sobre el panel liso. Al no estar sobre textura cumple, pero en el celular se ve más apagada que la de la opción 4, que pasó a tinta.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "1",
+   "veredicto": "sirve",
+   "resumen": "Predigo que David elige la 1 (banda abajo). Es la única división que muestra el brazo robótico completo con todos los textos sobre panel oscuro liso. El titular manda con claridad y la firma cierra abajo a la izquierda, como en el Preset 01: se lee como un post de noticia limpio en el celular. La 2 es la misma pieza invertida, pero la firma queda a media altura y el orden imagen y después titular pierde fuerza. La 4 es la más compleja y llega al objetivo de 10:1, pero el velo gris turbio, la franja clara al pie y el brazo cortado la dejan para ajustes. La 3 respeta la familia del Preset 01, pero pierde el sujeto (solo queda la pinza cortada) y deja un vacío grande bajo el llamado."
+  }
+ ]
+}

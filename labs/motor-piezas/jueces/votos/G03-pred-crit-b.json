@@ -1,0 +1,78 @@
+{
+ "galeria": "G03",
+ "seccion": null,
+ "rubrica": "pred-crit-b",
+ "retro": true,
+ "criterios_hasta": "G03",
+ "sellado": "2026-11-11T00:43:02",
+ "hash_rubrica": "2afef7084991",
+ "hash_criterios": "fd98b8707561",
+ "votos": [
+  {
+   "id": "G03-pcb-prediccion",
+   "galeria": "G03",
+   "version": "pred-crit-b",
+   "lente": "prediccion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 6,
+    "2": 7,
+    "3": 5.5,
+    "4": 8
+   },
+   "hallazgos": [
+    {
+     "opcion": "4",
+     "donde": "subtítulo «TALLER PRÁCTICO / UMBRAL BIM»",
+     "problema": "Al crecer un 29 %, el subtítulo turquesa en dos líneas gana mucho peso y empieza a competir con el título. La columna queda llena y con menos aire.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "4",
+     "donde": "pie, esquina inferior izquierda",
+     "problema": "El llamado sube bajo los datos y el logo queda solo en el pie, con un hueco a su derecha. Se lee bien, aunque el pie queda algo desequilibrado.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1",
+     "donde": "datos (fecha, hora, lugar), llamado y logo",
+     "problema": "El texto chico sigue a 14 px CSS. A ancho de celular, los datos y el pie se ven diminutos aunque el contraste llegue a 10,13:1. Es justo lo que David marcó como pendiente: falta holgura de lectura abajo a la izquierda.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "entre el subtítulo y los datos",
+     "problema": "Queda un vacío grande sin función, de alrededor de 250 px a 1280, sobre la textura oscura. Se nota en el feed como un hueco más que como aire.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "llamado y logo en el pie",
+     "problema": "Los datos crecen, pero el llamado y el logo siguen a 14 px CSS: el texto más chico sobre la imagen no mejora. Además, el vacío entre el subtítulo y los datos persiste.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "subtítulo en una línea",
+     "problema": "Bajado al tamaño del kicker, el subtítulo pierde jerarquía y casi toca el borde derecho del tercio (~858 de 898 px).",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "bloque de texto completo",
+     "problema": "Mantiene todos los tamaños chicos (14 px), así que no mejora la lectura en el celular. Al bajar el bloque, el aire queda arriba sin función y el título pierde su posición de entrada arriba a la izquierda.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "todas",
+     "donde": "imagen del lado derecho (común, no desempata)",
+     "problema": "Es una mancha expresionista de tinta con un haz turquesa luminoso y contraste dramático. Se aleja de la línea isométrica plana de Magnific One aprobada y roza los vetos de brillo, resplandor y luz dramática. Es común a las cuatro y ya venía fijada.",
+     "gravedad": "media"
+    }
+   ],
+   "mejor": "4",
+   "veredicto": "sirve",
+   "resumen": "La galería cambia la jerarquía y la diferencia que más pesa para David es la lectura del texto chico en el celular. La 4° es la única que la resuelve de verdad: mínimo de 18 px CSS y 10,61:1 sobre la imagen, sin el vacío entre el subtítulo y los datos. Su costo es un subtítulo algo pesado y el logo solo en el pie. La 2° le sigue porque refuerza los datos clave, pero deja el llamado y el logo chicos y conserva el vacío. La 1° y la 3° mantienen el texto chico; la 3° además deja aire arriba sin función. El defecto común es una imagen fuera de la línea isométrica, con resplandor turquesa; no desempata."
+  }
+ ]
+}

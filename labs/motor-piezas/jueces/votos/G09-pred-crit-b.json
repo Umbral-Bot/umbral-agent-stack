@@ -1,0 +1,77 @@
+{
+ "galeria": "G09",
+ "seccion": null,
+ "rubrica": "pred-crit-b",
+ "retro": true,
+ "criterios_hasta": "G09",
+ "sellado": "2026-11-11T00:43:03",
+ "hash_rubrica": "2afef7084991",
+ "hash_criterios": "fd98b8707561",
+ "votos": [
+  {
+   "id": "G09-pcb-prediccion",
+   "galeria": "G09",
+   "version": "pred-crit-b",
+   "lente": "prediccion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 6.5,
+    "2": 8,
+    "3": 5
+   },
+   "hallazgos": [
+    {
+     "opcion": "3",
+     "donde": "pieza entera (banda inferior con los tres datos)",
+     "problema": "Es justo la alternativa que David descartó en LinkedIn: ahí eligió solo la fecha con aire frente a una banda con los tres datos (G08). La regla de conservar todos los datos vale para el feed 1:1 y 4:5, no para LinkedIn.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "franja de imagen superior",
+     "problema": "El recorte apaisado se queda con la textura clara y turquesa de arriba y corta la masa oscura que hace de sujeto: abajo a la derecha solo asoman las chimeneas. La imagen pierde su figura y queda como fondo sucio.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "panel izquierdo, subtítulo y logo",
+     "problema": "«UMBRAL BIM» aparece dos veces, en el subtítulo turquesa y en el logo. Además, título, subtítulo, tres datos y llamado llenan la banda y dejan poco aire.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1",
+     "donde": "bloque de fecha y llamado",
+     "problema": "Con el tamaño de celular, la fecha y «INSCRÍBETE · umbralbim.io» van de borde a borde de la columna, sin aire. David eligió en LinkedIn la versión con aire, pensada para computador.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "esquina inferior izquierda",
+     "problema": "El logo queda solo y chico bajo un llamado muy grande, y la etiqueta EJEMPLO crece hasta competir con el kicker. La jerarquía de abajo se descompensa.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "logo, rótulo FECHA y llamado (fila inferior)",
+     "problema": "Los tamaños están pensados para 555 px CSS: en un celular de unos 390 px el texto más chico baja a unos 8 px. Es solo un aviso, porque David ya eligió una imagen de LinkedIn pensada para computador.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "panel izquierdo, entre el título y la fecha",
+     "problema": "Queda un vacío amplio sobre la fecha. Es el aire que David prefirió y no queda bajo los datos, así que no choca con la hipótesis de vacíos. Solo se anota.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "imagen",
+     "problema": "Defecto común: la imagen es pictórica y con textura grunge, no la línea isométrica plana de Magnific One. Como viene de la base ya elegida, no desempata.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "2",
+   "veredicto": "sirve",
+   "resumen": "Predigo la 2. En LinkedIn, David ya eligió solo la fecha con aire, en una imagen pensada para computador, frente a una banda con los tres datos. La 2 es exactamente eso: la misma composición, con el texto más contenido, el logo y el llamado en una línea, y el sujeto entero en la mitad derecha. La 1 se lee mejor en el celular, pero queda apretada de borde a borde y contradice esa preferencia. La 3 da todos los datos fuertes, pero es la banda que David no eligió, y su recorte pierde el sujeto de la imagen. El único aviso de la 2 es que el texto chico baja de 11 px en el celular."
+  }
+ ]
+}

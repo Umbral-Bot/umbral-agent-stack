@@ -1,0 +1,60 @@
+{
+ "galeria": "G05",
+ "seccion": null,
+ "rubrica": "pred-sin-b",
+ "retro": true,
+ "criterios_hasta": null,
+ "sellado": "2026-11-11T00:45:35",
+ "hash_rubrica": "2afef7084991",
+ "hash_criterios": "fd98b8707561",
+ "votos": [
+  {
+   "id": "G05-qb-prediccion",
+   "galeria": "G05",
+   "version": "pred-sin-b",
+   "lente": "prediccion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 8,
+    "2": 6,
+    "3": 5,
+    "4": 6
+   },
+   "hallazgos": [
+    {
+     "opcion": "2",
+     "donde": "etiquetas FECHA / HORA / LUGAR del bloque de datos",
+     "problema": "Las etiquetas en blanco (#ECEDEE) quedan del mismo color que los valores y se pierde la jerarquía entre etiqueta y dato. El bloque se ve más cargado. A tamaño de feed las etiquetas son tan chicas que la mejora de lectura casi no se nota, así que el cambio resta sin aportar.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "kicker, subtítulo, números 01-03 y llamado INSCRÍBETE",
+     "problema": "El turquesa claro #99F6E4 se lee casi blanco en el celular. El acento de marca pierde fuerza y se confunde con el título, así que la pieza se ve más pálida y menos Umbral.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "pie: logo «Umbral BIM» junto a INSCRÍBETE",
+     "problema": "El wordmark «BIM» del logo sigue en #2DD4BF (medido) y el llamado de al lado está en #99F6E4. Quedan dos turquesas distintos en la misma línea.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4",
+     "donde": "panel de texto y borde con la imagen",
+     "problema": "El panel #1A1A2E mete un azul violáceo que la imagen no tiene: la tinta de la imagen es negra y turquesa. El panel se separa de la imagen en vez de continuar sus negros, y la etiqueta EJEMPLO ocre se ve más fuera de lugar. El contraste baja a 6,69:1, que sigue siendo suficiente.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "panel completo",
+     "problema": "No veo problemas de color. El gris #111418 continúa la masa negra de la imagen, las etiquetas grises (#9BA3AD) separan etiqueta de valor y el turquesa #2DD4BF es el mismo del logo, así que la pieza se lee como una sola.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "1",
+   "veredicto": "sirve",
+   "resumen": "Predigo que David elige la 1°. De los cuatro cambios, ninguno mejora lo que se ve en el celular: la 2° quita jerarquía al bloque de datos y la 3° destiñe el turquesa de marca, que además no coincide con el «BIM» del logo. La 4° cumple el manual de portadas, pero mete un azul violáceo que la imagen no tiene y separa el panel de la imagen. La 1° tiene una sola familia de turquesa, etiquetas en segundo plano y un panel que continúa los negros de la imagen."
+  }
+ ]
+}

@@ -1,0 +1,59 @@
+{
+ "galeria": "G23",
+ "seccion": null,
+ "rubrica": "pred-crit-a",
+ "retro": true,
+ "criterios_hasta": "G23",
+ "sellado": "2026-11-11T00:43:06",
+ "hash_rubrica": "2afef7084991",
+ "hash_criterios": "fd98b8707561",
+ "votos": [
+  {
+   "id": "G23-pca-prediccion",
+   "galeria": "G23",
+   "version": "pred-crit-a",
+   "lente": "prediccion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 6.5,
+    "2": 8.5,
+    "3": 5
+   },
+   "hallazgos": [
+    {
+     "opcion": "1",
+     "donde": "botón al pie de la columna (537×135 px a 2x)",
+     "problema": "Con solo un 12 % menos, la reducción casi no se nota a tamaño de feed. David ya pidió dos veces un botón más chico (G19 y G22), así que es probable que lo vea como un cambio insuficiente.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "relleno interno del botón",
+     "problema": "Con un módulo menos de relleno, el texto queda pegado a la caja: unos 17–19 px a los lados y 3–7 px arriba y abajo a 2x, frente a 25–27 px en la 2°. El interlineado también se aprieta. Se ve como una etiqueta estrujada, no como un botón, y un bloque apretado es un defecto que David ya rechazó.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "texto del botón a 390 px",
+     "problema": "Mide 7,1 px CSS, igual que la 2°. Para el texto del botón es solo un aviso, no un veto. Sumado al relleno mínimo, el botón queda como el elemento más débil de la columna.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "texto del botón a 390 px",
+     "problema": "Queda en 7,1 px CSS, bajo la referencia de unos 11 px. Es un aviso y no un veto, porque es texto de botón y David pidió achicarlo. En común con la 3°.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "separación entre el titular y el botón",
+     "problema": "La separación crece a medida que el botón se achica: 151, 157 y 165 px a 2x. Aquí manda la excepción del botón que cierra la columna al pie, así que no es un defecto. Solo se anota.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "2",
+   "veredicto": "sirve",
+   "resumen": "Lo único que cambia en esta galería es el botón. Predigo que David elige la 2°: el botón baja un 24 %, se nota que es más chico y conserva el mismo relleno, así que sigue viéndose como un botón ordenado al pie, como él pidió dos veces. La 1° cambia tan poco que probablemente la vea como «igual que antes». La 3° achica el botón, pero el relleno mínimo lo deja apretado, con el texto pegado al borde. En las tres, el contraste mínimo es de 9,92:1 y no hay choques; el texto del botón queda bajo los 11 px en el celular, pero eso es solo un aviso."
+  }
+ ]
+}

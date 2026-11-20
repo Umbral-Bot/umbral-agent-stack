@@ -1,0 +1,9 @@
+id: T3
+nombre: "9:16 · Historia: banda abajo con titular y bajada, imagen arriba"
+alternativa: p02-formatos
+paso: formatos
+hereda: packs/P02-noticia-4x5.yaml
+decision_david: null
+valores:
+  formato: historia
+  division_fraccion: 0.375   # en 9:16 sobra alto: el texto en 3 de 8 filas y más imagen

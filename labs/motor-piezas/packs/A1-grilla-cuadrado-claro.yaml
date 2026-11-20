@@ -1,0 +1,16 @@
+id: A1
+nombre: "Grilla primero · 1:1 claro · título a todo el ancho, isometría en su celda"
+alternativa: A
+contenido: contenido/workshop-bim-ia.yaml
+corrige: "v2 1°: filas legibles en el celular, isometría anclada a la grilla, chip fuera de las cruces"
+decision_david: null
+valores:
+  proceso: A_grilla
+  formato: cuadrado
+  modo: claro
+  columnas: 6
+  filas: 8
+  columnas_texto: 3
+  columnas_titulo: 6
+  ilustracion_zona: derecha_inferior
+  ilustracion_alineacion: inferior_derecha

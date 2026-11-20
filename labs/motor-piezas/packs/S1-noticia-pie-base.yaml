@@ -1,0 +1,7 @@
+id: S1
+nombre: "Base · bajada blanca (G15 2°): logo y llamado en texto, cruces y trama"
+alternativa: p02-paso5
+paso: pie
+hereda: packs/R2-noticia-bajada-blanca.yaml
+decision_david: null
+valores: {}

@@ -1,0 +1,7 @@
+id: J1
+nombre: "Base · color de marca (G05 1°): logo y llamado en texto, cruces de registro"
+alternativa: paso5
+paso: pie
+hereda: packs/H1-color-base.yaml
+decision_david: null
+valores: {}

@@ -1,0 +1,84 @@
+{
+ "galeria": "G12",
+ "seccion": null,
+ "rubrica": "pred-crit2-b",
+ "retro": true,
+ "criterios_hasta": "G12",
+ "sellado": "2026-11-11T00:51:29",
+ "hash_rubrica": "b71ce177d875",
+ "hash_criterios": "11070cf84d18",
+ "votos": [
+  {
+   "id": "G12-rab-prediccion",
+   "galeria": "G12",
+   "version": "pred-crit2-b",
+   "lente": "prediccion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 8,
+    "2": 7,
+    "3": 4,
+    "4": 5
+   },
+   "hallazgos": [
+    {
+     "opcion": "3",
+     "donde": "franja de imagen a la derecha",
+     "problema": "El recorte en franja pierde el sujeto. Del brazo robótico solo queda un fragmento de la pinza, cortado por el borde derecho, y la mitad de la franja es un bloque crema sin contenido. No se lee 'un brazo robótico construyendo'. Es el mismo problema de objeto mal ubicado en la máscara que David ya reclamó.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "3",
+     "donde": "columna de texto, entre el llamado y el logo",
+     "problema": "Queda un vacío oscuro sin función de cerca de un tercio del alto bajo el llamado. El llamado flota a media columna, separado del logo.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "titular",
+     "problema": "Para caber en la columna, el titular baja a 107 px, frente a 156 px en las otras opciones. Sigue mandando, pero pierde fuerza en el feed. La etiqueta EJEMPLO queda encima del kicker y lo aprieta.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "4",
+     "donde": "panel inferior (velo al 0,86)",
+     "problema": "El velo plano deja el panel en un gris turbio en vez del oscuro de marca y pierde la trama del panel. Además se aclara el acento (acento_texto_claro). La pieza se sale de la serie del Preset 01 y queda más genérica. Contrasta bien (10,19:1), pero la mejora de lectura llega a costa del carácter, y eso David no lo premia.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4",
+     "donde": "zona del kicker, el titular y la bajada",
+     "problema": "La pinza del robot entra detrás del kicker y del titular, y los bloques fantasma bajo el velo dejan textura detrás de la bajada. El recorte ampliado también corta el brazo arriba a la derecha y el círculo a la izquierda, de modo que la escena de construcción queda escondida bajo el velo.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4",
+     "donde": "franja inferior del lienzo",
+     "problema": "El margen crema de la imagen, ya velado, aparece como una franja gris más clara bajo el logo y el llamado. Se lee como una costura o un error.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "logo y llamado a media altura, sobre la costura con la imagen",
+     "problema": "El cierre (logo y LEE EL ARTÍCULO) queda a mitad del lienzo y la imagen termina la pieza como si fuera un pie. Se pierde el ancla del logo abajo a la izquierda de la serie y la lectura termina en el centro.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1",
+     "donde": "costura entre la imagen y la banda",
+     "problema": "El margen crema propio de la imagen deja una franja clara justo sobre la banda oscura. Es un detalle, y la división 50/50 es una composición sencilla, aunque bien resuelta.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "marcas de registro y texto mínimo",
+     "problema": "Defecto común a todas: las cruces turquesa sobre el margen crema de la imagen casi no se ven, y el texto más chico queda justo en el piso de 11 px CSS (llamado y logo). No desempata.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "1",
+   "veredicto": "sirve",
+   "resumen": "Predigo que David elige la 1. Muestra la imagen completa y reconocible (el brazo construyendo), el panel conserva el oscuro de marca con la trama, el titular manda y el logo con el llamado cierran abajo a la izquierda, como en la serie del Preset 01. La 2 es igual de limpia, pero deja el cierre a media altura y la imagen como pie. La 3 sería la más fiel a la familia, pero la franja corta el sujeto a un fragmento de pinza y deja un vacío grande en la columna. La 4 es la más integrada, pero el velo vuelve gris el panel, aclara el acento y esconde la escena: lee mejor a costa del carácter."
+  }
+ ]
+}

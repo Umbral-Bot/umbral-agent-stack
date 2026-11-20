@@ -1,0 +1,72 @@
+{
+ "galeria": "G03",
+ "seccion": null,
+ "rubrica": "pred-sin-b",
+ "retro": true,
+ "criterios_hasta": null,
+ "sellado": "2026-11-11T00:45:34",
+ "hash_rubrica": "2afef7084991",
+ "hash_criterios": "fd98b8707561",
+ "votos": [
+  {
+   "id": "G03-qb-prediccion",
+   "galeria": "G03",
+   "version": "pred-sin-b",
+   "lente": "prediccion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 5.5,
+    "2": 7,
+    "3": 5,
+    "4": 8
+   },
+   "hallazgos": [
+    {
+     "opcion": "1",
+     "donde": "columna izquierda, entre el subtítulo y FECHA",
+     "problema": "Queda un vacío grande que parte la columna en dos bloques, y los datos y el pie siguen a 14 px CSS. En el celular, 'INSCRÍBETE · umbralbim.io' y 'Umbral BIM' se vuelven ilegibles.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "pie (logo + llamado)",
+     "problema": "El llamado comparte fila con el logo a tamaño mínimo y, a tamaño de feed, se pierde como acción.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "pie y etiquetas FECHA/HORA/LUGAR",
+     "problema": "Los datos crecen y la jerarquía título > datos se lee clara, pero el llamado, el logo y las etiquetas siguen en 14 px CSS. Además se mantiene el vacío entre el subtítulo y los datos.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "subtítulo 'TALLER PRÁCTICO · UMBRAL BIM'",
+     "problema": "Al bajar al tamaño del kicker en una línea pierde presencia y casi se funde con 'SAVE THE DATE'.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "tercio superior de la columna",
+     "problema": "El aire arriba deja la etiqueta EJEMPLO aislada y baja el título de la zona de lectura inicial. El bloque apoyado abajo se ve apretado y no gana tamaño: el texto chico sigue ilegible en el celular.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4",
+     "donde": "subtítulo en 2 líneas",
+     "problema": "El subtítulo crece y casi iguala el peso de los datos, de modo que la jerarquía queda título > subtítulo ≈ datos.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "4",
+     "donde": "columna completa",
+     "problema": "La columna queda llena casi sin respiro entre los bloques. El llamado se separa del logo y queda flotando sobre él; funciona, pero la base se ve algo cargada.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "4",
+   "veredicto": "sirve",
+   "resumen": "Vista en el celular, la 4 es la única que sube todo el texto chico (18 px CSS frente a 14 px) y cierra el vacío de la columna. Además deja el llamado en su propia línea y con más peso. Sigue el pedido de David de que lo de abajo a la izquierda se lea bien. La 2 es la alternativa: tiene datos fuertes y buena jerarquía, pero el pie y el llamado siguen siendo diminutos. La 1 y la 3 no cambian los tamaños y solo reacomodan el espacio."
+  }
+ ]
+}

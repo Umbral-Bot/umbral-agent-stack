@@ -1,0 +1,72 @@
+{
+ "galeria": "G04",
+ "seccion": null,
+ "rubrica": "pred-sin-b",
+ "retro": true,
+ "criterios_hasta": null,
+ "sellado": "2026-11-11T00:45:34",
+ "hash_rubrica": "2afef7084991",
+ "hash_criterios": "fd98b8707561",
+ "votos": [
+  {
+   "id": "G04-qb-prediccion",
+   "galeria": "G04",
+   "version": "pred-sin-b",
+   "lente": "prediccion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 6.5,
+    "2": 8,
+    "3": 5.5,
+    "4": 4
+   },
+   "hallazgos": [
+    {
+     "opcion": "1",
+     "donde": "borde del velo en x≈898 (vista 2576), a toda la altura",
+     "problema": "El velo termina en un corte vertical seco, así que la imagen no se lee como algo que pasa por detrás del texto. Se ve como un panel liso algo sucio. A tamaño de feed, F1 y F2 casi no se distinguen, pero F1 queda más turbia.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "filas 01-03, etiquetas FECHA/HORA/LUGAR",
+     "problema": "Para llegar a 10:1 sobre la textura, las etiquetas pasaron a tinta blanca, el mismo color que los valores. Se pierde la jerarquía etiqueta gris / valor blanco que sí tiene F2.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "franja inferior de la imagen (y > 1290, a la derecha)",
+     "problema": "Por la parte baja corre una banda casi blanca que es la masa más clara de la pieza y compite con el CTA. Ocurre también en F1 y F3.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "separación entre la columna de texto y la caja (x≈865 a 898)",
+     "problema": "El espacio interior entre texto y caja mide unos 33 px, contra 86 px de margen exterior. La caja queda pegada al texto y el ajuste a la grilla no se nota.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "caja completa, esquina inferior derecha",
+     "problema": "La imagen queda contenida y pierde la fuerza del sangrado. La franja blanca de abajo, con el radio de 8 px, parece un recorte de papel sobre el fondo oscuro y la pieza se lee como una tarjeta web.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4",
+     "donde": "isometría vectorial en los dos tercios libres",
+     "problema": "Los trazos teal miden unos 2-3 px a 3840 y quedan por debajo de 1 px de dispositivo en el feed del celular. Esos dos tercios se ven casi vacíos y la pieza pierde el gancho visual que daba la imagen.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "4",
+     "donde": "composición de la ilustración (bloques flotantes y base romboidal)",
+     "problema": "Los volúmenes están sueltos y a la base le falta peso, así que la ilustración no acompaña el tono de un taller BIM+IA. Además se ve fría al lado del bloque de datos fuerte.",
+     "gravedad": "media"
+    }
+   ],
+   "mejor": "2",
+   "veredicto": "sirve",
+   "resumen": "Predigo que David elige F2. Mantiene el impacto de la imagen a sangre en los dos tercios, el tercio de texto queda limpio y las etiquetas vuelven al gris de marca, lo que recupera la jerarquía. F1 parte de lo elegido antes, pero el velo termina en un corte seco: a tamaño de feed se ve como un F2 más turbio y con etiquetas planas. F3 encierra la imagen, le resta fuerza y deja un espacio desparejo junto al texto. F4 es coherente con la marca, pero en el celular sus líneas finas casi desaparecen y los dos tercios se ven vacíos."
+  }
+ ]
+}

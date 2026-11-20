@@ -1,0 +1,71 @@
+{
+ "galeria": "G09",
+ "seccion": null,
+ "rubrica": "pred-sin-a",
+ "retro": true,
+ "criterios_hasta": null,
+ "sellado": "2026-11-11T00:45:35",
+ "hash_rubrica": "2afef7084991",
+ "hash_criterios": "fd98b8707561",
+ "votos": [
+  {
+   "id": "G09-qa-prediccion",
+   "galeria": "G09",
+   "version": "pred-sin-a",
+   "lente": "prediccion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 6,
+    "2": 4,
+    "3": 8
+   },
+   "hallazgos": [
+    {
+     "opcion": "3",
+     "donde": "subtítulo «TALLER PRÁCTICO · UMBRAL BIM» contra la columna de datos",
+     "problema": "El subtítulo termina cerca de x≈1370 y la columna de datos empieza cerca de x≈1400 (en 2400 px). Quedan unos 30 px y a tamaño de feed casi se toca con el «03». Además repite la marca que ya está en el logo.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "etiquetas FECHA/HORA/LUGAR y CTA a ancho de celular",
+     "problema": "El texto más chico mide 11 px CSS a 555 px; a 390 px baja a unos 7,7 px. Los valores siguen legibles: la fecha mide casi lo mismo que en la opción 1 y el título es más grande. Las etiquetas y el CTA, en cambio, quedan chicos en el celular.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "banda de imagen superior",
+     "problema": "La banda ocupa un 37 % del alto. El recorte pierde la silueta oscura central y la imagen queda como textura. «SAVE THE DATE» arranca a unos 30 px del borde de la banda.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1",
+     "donde": "bloque de datos",
+     "problema": "Solo muestra la fecha: faltan la hora y el lugar en un save the date. Además, un «01» numerado sin 02 ni 03 queda como una lista huérfana.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "panel entre «BIM + IA» y la fecha",
+     "problema": "Queda un hueco oscuro de unos 190 px (≈15 % del alto) que se ve como un vacío sin función.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "panel entre el título y la fecha",
+     "problema": "El vacío crece a unos 340 px (≈28 % del alto). Con la fecha más chica, la pieza pierde los datos fuertes y se ve sin terminar en el celular.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "2",
+     "donde": "bloque de datos",
+     "problema": "Tiene la misma carencia que la opción 1: solo la fecha y un «01» huérfano, ahora con menos peso.",
+     "gravedad": "media"
+    }
+   ],
+   "mejor": "3",
+   "veredicto": "sirve",
+   "resumen": "David elegiría la 3. Es la única que trae los tres datos fuertes. Vista en el celular, su título es más grande que el de la 1 y la fecha mide casi lo mismo, así que perder legibilidad por mostrar todo cuesta poco. La 1 se lee bien pero queda incompleta: solo la fecha, un «01» huérfano y un hueco. La 2 empeora la 1 con texto más chico y un vacío grande. Ajuste menor en la 3: dar aire al subtítulo turquesa frente a la columna de datos, o quitarlo."
+  }
+ ]
+}

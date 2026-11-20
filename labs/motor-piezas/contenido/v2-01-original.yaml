@@ -1,0 +1,14 @@
+# Textos literales de la v2 1° (STD-1080x1080-CLA), para el control de réplica.
+# Se conservan tal cual, incluida la fecha inconsistente (20-nov-2026 es viernes).
+id: v2-01-original
+ejemplo: true
+chip: EJEMPLO
+kicker: SAVE THE DATE
+titulo: [WORKSHOP, BIM + IA]
+subtitulo: EJEMPLO · UMBRAL BIM · NO PUBLICAR
+filas:
+  - {numero: "01", etiqueta: FECHA, valor: "Jueves 20 nov 2026", densidad: minima}
+  - {numero: "02", etiqueta: HORA,  valor: "18:00 – 19:30 CLT", densidad: media}
+  - {numero: "03", etiqueta: LUGAR, valor: "Online · Zoom",      densidad: media}
+cuerpo: null
+cta: "INSCRÍBETE · umbralbim.io"

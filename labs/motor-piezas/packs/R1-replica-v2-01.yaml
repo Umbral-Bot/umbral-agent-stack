@@ -1,0 +1,70 @@
+id: R1
+nombre: "Control · la v2 1° (STD-1080x1080-CLA) regenerada desde un pack"
+alternativa: control
+contenido: contenido/v2-01-original.yaml
+descripcion: >
+  Todos los valores que generate.py tenía escritos en el código, pasados a
+  parámetros. Proceso «libre» porque la v2 no usa grilla: posiciones sueltas.
+  Los números de fila van en turquesa (#0FA994 sobre claro) como en la v2: la
+  verificación debe marcarlo, porque UB-3 lo prohíbe.
+decision_david: null
+control:                          # contra qué se compara (comparar_replica.py)
+  original_svg: svg/01_save-the-date_1080x1080_claro.svg   # relativo a rutas.v2_paquete
+  mapa_ids:                       # id en la v2 -> id en el motor
+    kicker: kicker
+    title-l1: titulo-1
+    title-l2: titulo-2
+    subtitle: subtitulo
+    row-num-01: fila-01-numero
+    row-label-01: fila-01-etiqueta
+    row-value-01: fila-01-valor
+    row-num-03: fila-03-numero
+    row-value-03: fila-03-valor
+    cta: cta
+    lockup: logo
+    wireframe-iso: ilustracion
+    example-banner: chip-fondo
+roles_texto:
+  numero: {color: acento}         # como la v2; rompe UB-3 a propósito
+valores:
+  proceso: libre
+  formato: cuadrado
+  modo: claro
+  margen_proporcional: 0.0593     # 64 px
+  margen_inferior_proporcional: 0.0519   # 56 px bajo el logo (la v2 usa otro margen abajo)
+  modulo_proporcional: 0.0037     # 4 px
+  titulo_altura_relativa: 0.0673  # cuerpo 100 px (mayúscula 72,7 px)
+  titulo_ancho_max: 1.0
+  titulo_tracking_em: -0.035
+  titulo_interlineado: 0.96
+  texto_minimo_css: 4.33          # etiqueta de 12 px en 1080 px vista a 390 px CSS
+  escala_valor: 1.6667            # 20 px
+  escala_numero: 2.1667           # 26 px
+  escala_kicker: 1.25             # 15 px
+  escala_subtitulo: 1.1667        # 14 px
+  escala_cta: 1.0833              # 13 px
+  escala_chip: 0.9167             # 11 px
+  etiqueta_tracking_em: 0.14
+  chip_tracking_em: 0.08
+  pila_desplazamiento: 3          # kicker en y ≈ 88
+  espacio_kicker_titulo: 4
+  espacio_titulo_subtitulo: 7
+  espacio_subtitulo_filas: 8
+  fila_relleno_superior: 5
+  fila_separacion_interna: 2
+  fila_relleno_inferior: 6
+  fila_x_numero: 5
+  fila_espacio_numero_texto: 9
+  filas_ancho_relativo: 0.463     # 500 px
+  densidad_texto: media
+  ilustracion_zona: derecha_inferior
+  ilustracion_anclaje: libre
+  ilustracion_centro_rel: [0.70, 0.46]
+  ilustracion_escala_libre: 1.28
+  logo_composicion: "01"
+  logo_altura_relativa: 0.0407    # 44 px
+  chip_ancla: linea_cruces
+  chip_relleno_h: 7
+  chip_relleno_v: 2
+  trama_inset: 0.75               # 48 px
+  trama_paso: 8                   # 32 px

@@ -1,0 +1,112 @@
+{
+ "galeria": "G28",
+ "seccion": null,
+ "rubrica": "pred-crit-b",
+ "retro": false,
+ "criterios_hasta": null,
+ "sellado": "2026-11-11T00:46:28",
+ "hash_rubrica": "2afef7084991",
+ "hash_criterios": "fd98b8707561",
+ "votos": [
+  {
+   "id": "G28-predb-prediccion",
+   "galeria": "G28",
+   "version": "pred-crit-b",
+   "lente": "prediccion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 6.5,
+    "2": 7.5,
+    "3": 5.5,
+    "4": 5.5,
+    "5": 6,
+    "6": 2.5,
+    "7": 2.5,
+    "8": 3.5
+   },
+   "hallazgos": [
+    {
+     "opcion": "1",
+     "donde": "pieza 4° (slide 16:9) y 2° (cuadrado 2,66:1), imagen apaisada mg-articulo-ia-obra-formula-a1",
+     "problema": "La apaisada de Magnific One es un objeto de unos 2:1 en vista oblicua: en la banda 3,64:1 ocupa solo un 52 % del ancho y deja los costados vacíos, y en la de 2,66:1 llega al 71 %. David aprobó una apaisada que ocupaba entre el 81 y el 85 % del ancho. Es un defecto de la imagen, no de la maquetación.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "1",
+     "donde": "imagen apaisada (piezas 2°, 4° y 6°)",
+     "problema": "Trazo de boceto con líneas dobladas y remates sucios (extremo derecho de la viga), y vista oblicua frente a la isométrica de la principal. Se nota a tamaño de feed y rompe la línea plana y clara.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "imagen principal mg-articulo-ia-obra-nb-p1 (piezas 8°, 10° y 12°)",
+     "problema": "El acento turquesa queda en un tramo de viga bajo el tubo y el tubo sigue blanco: el choque que cuenta el artículo se lee menos directo que en la opción 1 o en la 3.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "imagen apaisada mg-articulo-ia-obra-nb-a1 (piezas 9°, 11° y 13°)",
+     "problema": "Vista frontal de elevación frente a la isométrica de la principal. Es un ajuste que se anota, no un veto: llena la banda (≈85 % del ancho), queda centrada y comparte el trazo.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "pieza 15° (vertical) y 17° (historia 9:16)",
+     "problema": "El anclaje por acento corre el objeto hacia la izquierda porque el hallazgo está a la derecha. En la historia, el cubo queda a 135 px del borde izquierdo y a unos 355 px del derecho. Es justo la queja de G24: el objeto corrido en su máscara.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "3",
+     "donde": "imagen apaisada mg-articulo-ia-obra-nb-a2 (piezas 16°, 18° y 20°)",
+     "problema": "Errores de dibujo: en los extremos de la losa salen diagonales como alas, hay un tubo suelto que asoma por la izquierda y la perspectiva no es coherente. En 16:9 esto se ve a tamaño de feed.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4",
+     "donde": "imagen apaisada mg-articulo-ia-obra-fondo-a1 (piezas 23°, 25° y 27°)",
+     "problema": "Trazo más grueso y otro repertorio de piezas (muros en U) que el fondo principal. Además, cuatro losas grandes con la cara turquesa cargan la máscara de turquesa, justo lo que el método de recorte dice evitar.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4, 5, 6, 7, 8",
+     "donde": "esquinas superiores en vertical, slide y LinkedIn (p. ej., piezas 22°, 25°, 36° y 46°)",
+     "problema": "En el camino A, las cruces de registro de las esquinas superiores desaparecen bajo el fondo. Quitarlas no es una mejora: si chocan con el dibujo, hay que moverlas.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "5",
+     "donde": "pieza 32° (slide 16:9), imagen apaisada fondo-a2",
+     "problema": "El recorte óptimo corta en el borde izquierdo una viga con acento turquesa (el método promete no cortarlos). Además, la retícula de construcción es más marcada y le suma textura a la banda.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "6",
+     "donde": "imagen apaisada mg-rescate-h063 (piezas 37°, 39° y 41°)",
+     "problema": "La planta trae cotas con pseudo-números y letras dibujados dentro de la imagen, lo que es un veto de marca. La imagen de origen además tiene figuras humanas y degradado turquesa.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "6, 8",
+     "donde": "imagen principal G-AFI-04, región [0.42–1.0] (piezas 36°, 38°, 50° y 52°)",
+     "problema": "No es un fondo de densidad pareja: un tercio de la máscara queda vacío, salvo un filete turquesa vertical. Las losas turquesa son enormes y quedan cortadas por los bordes, y la estructura se lee como un objeto recortado.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "7",
+     "donde": "imagen mg-rescate-h021 en todas las máscaras (piezas 43° a 49°)",
+     "problema": "Tiene composición de afiche: la ciudad a la izquierda se disuelve en una red y deja la mitad derecha vacía. Los edificios llevan sombreado casi de render, no isométrico plano, y el recorte deja la ciudad cortada contra el borde.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "8",
+     "donde": "imagen apaisada mg-rescate-h023 (piezas 51°, 53° y 55°)",
+     "problema": "La retícula queda cortada arriba y la mitad derecha está casi vacía, con puntos sueltos. El trazo de boceto es distinto del de la principal.",
+     "gravedad": "media"
+    }
+   ],
+   "mejor": "2",
+   "veredicto": "sirve con ajustes",
+   "resumen": "Predigo que David elige la opción 2 (Nano Banana 2.1, variante 1). Es la única del camino B que cumple en todos los formatos. La principal es isométrica, limpia y queda centrada en vertical, historia y LinkedIn. La apaisada es baja y ancha, y llena las bandas de 2,05, 2,66 y 3,64:1 con cerca del 85 % del ancho. Ajustes que se anotan: el choque se lee menos directo porque el turquesa va en la viga y no en el tubo, y la apaisada tiene vista frontal frente a la isométrica de la principal. La opción 1 (Magnific One) cuenta mejor el choque en la principal, pero su apaisada oblicua y de boceto deja vacía la banda del 16:9 (≈52 % del ancho). La opción 3 cuenta bien la historia, pero el anclaje por acento corre el objeto a la izquierda en el vertical y la historia, que es el defecto de G24. En el camino A, la opción 5 es la mejor como variante de fondo (trazo coherente entre principal y apaisada), aunque corta un acento en el borde del 16:9. Igual que la 4, pierde las cruces de las esquinas superiores. Los rescates 6 a 8 no sirven: traen números en la imagen, composición de afiche o un tercio vacío con turquesa cortado. Si se quiere un fondo además del gráfico, propondría la 2 y la 5 como variantes."
+  }
+ ]
+}

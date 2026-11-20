@@ -1,0 +1,11 @@
+id: W1
+nombre: "LinkedIn con bajada · más margen y el bloque de texto al centro de la columna"
+alternativa: p02-linkedin-distribucion
+paso: distribución del texto
+hereda: packs/T4-noticia-linkedin-computador.yaml
+decision_david: "G19, 2026-11-10: «= 5 pero ajustando tamaño de \"lee el articulo..\" mas mpequeño y distribuye mejor los textos»"
+valores:
+  margen_proporcional: 0.1   # 64 px en vez de 36: el texto deja de ir pegado a los bordes
+  logo_altura_relativa: 0.07   # unos 44 px de alto; antes 36 (el mínimo de 120 px de ancho) y se veía chico
+  pila_anclaje: centro
+  texto_equilibrado: [cuerpo]   # la bajada en líneas parejas, sin una palabra sola al final

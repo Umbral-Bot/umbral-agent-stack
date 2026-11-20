@@ -1,0 +1,67 @@
+# Regresión del router del camino B (paso 16 de ruteo.md). Cada error de ruta agrega un caso.
+#   python formula/formula.py regresion
+# Los casos sin archivo usan copies de prueba; el de CAND-WLCA-01 falta, porque su copy real no está
+# en el repo.
+casos:
+- nombre: La IA entra a la obra
+  contenido: contenido/articulo-ejemplo.yaml
+  espera: {ruta: imagen, categoria: hallazgo, metodo: regla}
+
+- nombre: Del plano al modelo, en tres semanas
+  contenido: contenido/articulo-ejemplo-2.yaml
+  espera: {ruta: diagrama}
+
+- nombre: Del plano al modelo, con instrucción de David de pedir imagen
+  contenido:
+    kicker: Caso
+    titulo: [Del plano al modelo, en tres semanas]
+    cuerpo: Cómo una constructora ordenó su coordinación con un flujo BIM sencillo, y qué aprendimos en el camino.
+    grafico: {ruta: imagen}
+  espera: {ruta: imagen, categoria: transformacion, metodo: regla}
+
+- nombre: Fixture openBIM del repo
+  contenido: {kicker: Artículo, fixture_repo: tests/fixtures/editorial/visual_brief_v2_openbim.yaml}
+  # El cálculo a mano de ruteo.md daba interfaz 5 contra 3. Contado con la misma regla que «La IA entra a
+  # la obra», «comprobación» y «automatizar una comprobación» suman 4 en hallazgo: sin ventaja de 2, decide
+  # el clasificador (la cláusula principal es «no crea un criterio común»).
+  espera: {ruta: clasificar}
+
+- nombre: Fixture RFI del repo
+  contenido: {kicker: Artículo, fixture_repo: tests/fixtures/editorial/visual_brief_v2_rfi.yaml}
+  espera: {ruta: imagen, categoria: pendiente, metodo: regla}
+
+- nombre: Webinar Coordinación BIM con IA
+  contenido: contenido/webinar-ejemplo.yaml
+  espera: {ruta: imagen, categoria: evento, metodo: regla}
+
+- nombre: Workshop BIM + IA (save the date)
+  contenido: contenido/workshop-bim-ia.yaml
+  espera: {ruta: imagen, categoria: evento, metodo: regla}
+
+- nombre: ¿Fachada de madera o prefabricada?
+  contenido: {kicker: Artículo, titulo: '¿Fachada de madera o prefabricada?', bajada: 'El carbono entra antes a la mesa'}
+  espera: {ruta: imagen, categoria: comparacion, metodo: regla}
+
+- nombre: Bajamos 40 % las RFIs abiertas en tres meses
+  contenido: {kicker: Caso, titulo: Bajamos 40 % las RFIs abiertas en tres meses, bajada: Lo que cambió en la coordinación de una obra en altura}
+  espera: {ruta: diagrama}
+
+- nombre: Umbral BIM cumple cinco años
+  contenido: {kicker: Aniversario, titulo: Umbral BIM cumple cinco años, bajada: Gracias a la comunidad que nos acompaña}
+  espera: {ruta: fondo, metodo: salida}
+
+- nombre: Tu primer BEP en cuatro pasos
+  contenido: {kicker: Guía, titulo: Tu primer BEP en cuatro pasos, bajada: Qué definir antes de modelar}
+  espera: {ruta: diagrama}
+
+- nombre: Las normas y versiones no son cifras
+  contenido: {kicker: Artículo, titulo: Qué pide la ISO 19650 al intercambio de información, bajada: Un formato abierto no basta si no se acuerda qué información se exige}
+  espera: {ruta: imagen, categoria: interfaz, metodo: regla}
+
+- nombre: El modelo detecta el choque antes de la obra
+  contenido: {kicker: Caso, titulo: La revisión detectó el choque antes de llegar a obra, bajada: Una tubería cruzaba la viga del segundo piso}
+  espera: {ruta: imagen, categoria: hallazgo, metodo: regla}
+
+- nombre: Una ganadora declarada no es comparación
+  contenido: {kicker: Artículo, titulo: '¿Madera o acero? Elegimos madera', bajada: Por qué nos quedamos con la madera en el edificio de oficinas}
+  espera: {ruta: clasificar}

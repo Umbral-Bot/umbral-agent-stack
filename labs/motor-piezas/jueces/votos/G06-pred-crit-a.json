@@ -1,0 +1,78 @@
+{
+ "galeria": "G06",
+ "seccion": null,
+ "rubrica": "pred-crit-a",
+ "retro": true,
+ "criterios_hasta": "G06",
+ "sellado": "2026-11-11T00:43:03",
+ "hash_rubrica": "2afef7084991",
+ "hash_criterios": "fd98b8707561",
+ "votos": [
+  {
+   "id": "G06-pca-prediccion",
+   "galeria": "G06",
+   "version": "pred-crit-a",
+   "lente": "prediccion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 7,
+    "2": 6.5,
+    "3": 7.5,
+    "4": 5.5
+   },
+   "hallazgos": [
+    {
+     "opcion": "3",
+     "donde": "pie del panel: botón INSCRÍBETE",
+     "problema": "Es la única variante cuya diferencia se nota en el celular: el llamado pasa a ser un bloque sólido (9,9:1) que se lee con holgura, y al subir los datos se achica el vacío entre el subtítulo y FECHA. Pero el botón termina a media columna, no en el filete de los datos (llega a x≈600 de 865), y el logo queda solo con la mitad derecha del pie vacía.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "zona inferior del panel",
+     "problema": "El turquesa sólido del botón es la mancha más fuerte bajo los datos y les resta algo de peso propio a la fecha, la hora y el lugar. Conviene que no crezca más que en esta versión.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "4",
+     "donde": "panel de texto completo",
+     "problema": "La trama de puntos no se ve a tamaño de feed, así que no aporta nada en el celular. De cerca pone textura bajo el título y los datos, justo lo que David pide evitar bajo el texto chico.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "esquinas y extremos de los filetes",
+     "problema": "Al quitar las cruces, la pieza pierde el guiño técnico de registro y los filetes terminan en seco. En el celular la diferencia con la 1° casi no se percibe.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1",
+     "donde": "pie: logo + INSCRÍBETE en una línea",
+     "problema": "El llamado en texto turquesa espaciado de 14 px CSS es lo más fino del pie. Se lee porque está sobre el panel liso, pero en el celular queda como letra chica y la acción no destaca.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "panel entre el subtítulo y los datos",
+     "problema": "Defecto común: queda un vacío grande sin función entre TALLER PRÁCTICO y el bloque de datos. Es menor en la 3° porque los datos suben.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "imagen a la derecha",
+     "problema": "Defecto común, viene de pasos ya elegidos y no se rediscute: la mancha turquesa luminosa y el claroscuro fuerte rozan los vetos de resplandor y de luz dramática, y la imagen no sigue la línea isométrica plana de referencia.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "todas",
+     "donde": "esquina superior del panel",
+     "problema": "La etiqueta EJEMPLO es del laboratorio y debe salir de la pieza final.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "3",
+   "veredicto": "sirve",
+   "resumen": "Las cuatro piezas comparten base y pasan contraste, 7,24:1 como mínimo y texto de 14 px. En el celular la única diferencia que se ve es el botón de la 3°: el llamado se lee con holgura y el vacío sobre los datos se achica. Por eso predigo que David elige la 3°. Antes de aprobarla convendría alinear el ancho del botón con los filetes. La 1° es una base sólida y queda cerca. La 2° casi no se distingue de la 1° en el feed. La 4° no aporta a tamaño de feed y de cerca pone textura bajo el texto."
+  }
+ ]
+}

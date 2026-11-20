@@ -1,0 +1,66 @@
+{
+ "galeria": "G13",
+ "seccion": null,
+ "rubrica": "pred-ej-b",
+ "retro": true,
+ "criterios_hasta": "G13",
+ "sellado": "2026-11-11T01:09:46",
+ "hash_rubrica": "b71ce177d875",
+ "hash_criterios": "c375ba4695d4",
+ "votos": [
+  {
+   "id": "G13-ejb-prediccion",
+   "galeria": "G13",
+   "version": "pred-ej-b",
+   "lente": "prediccion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 7.5,
+    "2": 5,
+    "3": 8,
+    "4": 5.5
+   },
+   "hallazgos": [
+    {
+     "opcion": "2",
+     "donde": "banda de texto, entre el titular y el pie",
+     "problema": "Sin bajada, queda un vacío de unos 290 px (~11 % del alto) sin función entre el titular y el pie. Además la pieza deja de decir de qué trata el artículo y todo depende del texto del post. El titular de 186 px tiene mucha fuerza de afiche, pero la banda se ve a medio llenar.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4",
+     "donde": "banda de texto, bajo la bajada y a la derecha del titular",
+     "problema": "Con el titular a 110 px, la banda pierde fuerza: el titular ocupa ~55 % del ancho y bajo la bajada queda un vacío de ~210 px antes del pie. El aire no se lee como intención; parece texto que no llena la banda.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "bajada, bajo el titular",
+     "problema": "La bajada mide 14 px CSS en gris, cerca del 25 % del titular. Se lee, pero en el celular queda chica y apagada al lado de un titular de ~56 px CSS. Es el mismo tipo de texto secundario que David ya pidió reforzar en galerías anteriores.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "titular y bajada",
+     "problema": "El titular baja a 136 px y la bajada sube a 17,6 px CSS, cerca del 36 % del titular. Sigue bajo el tope del 45 %, así que el titular manda. Es la versión con la bajada más legible en el feed, aunque el titular pierde algo de impacto frente a la 1.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "pie, logotipo «Umbral BIM»",
+     "problema": "Defecto común, no desempata. La palabra del logotipo mide unos 8 px CSS en la vista de 390 px, por debajo de la referencia de 11 px. El contraste sobre el fondo liso oscuro es bueno.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "imagen superior",
+     "problema": "Defecto común, fuera de este paso. El brazo robótico entre bloques ilustra el titular de forma literal, pero no tiene metáfora ni abstracción. Además, el sujeto queda cargado a la derecha y deja un marco crema arriba y abajo. Hay que verlo en el paso de imagen, no aquí.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "3",
+   "veredicto": "sirve",
+   "resumen": "Predigo la 3, con la 1 muy cerca. En G03 David eligió que la información secundaria creciera para leerse en el celular («Datos fuertes»). La 3 hace eso con la bajada: sube a 17,6 px CSS, llena la banda sin vacíos y el titular sigue mandando (36 %). La 1 es sólida y tiene el titular más potente, pero su bajada de 14 px en gris queda chica en el feed. La 2 y la 4 dejan vacíos sin función en la banda, y la 2 además pierde la bajada. Los defectos comunes a todas son el logotipo chico del pie y la falta de metáfora en la imagen. No cambian la elección."
+  }
+ ]
+}

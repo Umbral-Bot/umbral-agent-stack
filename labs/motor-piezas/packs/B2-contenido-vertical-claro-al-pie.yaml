@@ -1,0 +1,14 @@
+id: B2
+nombre: "Contenido primero · 4:5 claro · datos anclados al pie"
+alternativa: B
+contenido: contenido/workshop-bim-ia.yaml
+corrige: "vacío inferior (1°, 20°): las filas bajan al pie y la isometría ocupa el centro"
+decision_david: null
+valores:
+  proceso: B_contenido
+  formato: vertical
+  modo: claro
+  columnas: 6
+  texto_ancho_max_relativo: 0.9
+  filas_ubicacion: al_pie
+  ilustracion_zona: auto

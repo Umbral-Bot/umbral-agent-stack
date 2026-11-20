@@ -1,0 +1,8 @@
+id: D4
+nombre: "Ele · título arriba a todo el ancho, datos en la columna izquierda"
+alternativa: paso1
+paso: division
+hereda: packs/D1-division-mitad.yaml
+decision_david: null
+valores:
+  division: ele          # lo único que cambia respecto de D1

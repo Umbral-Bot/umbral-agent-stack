@@ -1,0 +1,10 @@
+# G27 (2026-11-11): Versión A (fondo abstracto), variante 2: patrón ligero de elementos BIM. No publicar.
+id: articulo-fondo-v2
+ejemplo: true              # muestra el chip EJEMPLO
+chip: EJEMPLO
+kicker: Artículo
+titulo: [La IA entra, a la obra]
+cuerpo: "Qué cambia en la coordinación BIM cuando los modelos se revisan con IA, y qué sigue dependiendo del equipo."
+cta: "LEE EL ARTÍCULO · umbralbim.io"
+imagen: mg-articulo-ia-obra-fondo-p2
+imagen_ancha: mg-articulo-ia-obra-fondo-a2

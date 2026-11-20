@@ -1,0 +1,78 @@
+{
+ "galeria": "G13",
+ "seccion": null,
+ "rubrica": "pred-sin-a",
+ "retro": true,
+ "criterios_hasta": null,
+ "sellado": "2026-11-11T00:45:36",
+ "hash_rubrica": "2afef7084991",
+ "hash_criterios": "fd98b8707561",
+ "votos": [
+  {
+   "id": "G13-qa-prediccion",
+   "galeria": "G13",
+   "version": "pred-sin-a",
+   "lente": "prediccion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 7,
+    "2": 5,
+    "3": 7.5,
+    "4": 4.5
+   },
+   "hallazgos": [
+    {
+     "opcion": "1",
+     "donde": "bajada (3 líneas grises bajo el titular)",
+     "problema": "Con 14 px CSS, gris y peso regular sobre negro, la bajada pierde fuerza a tamaño de feed: se lee, pero cuesta. El titular de 156 px se lleva casi todo el peso.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "titular, borde derecho",
+     "problema": "'La IA entra' ocupa cerca del 76 % del ancho. Queda una columna vacía a la derecha que no se alinea con la etiqueta EJEMPLO ni con el llamado.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "banda oscura, entre el titular y el pie",
+     "problema": "Sin bajada queda un hueco de unos 300 px reales (≈11 % del alto). La banda se ve incompleta, como si faltara un texto.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "contenido de la pieza",
+     "problema": "Un post de noticia sin bajada no dice de qué trata el artículo. Todo el contexto queda en el texto del post y el titular solo no alcanza para que alguien se detenga en el feed.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "titular",
+     "problema": "Con 136 px el titular pierde algo de golpe respecto de la base, aunque sigue siendo casi 3 veces la bajada y conserva la jerarquía.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "bajada, final de la línea 2",
+     "problema": "La línea termina en 'con IA, y': la conjunción queda colgando antes del corte.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "4",
+     "donde": "banda oscura, bajo la bajada y a la derecha del titular",
+     "problema": "El aire no se reparte: se junta abajo (unos 230 px reales vacíos antes del pie) y a la derecha del titular. La banda se ve a medio llenar.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4",
+     "donde": "titular",
+     "problema": "Con 110 px, el titular de una noticia pierde presencia en el feed y la pieza queda sin un punto fuerte.",
+     "gravedad": "media"
+    }
+   ],
+   "mejor": "3",
+   "veredicto": "sirve",
+   "resumen": "Predigo la 3. En el celular reparte mejor el peso: el titular sigue mandando (unos 49 px CSS) y la bajada de 17,6 px se lee bien en el feed. Además, la bajada ocupa casi todo el ancho y alinea con la etiqueta EJEMPLO y el llamado, y entre kicker, titular, bajada y pie hay un ritmo parejo, sin huecos. La 1 queda muy cerca, con más golpe en el titular pero una bajada débil a tamaño de feed. La 2 y la 4 dejan la banda con un hueco y se ven incompletas; además, la 2 pierde el contexto de la noticia."
+  }
+ ]
+}

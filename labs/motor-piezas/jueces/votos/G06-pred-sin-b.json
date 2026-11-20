@@ -1,0 +1,72 @@
+{
+ "galeria": "G06",
+ "seccion": null,
+ "rubrica": "pred-sin-b",
+ "retro": true,
+ "criterios_hasta": null,
+ "sellado": "2026-11-11T00:45:35",
+ "hash_rubrica": "2afef7084991",
+ "hash_criterios": "fd98b8707561",
+ "votos": [
+  {
+   "id": "G06-qb-prediccion",
+   "galeria": "G06",
+   "version": "pred-sin-b",
+   "lente": "prediccion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 7,
+    "2": 6.5,
+    "3": 7.5,
+    "4": 5.5
+   },
+   "hallazgos": [
+    {
+     "opcion": "1",
+     "donde": "pie del panel de texto",
+     "problema": "En el celular, el llamado «INSCRÍBETE · umbralbim.io» es una línea turquesa chica al lado del logo. Se lee como un lema de marca y no como una acción, así que pasa inadvertido.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "panel de texto, entre el subtítulo y la fila 01",
+     "problema": "Queda un vacío grande en la mitad del panel. El bloque de datos y el pie se van al fondo, y el panel se ve cargado abajo.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "esquinas y extremos de los filetes",
+     "problema": "Quitar las cruces le saca a la pieza el aire técnico de plano. En el celular casi no se nota la diferencia con la 1°, así que el cambio no define la elección y el pie sigue con el mismo llamado débil.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "botón turquesa bajo los datos",
+     "problema": "El botón es lo más saturado del panel y compite con la fecha y con el título por la primera mirada. Además, imita un control que no se puede pulsar en una imagen.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "pie, logo solo",
+     "problema": "El logo queda aislado a la izquierda, con todo el ancho libre a su derecha. El pie se ve menos resuelto que en la 1°.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "4",
+     "donde": "trama de puntos en el panel de texto",
+     "problema": "En el celular no se ve. De cerca solo suma ruido detrás del título y de los datos, sin ninguna función, y vuelve a un recurso que ya se había dejado (v2).",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1",
+     "donde": "cruces de las esquinas sobre la imagen (arriba y abajo a la derecha)",
+     "problema": "Sobre el gris claro de la imagen las cruces casi desaparecen. Solo se ven bien las del lado oscuro (vale también para la 3° y la 4°).",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "3",
+   "veredicto": "sirve",
+   "resumen": "En el celular, la 1°, la 2° y la 4° se ven casi iguales: las cruces y la trama de puntos no se distinguen a tamaño de feed. La única variante que cambia la pieza a esa escala es la 3°. Su botón deja el llamado a inscribirse como una acción visible, con 9,9:1 de contraste, y además reparte mejor el vertical del panel porque achica el vacío entre el subtítulo y los datos. Predigo que David elige la 3°. Como alternativa cercana queda la 1° si prefiere el pie limpio. El punto a vigilar en la 3° es que el botón no le gane a la fecha."
+  }
+ ]
+}

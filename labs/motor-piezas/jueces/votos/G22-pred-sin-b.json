@@ -1,0 +1,47 @@
+{
+ "galeria": "G22",
+ "seccion": null,
+ "rubrica": "pred-sin-b",
+ "retro": true,
+ "criterios_hasta": null,
+ "sellado": "2026-11-11T00:45:38",
+ "hash_rubrica": "2afef7084991",
+ "hash_criterios": "fd98b8707561",
+ "votos": [
+  {
+   "id": "G22-qb-prediccion",
+   "galeria": "G22",
+   "version": "pred-sin-b",
+   "lente": "prediccion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 6,
+    "2": 6.5,
+    "3": 8
+   },
+   "hallazgos": [
+    {
+     "opcion": "1",
+     "donde": "entre el titular y el botón",
+     "problema": "El botón queda a 68 px del titular (136 px en el PNG de 2400), mientras «Artículo» y el titular están a 32 px. Los tres textos no quedan a la misma distancia y el botón se ve suelto, separado del bloque. En el celular son unos 22 px CSS contra 10 px CSS, y se nota.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "pie de la columna oscura",
+     "problema": "El bloque queda alto: hay 58 px entre el logo y «Artículo» y 105 px de vacío bajo el botón. Se pierde la simetría de márgenes de 64 px arriba y abajo que tienen la 1 y la 3. La mitad oscura queda pesada arriba y con un hueco abajo a la izquierda.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "entre el logo y «Artículo»",
+     "problema": "Queda un hueco de 100 px (unos 32 px CSS en el celular). Se lee como una separación buscada entre el logo y el bloque de texto, no como un error. Solo podría parecer un bloque algo bajo.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "3",
+   "veredicto": "sirve",
+   "resumen": "Elegiría la 3. Mantiene el botón exactamente donde estaba en la pieza que David eligió en G20 (fila 977-1125 del PNG, margen inferior de 64 px igual al superior) y además deja los tres textos a 32 px entre sí, que es lo que pidió. La 1 cumple los 32 px solo entre «Artículo» y el titular: el botón queda a 68 px y se ve suelto. La 2 iguala las distancias, pero deja el bloque alto, con 105 px vacíos abajo y los márgenes desparejos. Las tres tienen el mismo contraste (9.92:1), el mismo texto mínimo (9.3 px CSS) y ningún choque, así que la diferencia está solo en la composición."
+  }
+ ]
+}

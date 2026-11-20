@@ -1,0 +1,11 @@
+# Campaña con dos imágenes de Magnific One (2026-11-10): la principal (16:9) para el 4:5, el 9:16 y
+# los LinkedIn, y la apaisada (21:9) para las máscaras desde 2:1. No publicar.
+id: articulo-ia-obra-dos-imagenes
+ejemplo: true              # muestra el chip EJEMPLO
+chip: EJEMPLO
+kicker: Artículo
+titulo: [La IA entra, a la obra]
+cuerpo: "Qué cambia en la coordinación BIM cuando los modelos se revisan con IA, y qué sigue dependiendo del equipo."
+cta: "LEE EL ARTÍCULO · umbralbim.io"
+imagen: mg-articulo-ia-obra-01
+imagen_ancha: mg-articulo-ia-obra-ancha-01

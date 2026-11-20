@@ -1,0 +1,10 @@
+id: Q3
+nombre: "Ilustración · la isometría vectorial de marca en lugar de la imagen"
+alternativa: p02-paso3
+paso: imagen
+hereda: packs/Q1-noticia-imagen-sangre.yaml
+decision_david: null
+valores:
+  imagen_encaje: sin_imagen
+  ilustracion_zona: derecha
+  ilustracion_alineacion: centro

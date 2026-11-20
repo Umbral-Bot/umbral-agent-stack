@@ -1,0 +1,23 @@
+id: A4
+nombre: "Grilla primero · 16:9 portada oscura · lockup 02, isometría a la derecha"
+alternativa: A
+contenido: contenido/workshop-bim-ia.yaml
+corrige: "24°: título grande y anclado a la grilla; fondo de portada permitido en slide"
+decision_david: null
+valores:
+  proceso: A_grilla
+  formato: slide
+  modo: oscuro
+  fondo_portada: true
+  columnas: 8
+  filas: 6
+  columnas_texto: 4
+  ilustracion_zona: derecha
+  ilustracion_alineacion: centro
+  titulo_altura_relativa: 0.10
+  logo_composicion: "02"
+  logo_altura_relativa: 0.05
+  texto_minimo_css: 14
+  filas_ubicacion: al_pie
+  escala_kicker: 1.4
+  escala_subtitulo: 1.6

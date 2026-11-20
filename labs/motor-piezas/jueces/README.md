@@ -1,0 +1,96 @@
+# Jueces que aprenden de las elecciones de David
+
+Pedido de David (2026-11-11): «la diea es que los jhuueces cada vez adopten mas mis creiterios y tu busque sla
+forma d elqeu lo hagan, editando sus configuraciones y/o flujos».
+
+Hasta G28 los jueces **no** aprendían: la rúbrica decía «calibrar contra decisiones.csv», pero ningún
+paso lo hacía, y la página de la galería mostraba su voto antes de que David eligiera, así que no había cómo
+medir si coincidían con él.
+
+## El ciclo
+
+1. **Galería ciega.** `pagina_eleccion.py` arma la página del celular con alternativas y piezas numeradas,
+   sin recomendaciones ni descartes.
+2. **Voto sellado.** Los jueces (un agente por lente) votan antes de que David elija. `jueces.py sellar`
+   guarda el voto en `votos/` con la hora y el hash de la rúbrica y de los criterios. Un voto posterior a la
+   elección solo entra como prueba retroactiva.
+3. **David elige por número**, idealmente con una frase de por qué. Va a `decisiones.csv` y a
+   `elecciones.yaml`.
+4. **Calibrar.** `jueces.py calibrar` compara cada voto sellado con la elección: si acertaron, en qué puesto
+   quedó la elegida y qué lentes coincidieron. `pesos.yaml` lleva el acuerdo de cada lente con David.
+5. **Aprender de los desacuerdos.** `desacuerdos.json` junta las galerías en que fallaron, con la cita de
+   David y el resumen de cada juez. De ahí sale un criterio nuevo o corregido en `criterios-david.yaml`
+   (siempre con su cita literal) o un cambio en la mirada de una lente en `rubricas.yaml`. Antes de
+   aceptarlo se vuelve a medir sobre las galerías pasadas: si no mejora, no entra.
+
+## Qué decide
+
+El **juez de predicción** (`rubricas.yaml`, etapa `eleccion`) recibe todos los criterios de David y responde
+«¿cuál elegiría David?». Su elección es la de los jueces. Las lentes parciales (marca, oficio, composición,
+lectura…) no deciden: sus hallazgos y vetos se le muestran a David como diagnóstico.
+
+## La prueba sobre 14 galerías pasadas (2026-11-11)
+
+Galerías en que David ya había elegido una opción: G02 a G06, G09, G12 a G16, G22, G23 y G25. Cada juez votó
+a ciegas: no sabía lo que eligió David y solo recibió los criterios aprendidos **antes** de esa galería (toda su
+evidencia anterior). El azar acertaría unas 4 de 14.
+
+| Jueces | G02–G06 (casi sin criterios) | G09–G25 (más criterios) | Total |
+|---|---|---|---|
+| Panel de 3 lentes, sin criterios (v1) | 2/5 | 4/9 | 6/14 |
+| Panel de 5 lentes, con criterios, suma pareja (v2) | 0/5 | 3/9 | 3/14 |
+| Predictor sin criterios, dos corridas | 2/5 · 2/5 | 3/9 · 5/9 | 5/14 · 7/14 |
+| **Predictor con criterios, dos corridas** | 1/5 · 1/5 | **6/9 · 5/9** | 7/14 · 6/14 |
+| Predictor con criterios + C46 (rechazado) | — | 5/9 · 4/9 | — |
+
+Lo que se aprendió:
+- Con criterios, el predictor acierta más cuando ya hay criterios (G09 en adelante) y es estable: sus dos
+  corridas eligen lo mismo en 13 de 14 galerías. Sin criterios, sus dos corridas coinciden en 8 de 14.
+- Son 14 galerías: la mejora es una señal, no una prueba. Se sigue midiendo galería a galería.
+- Sumar lentes con el mismo peso empeora: lectura (3/13), costuras (2/8) y posición (2/6) empujan hacia
+  opciones «seguras». La lente que más coincide con David es composición (8/13).
+- C46 («entre opciones que ya se leen, no gana la más legible») salió de los desacuerdos en G03, G05 y G06,
+  pero sobre G09–G25 bajó el acierto. Quedó en `rechazados`.
+- Siete de 28 jueces sin criterios, a los que se les preguntó qué elegiría David, fueron a buscar
+  `decisiones.csv`. Sus votos se anularon, el encargo ahora lo prohíbe y `jueces.py auditar` lo revisa en
+  cada tanda.
+
+## G28, voto sellado
+
+Antes de que David elija G28 quedaron sellados en `votos/`: el panel de 11 lentes (`G28-v2`), dos corridas del
+predictor con los 45 criterios (`G28-pred-crit-a` y `-b`) y dos con C46 (`G28-pred-crit2-a` y `-b`; el texto de C46 está en `rechazados`).
+La rúbrica y los criterios del panel y del predictor están en `historial/` con su hash. No se le muestran a David hasta que elija.
+
+## G28, la primera elección contra el voto sellado
+
+David eligió la 6 (piezas 36° a 42°, rescate R1) y valoró las demás. Para él, a la 1–3 (camino B) le falta la
+metáfora, la 4–5 se ve bien, la 7 tiene muy buena abstracción y la 8 queda en «casi». Todos los jueces eligieron el
+camino B (la 1 o la 2) y dejaron la 6 última o penúltima. La correlación con su valoración fue negativa: −0,4 a −0,7.
+La lente de marca había vetado la 6 por unas cotas que no se leen. Lo aprendido entró como C47–C50 y como rúbrica v3:
+la lente de contenido pregunta por la metáfora, y el veto de marca exige que el texto se lea a tamaño de feed.
+
+Probados en la misma sesión y no adoptados por defecto: los ejemplos de elecciones anteriores en el encargo del
+predictor (`--ejemplos`) acertaron 5 y 5 de 9 en G09–G25, contra 6 y 5 sin ellos.
+
+## M01, metáforas en imagen
+
+David leyó cuatro metáforas en texto («suenan bien a simple vista») y, al verlas en imagen, no le gustó ninguna:
+«la idea no engancha». El predictor eligió la 1, el revisor de alineación aprobaba la 3 y la 4, y la lectura a
+ciegas reconoció la premisa en las cuatro. Ninguna lente mide hoy si una idea engancha. Por eso la respuesta
+«ninguna» también se registra (`elegir --elegidas ninguna`, todas en −1) y se pregunta qué falló antes de inferir
+nada.
+
+## Archivos
+
+| Archivo | Qué es |
+|---|---|
+| `rubricas.yaml` | Las lentes por etapa (imagen, pieza, campaña), vetos, escala, agregación y el protocolo. La versión anterior está en `historial/` |
+| `criterios-david.yaml` | Lo que David valora, rechaza o pide, con cita literal y la galería desde la que vale. Cada juez recibe los que tocan su lente |
+| `elecciones.yaml` | Qué eligió David en cada galería, en números de opción, con su valoración y comentario por opción |
+| `interacciones.jsonl` | Cada mensaje de David sobre una galería, literal |
+| `aprender.md` | El protocolo para aprender de cada interacción |
+| `votos/` | Votos sellados por galería y versión de rúbrica |
+| `pesos.yaml` | Acuerdo de cada lente con David (para ver qué lente lo representa mejor) |
+| `calibracion.csv`, `desacuerdos.json` | Salida de `jueces.py calibrar` |
+| `jueces.py` | `preparar`, `sellar`, `agregar`, `elegir`, `auditar`, `calibrar` |
+| `historial/` | Rúbricas y criterios con que se sellaron votos, para comparar después |

@@ -1,0 +1,259 @@
+{
+ "galeria": "G06",
+ "seccion": null,
+ "rubrica": "v2",
+ "retro": true,
+ "criterios_hasta": "G06",
+ "sellado": "2026-11-11T00:33:16",
+ "hash_rubrica": "f69064585452",
+ "hash_criterios": "fd98b8707561",
+ "votos": [
+  {
+   "id": "G06-v2-posicion",
+   "galeria": "G06",
+   "version": "v2",
+   "lente": "posicion",
+   "no_aplica": true,
+   "puntajes": {},
+   "hallazgos": [
+    {
+     "opcion": "todas",
+     "donde": "panel de imagen (x ≥ 1340 px de 3840)",
+     "problema": "Las cuatro opciones comparten la misma imagen abstracta, sin un objeto definido. La comparación píxel a píxel no muestra ninguna diferencia en el panel entre J1, J3 y J4. Entre J1 y J2 solo cambian las cruces de las esquinas (x 3757–3795). La mancha oscura que hace de acento está entera y no la corta la máscara. Esto viene de la base ya elegida, no es algo que distinga a una opción de otra.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "",
+   "veredicto": "no aplica",
+   "resumen": "G06 solo cambia el pie y los detalles del panel de texto. La imagen es abstracta, no tiene un objeto que posicionar y es idéntica en las cuatro opciones (salvo las cruces de las esquinas en la 2°). La lente de posición no ve diferencia entre opciones y no elige usando otra lente."
+  },
+  {
+   "id": "G06-v2-jerarquia",
+   "galeria": "G06",
+   "version": "v2",
+   "lente": "jerarquia",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 7.5,
+    "2": 7.5,
+    "3": 8.2,
+    "4": 7
+   },
+   "hallazgos": [
+    {
+     "opcion": "1",
+     "donde": "pie, a la derecha del logo",
+     "problema": "El llamado 'INSCRÍBETE · umbralbim.io' tiene el mismo tratamiento que el kicker y el subtítulo (turquesa, versales espaciadas). Las tres piezas hablan con la misma voz, así que la acción no se distingue como acción y queda al nivel de la firma.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "pie, a la derecha del logo",
+     "problema": "Tiene el mismo llamado en texto que la 1°, con igual voz que el kicker y el subtítulo; la acción no se distingue.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4",
+     "donde": "pie, a la derecha del logo",
+     "problema": "Tiene el mismo llamado en texto que la 1°, con igual voz que el kicker y el subtítulo; la acción no se distingue.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "botón turquesa bajo la fila 03 (Lugar)",
+     "problema": "Es el único relleno saturado del panel. Con su tamaño actual el orden se mantiene (titular, datos, botón, logo), pero si crece se adelanta a los datos en el feed y choca con el criterio de datos fuertes. Conviene no agrandarlo.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "ancho del botón",
+     "problema": "El botón termina a unos 2/3 del panel y no se alinea con la columna de datos, que llega al borde derecho de los filetes, ni con el ancho del titular.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "pie",
+     "problema": "El logo queda solo a la izquierda y el lado derecho del pie queda vacío. La firma está en su lugar y se lee bien; solo el peso del pie queda algo cargado a la izquierda.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1",
+     "donde": "extremos de los filetes de las filas 01, 02 y 03",
+     "problema": "Las cruces de registro en las puntas de cada filete agregan marcas cerca de los números de fila. Es ruido menor que no aporta orden de lectura; los filetes solos ya separan las filas (como en la 2°).",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "4",
+     "donde": "fondo del panel de texto, detrás del titular, los rótulos FECHA/HORA/LUGAR y los datos",
+     "problema": "La trama de puntos no se ve a tamaño de feed. De cerca agrega textura detrás de los rótulos grises, que son el texto más chico, sin aportar a la jerarquía.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "común",
+     "donde": "llamado y rótulos de datos (14 px CSS en vista de 1280 px)",
+     "problema": "Lo más chico de la pieza es justo lo que hay que accionar (la URL). Cumple la medida, pero en el celular queda justo. Defecto común a las cuatro opciones; no desempata.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "común",
+     "donde": "subtítulo 'TALLER PRÁCTICO · UMBRAL BIM' y logo",
+     "problema": "'Umbral BIM' aparece en el subtítulo y en la firma. La redundancia le quita función de bajada al subtítulo. Es común a las cuatro opciones y no desempata.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "3",
+   "veredicto": "sirve",
+   "resumen": "En las cuatro el titular manda y la imagen acompaña desde su tercio. Los datos se leen fuertes y el pie va sobre el panel sólido, no sobre la imagen, así que el texto chico no se lava (cumple el criterio G01). Para la jerarquía, la única diferencia real es la 3°: el llamado convertido en botón bajo los datos deja una secuencia clara (titular, datos, acción, firma) y separa la acción del kicker y del subtítulo, que en la 1°, la 2° y la 4° comparten la misma voz turquesa. Quitar las cruces (2°) limpia apenas las filas y la trama de puntos (4°) es neutra o algo ruidosa: casi no mueven el orden de lectura. Elijo la 3°, con la condición de no agrandar el botón para que no le gane a los datos."
+  },
+  {
+   "id": "G06-v2-lectura",
+   "galeria": "G06",
+   "version": "v2",
+   "lente": "lectura",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 7.5,
+    "2": 7.5,
+    "3": 8.5,
+    "4": 7
+   },
+   "hallazgos": [
+    {
+     "opcion": "3",
+     "donde": "botón «INSCRÍBETE · umbralbim.io», bajo los datos",
+     "problema": "Es la que mejor se lee de las cuatro. El bloque turquesa se ve como llamado aunque a tamaño de feed las letras queden borrosas. Tiene fila propia, así que ya no compite con el logo. El texto oscuro sobre turquesa mide 9,9:1. Pero las letras miden lo mismo que en la 1° (unos 40 px de alto en 4K, unos 14 px CSS), y sobra ancho: el botón ocupa 766 de los 1330 px del panel. Conviene subir el texto del botón un punto.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "aire entre datos, botón y logo",
+     "problema": "El bloque de datos sube unos 175 px en 4K para dejar sitio al botón. Las separaciones quedan parejas: unos 80 px de los datos al botón y unos 95 px del botón al logo. No es un defecto, solo lo verifiqué.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "4",
+     "donde": "trama de puntos bajo etiquetas, llamado y logo",
+     "problema": "Puntos de 6 px cada 64 px en 4K, a 1,56:1 sobre el panel. Caen bajo FECHA, el llamado y el texto del logo. No mueven el p10 (sigue en 7,24:1) y a tamaño de feed no se ven. De cerca le ponen textura al fondo del texto chico, justo lo que David pide evitar. Es la única variante que empeora un poco la lectura.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "extremos de filetes y esquinas",
+     "problema": "Las cruces no tocan ningún texto. Quitarlas no cambia la lectura: para mi lente la 2° empata con la 1°.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "etiquetas FECHA/HORA/LUGAR, texto del logo y llamado",
+     "problema": "Defecto común, no lo uso para desempatar. El texto más chico mide 14 px CSS en la vista de 1280. En una slide 16:9 dentro del feed del celular (unos 390 px de ancho) queda en unos 4–5 px efectivos. El mínimo medido, 7,24:1, es el gris de las etiquetas. Ese texto va sobre panel liso y no sobre la imagen, así que no tiene el problema de G01, pero es letra muy chica para el feed.",
+     "gravedad": "media"
+    }
+   ],
+   "mejor": "3",
+   "veredicto": "sirve",
+   "resumen": "Para la lectura, todo el texto va sobre el panel oscuro liso: las cuatro opciones comparten el mínimo de 7,24:1 y los 14 px CSS. La 3° es la mejor: el llamado como bloque turquesa (9,9:1) se reconoce a tamaño de feed y deja de competir con el logo. Conviene agrandar un poco el texto del botón, que mide lo mismo que en la 1°. Para mi lente, la 1° y la 2° empatan, porque las cruces no tocan texto. La 4° baja un poco porque la trama de puntos (1,56:1) pasa bajo el texto chico, aunque no se ve en el feed. Defecto común a las cuatro: el texto de 14 px CSS (etiquetas, logo y llamado) queda muy chico en el celular."
+  },
+  {
+   "id": "G06-v2-composicion",
+   "galeria": "G06",
+   "version": "v2",
+   "lente": "composicion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 7.5,
+    "2": 8,
+    "3": 6.5,
+    "4": 7
+   },
+   "hallazgos": [
+    {
+     "opcion": "3",
+     "donde": "pie del panel de texto (botón y logo)",
+     "problema": "El botón ocupa x 128–893 y su borde derecho no coincide con el borde de la columna (1290) ni con ninguna línea del texto. El logo queda solo en su fila, con unos 800 px vacíos a la derecha. Se pierde el pie justificado de 1°, 2° y 4° (logo en x 128, llamado hasta x 1283), que repite el ancho de los filetes.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "reparto vertical de la columna",
+     "problema": "La opción cambia dos cosas. Además del llamado, el bloque de datos sube 176 px (el filete superior pasa de y 1239 a y 1063) y el aire entre el subtítulo y los datos baja de 438 a 262 px. Es la única opción que reparte la columna de otra forma, así que su comparación con la 1° no es limpia, aunque el vacío superior quede mejor resuelto.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "aires entre datos, botón y logo",
+     "problema": "Los aires son desiguales: 81 px entre el último filete (y 1651) y el botón (y 1732), y 97 px entre el botón (y 1827) y el logo (y 1924).",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "4",
+     "donde": "trama de puntos del panel",
+     "problema": "La trama sigue la columna (primera columna de puntos en x≈128, paso de 64 px), pero sus filas (…1213, 1277…) no coinciden con los filetes (1239, 1435, 1631, 1827; paso de 196 px) y pasan detrás del título. La luminancia de los puntos es 25 contra 17 del fondo, así que a tamaño de feed no se ven y no aportan estructura visible: la composición queda igual que la 1°.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1",
+     "donde": "cruces de registro",
+     "problema": "Las cruces de las esquinas del lado de la imagen casi no se ven sobre el gris claro y no se relacionan con nada de la ilustración. Las cruces de los extremos de las filas sobresalen unos 4 px de la columna (x 124 contra 128). Es ruido menor frente a los filetes limpios de la 2°.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1, 2 y 4 (común)",
+     "donde": "entre el subtítulo y el primer filete",
+     "problema": "Queda un vacío de 438 px (20 % del alto) entre el subtítulo (termina en y 801) y los datos (y 1239). No está bajo los datos, así que no choca con la hipótesis del laboratorio, y lo comparten tres de las cuatro opciones: lo anoto aparte y no lo uso para desempatar.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "2",
+   "veredicto": "sirve",
+   "resumen": "Para la lente de composición, la 1°, la 2° y la 4° son la misma pieza. Las cruces y la trama son adornos que a tamaño de feed casi no se ven. La 2° es la más limpia: los filetes quedan justo al ras de la columna (x 128 a 1290) y el pie justificado, con el logo a la izquierda y el llamado a la derecha, repite ese ancho. La 3° es la única que cambia el reparto de la columna: baja el vacío superior de 438 a 262 px, pero a cambio el pie pierde el equilibrio y queda un botón cuyo borde derecho no se alinea con nada. Además cambia dos cosas a la vez, porque los datos suben 176 px. Elijo la 2°."
+  },
+  {
+   "id": "G06-v2-costuras",
+   "galeria": "G06",
+   "version": "v2",
+   "lente": "costuras",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 9,
+    "2": 9,
+    "3": 9,
+    "4": 9
+   },
+   "hallazgos": [
+    {
+     "opcion": "todas",
+     "donde": "costura con el panel, a media altura (x≈1339 px reales, y≈890–1340)",
+     "problema": "Común a las cuatro: el panel corta en recto el lavado turquesa del lado izquierdo. Hay turquesa en el 46 % de la altura de la costura, pero el turquesa fuerte es solo el 10 %, y el brillo principal del haz queda dentro de la imagen. Es el corte propio del sangrado lateral, no un acento perdido.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "borde superior de la imagen (x 1340–1865 px reales)",
+     "problema": "Común a las cuatro: la columna turquesa llega al borde de arriba (10 % de ese borde). Viene del encuadre original de Midjourney, no del recorte del motor.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1",
+     "donde": "cruces de las esquinas derechas, sobre la imagen",
+     "problema": "No chocan con el dibujo: no hay trazos oscuros a menos de 100 px. Pero quedan sobre gris claro y blanco puro con un contraste de 1,7 a 1,9:1 y casi no se leen de ese lado; de ahí sale el registro asimétrico.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "cruces de las esquinas derechas, sobre la imagen",
+     "problema": "Igual que en la 1°: no chocan, pero casi no se ven sobre la zona clara (1,7 a 1,9:1). El botón turquesa queda entero dentro del panel y no toca la imagen (0 px de diferencia en la zona de imagen).",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "4",
+     "donde": "cruces de las esquinas derechas, sobre la imagen",
+     "problema": "Igual que en la 1°: no chocan, pero casi no se ven sobre la zona clara. La trama de puntos termina en x≈1282 px reales, 56 px antes de la división, así que no forma un rectángulo en la costura (0 px de diferencia en la zona de imagen).",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "",
+   "veredicto": "sirve",
+   "resumen": "La imagen no se extiende: se recorta con registro de lienzo bajo el panel y solo pierde unos 7 px en horizontal. En las cuatro no hay escalón, parche ni rectángulo, y no aplica el veto. El bloque claro del haz viene del original y pasa en gradiente de 2 niveles por fila, sin costura. La zona de imagen es idéntica en las cuatro, salvo las dos cruces derechas que la 2° quita (296 px). En la 1°, 3° y 4° esas cruces no chocan con el dibujo: quedan en zonas limpias, aunque se leen muy poco. Mi lente no ve diferencia entre las opciones, así que no elijo por otra. Lo común a todas es baja gravedad: el lavado turquesa cortado en la división y la columna que toca el borde superior."
+  }
+ ]
+}

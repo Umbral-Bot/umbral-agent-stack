@@ -1,0 +1,80 @@
+{
+ "galeria": "M02",
+ "seccion": null,
+ "rubrica": "imagenes-pred-crit-b",
+ "retro": false,
+ "criterios_hasta": null,
+ "sellado": "2026-11-11T08:39:53",
+ "hash_rubrica": "ae799f118a10",
+ "hash_criterios": "05186d14725e",
+ "votos": [
+  {
+   "puntajes": {
+    "1": 6.5,
+    "2": 3,
+    "3": 5,
+    "4": 6
+   },
+   "hallazgos": [
+    {
+     "opcion": "1",
+     "donde": "Bandada, arriba a la izquierda",
+     "problema": "Los pájaros del extremo de la bandada salen como manchas y borrones, no como siluetas. En el celular se leen como textura sucia. Conviene pedir variantes con siluetas limpias, sin aceptar la imagen tal cual para ahorrar créditos.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "Composición general / máscaras",
+     "problema": "Tiene composición de afiche: la estructura se apoya en los bordes derecho e inferior y deja vacía la mitad inferior izquierda. No cumple el requisito de llevar el sujeto al centro. En un 16:9 con el texto en el tercio izquierdo funciona, pero en 1:1, 4:5 o 9:16 el recorte corta la estructura o deja solo la bandada. Hay que juzgarla formato por formato.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "Lectura de la metáfora",
+     "problema": "Es la que mejor engancha y la que mejor calza con el titular: «la IA entra a la obra» se ve como una bandada que llega y se posa en cada encuentro. Tiene un riesgo menor: puede leerse como «palomas en una obra abandonada».",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "4",
+     "donde": "Hilos turquesa (mitad derecha)",
+     "problema": "Es casi la retícula con losas turquesa que ya gustó en G28 (36–42). La metáfora de tejer depende de hilos finos y en parte transparentes que desaparecen a tamaño de feed. Sin texto se lee como el fondo de marca y no como una idea nueva. Gusta, pero no responde a «la idea no engancha».",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4",
+     "donde": "Losas aclaradas con haces de líneas (arriba a la derecha y al centro)",
+     "problema": "Las losas semitransparentes de las que salen haces de líneas parecen destellos y rozan el veto de brillo o resplandor. Además, el turquesa ocupa superficies grandes: según el criterio 51 eso se anota como ajuste, no como veto.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "Despiece por capas / color",
+     "problema": "Es un buen despiece a escala del oficio y tiene una composición compleja. Pero domina el gris, el turquesa queda reducido a líneas casi invisibles y en el celular el trazo fino se lava. Se lee como el despiece BIM clásico y la IA no aparece. Abajo, los pilares y las puertas sueltos se ven desordenados.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "Proporción del objeto",
+     "problema": "El objeto es muy apaisado (unos 2,3:1). Solo sirve en máscaras anchas. En la columna de LinkedIn o en el 9:16 queda chico o cortado.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "Idea / imagen completa",
+     "problema": "Es literal: un edificio en obra, una grúa y cotas. La grúa es una ilustración genérica del rubro, y dibujar el hecho técnico al pie de la letra no basta (criterio 49). Las cotas no se leen a tamaño de feed y su trama densa cubre todo el lienzo. Es un mecanismo didáctico como los que se rechazaron en M01.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "2",
+     "donde": "Carro de la grúa y bordes",
+     "problema": "El carro de la grúa tiene marcas con forma de letra («C»), lo que roza el veto de texto en la imagen. El edificio se corta en los bordes inferior y derecho, y el turquesa no se usa como acento sino repartido por todas las cotas.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "1",
+   "veredicto": "sirve con ajustes",
+   "resumen": "Predigo que David elegirá la 1, la bandada que se posa en la obra, y no «ninguna». Es la única idea nueva que engancha: convierte un campo disperso en orden sobre la estructura, se lee sin texto y calza con «la IA entra a la obra». Hay que anotarle dos ajustes: los pájaros borroneados y la composición de afiche, que complica los recortes fuera del 16:9. La 4 queda segunda, porque gusta, pero por ser la retícula ya vista y no por su idea. La 3 es compleja, pero gris y sin IA. La 2 es literal y no sirve.",
+   "lente": "prediccion"
+  }
+ ]
+}

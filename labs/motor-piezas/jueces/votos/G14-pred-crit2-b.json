@@ -1,0 +1,96 @@
+{
+ "galeria": "G14",
+ "seccion": null,
+ "rubrica": "pred-crit2-b",
+ "retro": true,
+ "criterios_hasta": "G14",
+ "sellado": "2026-11-11T00:51:30",
+ "hash_rubrica": "b71ce177d875",
+ "hash_criterios": "11070cf84d18",
+ "votos": [
+  {
+   "id": "G14-rab-prediccion",
+   "galeria": "G14",
+   "version": "pred-crit2-b",
+   "lente": "prediccion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 6.5,
+    "2": 7.5,
+    "3": 4
+   },
+   "hallazgos": [
+    {
+     "opcion": "3",
+     "donde": "ilustración isométrica, mitad superior",
+     "problema": "El trazo de la isometría mide unos 2 px sobre 2160, lo que deja menos de 0,5 px CSS en una pantalla de 390 px. En el feed del celular la ilustración se ve tenue y la mitad superior queda casi vacía, sin peso.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "3",
+     "donde": "mitad superior, a los lados de la isometría",
+     "problema": "La ilustración flota centrada, con grandes vacíos oscuros a izquierda y derecha. No se alinea con el margen del texto (x≈103) ni con el borde del lienzo. Es justo el patrón que se reprochó antes: la isometría que flota sin relación con la grilla.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "pieza entera",
+     "problema": "La composición es simple y la pieza queda casi tipográfica y genérica. Pierde el carácter que dan las opciones 1 y 2, y David prefiere la composición compleja y bien resuelta.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "esquinas superiores",
+     "problema": "Las cruces de registro de arriba caen sobre la imagen: la izquierda sobre el crema y la derecha justo en el borde entre crema y turquesa. Se ven como manchas sueltas y no como marcas técnicas.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1",
+     "donde": "mitad superior",
+     "problema": "La imagen a sangre con fondo turquesa ocupa toda la mitad de arriba hasta los bordes. La pieza se lee como foto con pie y no como pieza oscura de marca; el fondo oscuro UB-3 queda solo en la banda.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "borde entre imagen y banda (y≈1320 px)",
+     "problema": "La franja crema propia de la imagen forma un filete claro que corta seco contra la banda oscura, justo encima del kicker.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "caja de imagen, márgenes internos",
+     "problema": "La imagen trae franjas crema propias arriba y abajo pero no a los lados. Dentro de la caja con radio se lee como un paspartú desparejo.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "entre la caja y el kicker ARTÍCULO",
+     "problema": "Sobre la caja hay unos 128 px de aire y entre la caja y el kicker solo unos 50 px. El kicker queda pegado a la imagen y el ritmo vertical se desequilibra.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "mitad superior",
+     "problema": "La imagen queda alrededor de un 12 % más angosta que en la opción 1 y pierde algo de impacto en el feed.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "común 1 y 2",
+     "donde": "imagen",
+     "problema": "Defectos comunes que no desempatan: el turquesa ocupa como fondo gran parte de la imagen (veto de marca), el collage tiene grano y no es la línea isométrica plana de Magnific One, y el sujeto (el brazo robótico) está a la derecha, no al centro, lo que es un riesgo para otros recortes.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "común 1, 2 y 3",
+     "donde": "banda de texto",
+     "problema": "No hay diferencia entre opciones: el texto es idéntico en las tres (contraste mínimo 7,24:1 sobre fondo liso y 11 px CSS como mínimo), así que no sirve para elegir.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "2",
+   "veredicto": "sirve",
+   "resumen": "La banda de texto es idéntica en las tres opciones; solo cambia el tratamiento de la imagen. Predigo que David elige la 2 (en caja). La imagen queda alineada al margen del texto, el fondo oscuro de marca enmarca toda la pieza y las cruces de registro caen sobre fondo oscuro, lo que la hace más sobria y ordenada sin perder el carácter del collage. La 1 (a sangre) queda cerca: tiene más impacto, pero se lee como imagen turquesa con pie y las cruces de arriba ensucian la imagen. La 3 (isometría) cumple la marca, pero en el celular el trazo fino se pierde, la ilustración flota con vacíos laterales y la pieza se vuelve genérica. Los defectos de la imagen que comparten la 1 y la 2 (fondo turquesa, grano, sujeto a la derecha) se anotan aparte y no desempatan.",
+   "resumen_extra_ignore": "no"
+  }
+ ]
+}

@@ -1,0 +1,77 @@
+{
+ "galeria": "G09",
+ "seccion": null,
+ "rubrica": "pred-crit2-a",
+ "retro": true,
+ "criterios_hasta": "G09",
+ "sellado": "2026-11-11T00:51:28",
+ "hash_rubrica": "b71ce177d875",
+ "hash_criterios": "11070cf84d18",
+ "votos": [
+  {
+   "id": "G09-raa-prediccion",
+   "galeria": "G09",
+   "version": "pred-crit2-a",
+   "lente": "prediccion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 6,
+    "2": 8,
+    "3": 5
+   },
+   "hallazgos": [
+    {
+     "opcion": "1",
+     "donde": "Fila de la fecha y llamado, abajo en el panel izquierdo",
+     "problema": "No tiene aire. «Jueves 19 nov 2026» llega casi al borde derecho del panel, con un margen derecho de la mitad que el izquierdo. El llamado INSCRÍBETE en turquesa grande queda casi al mismo peso que la fecha y el título, y la jerarquía se aplana. Para LinkedIn, David prefirió la fecha sola con aire.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "Kicker SAVE THE DATE y etiqueta EJEMPLO",
+     "problema": "Ambos se agrandaron para la vista de celular y compiten con el título. Todo el panel queda a tamaños parecidos y se pierde la sobriedad de la base.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "Zona oscura entre el título y la línea de la fecha",
+     "problema": "Queda un vacío de cerca de un cuarto del alto sin función. Es la hipótesis del laboratorio, no un veto: ese aire también separa bien título y dato.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "Fila inferior: logo y llamado",
+     "problema": "El llamado turquesa, en la misma fila, pesa bastante más que el logotipo «Umbral BIM», que queda subordinado.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "Banda de imagen superior",
+     "problema": "El recorte apaisado deja solo textura y mancha turquesa. La silueta oscura, que es el sujeto de la imagen, queda cortada en el borde de la banda; es justo el caso que el requisito de sujeto al centro quiere evitar.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "Panel inferior: subtítulo y columna de datos",
+     "problema": "«TALLER PRÁCTICO · UMBRAL BIM» casi toca la columna de datos. Título, subtítulo, tres datos y llamado compiten en una franja densa. En celular (390 px), las etiquetas FECHA, HORA y LUGAR bajan a unos 7–8 px CSS. David ya prefirió en LinkedIn la fecha sola con aire frente a una banda con los tres datos.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "todas",
+     "donde": "Logotipo, abajo a la izquierda",
+     "problema": "La palabra «Umbral BIM» queda muy chica: unos 6–7 px CSS con el feed de 555 px. El contraste sobre el panel oscuro está bien, pero el tamaño es justo para texto chico. Es un defecto común a las tres y no desempata.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "todas",
+     "donde": "Imagen",
+     "problema": "Es pictórica, con mancha y salpicado, no la línea isométrica plana de referencia. Viene de la base ya elegida para el Preset 01, así que no se vuelve a discutir ni desempata.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "2",
+   "veredicto": "sirve",
+   "resumen": "Mi predicción es la opción 2. Para LinkedIn, David ya eligió la fecha sola con aire frente a una banda con los tres datos, y aceptó texto bajo el mínimo en la imagen pensada para computador. La opción 2 es exactamente eso: la jerarquía queda limpia (título, después la fecha, después logo y llamado), con aire y sobriedad. La 1 se lee mejor en celular, pero aplana la jerarquía y deja la fecha pegada al borde; ganar por legibilidad no basta cuando las tres ya cumplen. La 3 tiene la composición más completa, pero es densa, el recorte corta el sujeto de la imagen y repite la banda que David descartó para LinkedIn. El contraste no separa: las tres miden 7,24:1. A todas les queda pendiente el logotipo, que es muy chico."
+  }
+ ]
+}

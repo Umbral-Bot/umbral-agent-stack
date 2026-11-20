@@ -1,0 +1,7 @@
+id: R1
+nombre: "Base · imagen a sangre (G14 1°): bajada en gris de marca, turquesa en kicker y llamado"
+alternativa: p02-paso4
+paso: proteccion
+hereda: packs/Q1-noticia-imagen-sangre.yaml
+decision_david: null
+valores: {}

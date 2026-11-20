@@ -1,0 +1,183 @@
+{
+ "galeria": "G06",
+ "seccion": null,
+ "rubrica": "v1",
+ "retro": true,
+ "criterios_hasta": null,
+ "sellado": "2026-11-11T00:00:24",
+ "hash_rubrica": "de3f9cdef0fe",
+ "hash_criterios": "-",
+ "votos": [
+  {
+   "id": "G06-v1-jerarquia",
+   "galeria": "G06",
+   "version": "v1",
+   "lente": "jerarquia",
+   "puntajes": {
+    "1": 7,
+    "2": 7.2,
+    "3": 8,
+    "4": 6.6
+   },
+   "hallazgos": [
+    {
+     "donde": "Imagen, junto a la división, a la altura de los datos",
+     "problema": "El punto más luminoso de la imagen (el resplandor turquesa) queda pegado al panel, y la mitad derecha es gris claro y blanco. A tamaño de feed la imagen se lleva la primera mirada. El titular se sostiene por contraste, pero la imagen no solo acompaña: compite con los datos.",
+     "gravedad": "media",
+     "opcion": "todas"
+    },
+    {
+     "donde": "Pie: llamado «INSCRÍBETE · umbralbim.io» en texto",
+     "problema": "El llamado tiene el mismo color, peso y espaciado que el subtítulo «TALLER PRÁCTICO» y no lleva bloque, así que no se lee como botón. Comparte fila con el logo, y los dos son el texto más chico (14 px CSS en la vista de 1280). En un feed de unos 550 px quedan casi ilegibles.",
+     "gravedad": "media",
+     "opcion": "1, 2, 4"
+    },
+    {
+     "donde": "Titular",
+     "problema": "Para caber en 581 px se redujo de 176 a 98 px y ocupa cerca del 30 % del ancho frente a una imagen del 65 % del lienzo. Sigue mandando dentro del panel, pero pierde peso en la pieza completa. Es una consecuencia del tercio, que quedó fijo.",
+     "gravedad": "baja",
+     "opcion": "todas"
+    },
+    {
+     "donde": "Botón turquesa bajo los datos",
+     "problema": "El bloque sólido es el segundo foco del panel, lo que es correcto para un llamado. Pero su turquesa rima con el resplandor de la imagen a pocos centímetros y reparte la atención en la franja inferior izquierda.",
+     "gravedad": "baja",
+     "opcion": "3"
+    },
+    {
+     "donde": "Bloque de datos",
+     "problema": "Para hacer lugar al botón, los datos suben (el filete superior pasa de unos 830 a unos 713 px en la vista) y se acortan los aires entre los datos, el botón y el logo. El ritmo vertical queda más apretado abajo que entre el subtítulo y los datos.",
+     "gravedad": "baja",
+     "opcion": "3"
+    },
+    {
+     "donde": "Trama de puntos del panel",
+     "problema": "A tamaño de feed no se ve. De cerca agrega ruido detrás del titular y en el vacío del panel sin reforzar ningún nivel de la jerarquía.",
+     "gravedad": "baja",
+     "opcion": "4"
+    },
+    {
+     "donde": "Cruces de las esquinas derechas, sobre la imagen",
+     "problema": "Son cruces cian sobre el gris claro de la imagen: adorno sin función que se suma a la imagen y no al panel. La 2 lo resuelve.",
+     "gravedad": "baja",
+     "opcion": "1, 3, 4"
+    },
+    {
+     "donde": "Base izquierda de la imagen, junto a la división",
+     "problema": "La mancha negra de la imagen se funde con el fondo oscuro del panel y el borde del tercio se diluye en el cuarto inferior.",
+     "gravedad": "baja",
+     "opcion": "todas"
+    },
+    {
+     "donde": "Rótulo EJEMPLO, arriba a la derecha del panel",
+     "problema": "El ámbar del rótulo compite con SAVE THE DATE como primer elemento de lectura. Es marca de laboratorio y se retira al publicar.",
+     "gravedad": "baja",
+     "opcion": "todas"
+    }
+   ],
+   "mejor": "3",
+   "veredicto": "sirve",
+   "resumen": "Por jerarquía gana la 3. Es la única con un botón real y legible (texto oscuro sobre turquesa, 9,9:1). El logo queda solo en el pie y se lee mejor, y el titular sigue mandando. En la 1, la 2 y la 4 el llamado es texto chico del mismo color que el subtítulo: no funciona como botón y en el feed se pierde junto al logo. La 2 es marginalmente más limpia que la 1, y la trama de la 4 solo suma ruido. Hay un problema común a las cuatro: el resplandor turquesa de la imagen queda contra la división y compite con el panel a tamaño de feed. Una combinación posible es la 3 sin las cruces de las esquinas, como en la 2."
+  },
+  {
+   "id": "G06-v1-costuras",
+   "galeria": "G06",
+   "version": "v1",
+   "lente": "costuras",
+   "puntajes": {
+    "1": 8,
+    "2": 8.5,
+    "3": 8,
+    "4": 7.5
+   },
+   "hallazgos": [
+    {
+     "opcion": "1, 2, 3, 4",
+     "donde": "imagen completa (x 1338–3840)",
+     "problema": "No hay fondo extendido: la fuente de 1456×816 se recorta y se escala a la altura del lienzo. Por eso no hay escalón ni rectángulo. La línea horizontal clara cerca de y≈1930 ya está en la fuente (fila ~730), así que es parte del dibujo y no una costura. El panel es #111418 uniforme, sin parches, y la división no tiene esquinas redondeadas.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1, 2, 3, 4",
+     "donde": "borde superior del lienzo, x 1669–2034, y división x=1338",
+     "problema": "La aguada turquesa toca el borde superior y el corte vertical recto de la división la deja abierta en un 33 % de su altura. Se lee como sangrado intencional y no como un acento cortado. El haz cian brillante (x 1700–1900) no toca ningún borde.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1, 3, 4",
+     "donde": "cruces de registro de las esquinas derechas (3776,64) y (3776,2096), sobre la imagen",
+     "problema": "No chocan con el dibujo: el fondo es casi liso (desviación de 6 arriba y 0 abajo, blanco puro). Pero su contraste es de 1,6–1,9:1, frente a 9,9:1 de las cruces del panel, así que casi desaparecen y la marca queda desigual entre los dos lados.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "4",
+     "donde": "trama de puntos del panel, rectángulo x 128–1280 · y 128–1984",
+     "problema": "La trama termina 58 px antes de la división y 176 px antes del pie, y forma un recuadro interior. Con puntos #323841 sobre #111418 (~1,5:1) y ~4 px de radio, no se ve como parche a tamaño de feed. La columna x=128 queda a 7 px de las cruces de fila de x=121: no se tocan, pero de cerca parece un desalineo.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "2",
+   "veredicto": "sirve",
+   "resumen": "Desde la lente de costuras, las cuatro opciones sirven y ninguna cae en el veto. La imagen es la misma en las cuatro, recortada sin extensión: no hay escalón ni parche, y la línea clara de abajo es del dibujo original. El turquesa toca el borde superior y la división solo como sangrado. Elijo la 2 porque, al no tener cruces, quita las dos de la derecha, que flotan con poco contraste (1,6–1,9:1) sobre el blanco de la imagen. La 1 y la 3 también son limpias. La 4 suma un recuadro de puntos que no se ve a tamaño de feed pero de cerca roza las cruces de fila."
+  },
+  {
+   "id": "G06-v1-posicion",
+   "galeria": "G06",
+   "version": "v1",
+   "lente": "posicion",
+   "puntajes": {
+    "1": 6.4,
+    "2": 6.8,
+    "3": 6.6,
+    "4": 6.2
+   },
+   "hallazgos": [
+    {
+     "donde": "Todas · división panel/imagen, y≈1380–1900 px (de 2160)",
+     "problema": "La mancha oscura del motivo se funde con el panel: junto a la división, la imagen mide 4–22 de luminancia y el panel 20. La división desaparece justo a la altura de las filas de datos (1227–1840 en J1, J2 y J4; 1051–1664 en J3). El objeto toca el panel de texto. No es veto: es una textura abstracta con sangrado lateral deliberado, sin un contorno amputado.",
+     "gravedad": "media",
+     "opcion": "todas"
+    },
+    {
+     "donde": "Todas · bloque de texto del panel (panel de 0 a 1338 px)",
+     "problema": "Los márgenes no son parejos: hay 128 px a la izquierda, arriba y abajo, y solo 48–66 px a la derecha (filetes hasta 1290, EJEMPLO hasta 1289, subtítulo hasta 1272). El bloque queda corrido hacia la imagen.",
+     "gravedad": "media",
+     "opcion": "todas"
+    },
+    {
+     "donde": "Todas · imagen en la zona libre (de 1338 a 3840 px)",
+     "problema": "La masa oscura está corrida hacia la división: su centroide queda en x=2243 y el centro de la zona libre en 2589 (−346 px). La masa ocupa de 1374 a 3035: deja 36 px hacia el panel y 805 px hacia el borde derecho. El tercio derecho tiene apenas un 1,8 % de oscuro. El acento cian, con centroide en x=1766, apunta al texto, así que sirve como destino.",
+     "gravedad": "baja",
+     "opcion": "todas"
+    },
+    {
+     "donde": "Cruces de fila en x≈1303 (opciones 1, 3 y 4)",
+     "problema": "Las cruces de los extremos de fila quedan a 35 px de la división, justo donde la imagen es tan oscura como el panel (y 1423–1840): la marca casi toca el objeto.",
+     "gravedad": "baja",
+     "opcion": "1"
+    },
+    {
+     "donde": "Pie: el llamado «INSCRÍBETE · umbralbim.io» (opciones 1 y 4)",
+     "problema": "El llamado termina en x=1283, a 55 px de la división. El pie ocupa todo el ancho y aprieta el borde derecho; a la izquierda el logo arranca a 128 px.",
+     "gravedad": "baja",
+     "opcion": "1"
+    },
+    {
+     "donde": "Opción 3 · reparto vertical del panel",
+     "problema": "Los datos suben 176 px (el filete superior pasa de 1227 a 1051) y el vacío entre subtítulo y datos baja de 426 a 250 px, un mejor reparto. Pero los espacios del pie quedan desiguales (datos→botón 68 px, botón→logo 97 px). Además, el pie se apila a la izquierda (el botón termina en 894 y el logo en 490) y deja vacía la mitad derecha de la franja inferior.",
+     "gravedad": "baja",
+     "opcion": "3"
+    },
+    {
+     "donde": "Opción 4 · trama de puntos",
+     "problema": "La trama ocupa la caja 126–1281 × 126–2031, con un punto cada 64 px. Está alineada con el texto, pero dibuja esa caja descentrada en el panel (126 px a la izquierda, 57 px a la derecha) y hace más visible la asimetría de márgenes.",
+     "gravedad": "baja",
+     "opcion": "4"
+    }
+   ],
+   "mejor": "2",
+   "veredicto": "sirve con ajustes",
+   "resumen": "La imagen está en la misma posición en las 4 opciones y en ninguna queda cortada (sin veto). Pero en todas la mancha oscura se funde con el panel a la altura de los datos (y≈1380–1900 px), y el bloque de texto tiene 48–66 px de margen a la derecha frente a 128 px a la izquierda. Elijo la opción 2: al quitar las cruces ya no hay marcas a 35 px de la zona fundida ni sobre la pintura, y los filetes quedan a 48 px de la división. La opción 3 reparte mejor el panel en vertical, pero el pie queda irregular. La opción 4 hace más visible la asimetría. Ajustes: llevar el margen derecho del panel hacia 128 px y separar la masa oscura de la división, o aclarar ese borde."
+  }
+ ]
+}

@@ -1,0 +1,13 @@
+id: K2
+nombre: "1:1 · Banda: imagen arriba, texto abajo solo con la fecha"
+alternativa: 1x1
+paso: formatos
+hereda: packs/P01-save-the-date-slide.yaml
+decision_david: null
+valores:
+  formato: cuadrado
+  texto_minimo_css: 11      # celular (vista 390 px CSS): el mínimo legible; en la diapositiva era 14
+  division: banda_apilada
+  datos_ajuste_ancho: true
+  densidad_texto: minima    # kicker, título, fecha y llamado: más lugar para la imagen
+  division_fraccion: 0.75   # en 1:1 el texto toma 6 de 8 filas; con 5 el título baja a 83 px

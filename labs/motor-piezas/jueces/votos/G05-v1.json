@@ -1,0 +1,165 @@
+{
+ "galeria": "G05",
+ "seccion": null,
+ "rubrica": "v1",
+ "retro": true,
+ "criterios_hasta": null,
+ "sellado": "2026-11-11T00:00:24",
+ "hash_rubrica": "de3f9cdef0fe",
+ "hash_criterios": "-",
+ "votos": [
+  {
+   "id": "G05-v1-posicion",
+   "galeria": "G05",
+   "version": "v1",
+   "lente": "posicion",
+   "puntajes": {
+    "1": 6.5,
+    "2": 6.5,
+    "3": 6.5,
+    "4": 6.8
+   },
+   "hallazgos": [
+    {
+     "donde": "Todas · columna de texto del panel",
+     "problema": "Los márgenes no son parejos: el texto arranca a 130 px del borde izquierdo, pero a la derecha queda a 65 px de la imagen en el subtítulo, a 54 en el pie, a 48 en EJEMPLO y a 34 en las reglas (medidas sobre 3840 px). «TALLER PRÁCTICO · UMBRAL BIM» queda casi pegado a la división a tamaño de feed.",
+     "gravedad": "media",
+     "opcion": "1,2,3,4"
+    },
+    {
+     "donde": "Opciones 1 a 3 · división panel/imagen, abajo a la izquierda (y≈1380–1950)",
+     "problema": "La masa oscura toca la división en 564 de 2160 filas. El panel #111418 y la mancha (~#0D110D) difieren apenas (Δ 18,6), así que en ese tramo desaparece el borde del panel y la mancha parece meterse en él.",
+     "gravedad": "media",
+     "opcion": "1,2,3"
+    },
+    {
+     "donde": "Opción 4 · misma división",
+     "problema": "Con el panel en #1A1A2E la diferencia con la mancha sube a Δ 55,6: el borde se mantiene y la masa ya no se funde con el panel. Solo queda el contacto, que es propio del sangrado.",
+     "gravedad": "baja",
+     "opcion": "4"
+    },
+    {
+     "donde": "Todas · zona de la imagen",
+     "problema": "El centro de la masa oscura está en x≈2201, a unos 388 px a la izquierda del centro de la parte libre (x 2589), cerca del 15 % de ese ancho. El turquesa (centro en x≈1754) arranca justo en la división. Lleva el acento hacia el texto, así que se acepta, aunque deja la derecha gris y vacía.",
+     "gravedad": "baja",
+     "opcion": "1,2,3,4"
+    },
+    {
+     "donde": "Todas · veto y marcas",
+     "problema": "No aplica el veto: la imagen es una textura abstracta sin un objeto definido que quede cortado. No hay masa oscura en los bordes superior, derecho e inferior. Las marcas de esquina de la derecha caen sobre gris claro sin tocar la mancha. Fuera de esta lente: la geometría de la imagen es idéntica en las cuatro piezas, porque solo cambia el panel (x<1338).",
+     "gravedad": "baja",
+     "opcion": "1,2,3,4"
+    }
+   ],
+   "mejor": "4",
+   "veredicto": "sirve con ajustes",
+   "resumen": "Las cuatro piezas tienen la misma posición, porque solo cambia el color del panel. Gana la 4 por poco: su panel azul deja ver la división donde la mancha negra la toca, mientras que en las piezas 1 a 3 el borde se pierde en la esquina inferior izquierda. Hay un ajuste pendiente en todas: igualar los márgenes, que hoy son 130 px a la izquierda y entre 34 y 65 px a la derecha, para que el subtítulo no quede pegado a la imagen."
+  },
+  {
+   "id": "G05-v1-jerarquia",
+   "galeria": "G05",
+   "version": "v1",
+   "lente": "jerarquia",
+   "puntajes": {
+    "1": 7.5,
+    "2": 7,
+    "3": 6,
+    "4": 7
+   },
+   "hallazgos": [
+    {
+     "opcion": "1, 2, 3, 4",
+     "donde": "Imagen, mancha cian cerca del corte (x≈1800, y≈1300 de 3840×2160)",
+     "problema": "En la imagen hay un cian saturado (#38FAFF) a unos 460 px del corte y a la altura del bloque de datos. Es el punto más brillante del cuadro, y la imagen ocupa el 65 % del ancho, así que a tamaño de feed la mirada va primero a la mancha y después al título. Esta etapa no lo puede corregir porque el sangrado quedó fijo en G04.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1, 2, 3, 4",
+     "donde": "Llamado a la acción 'INSCRÍBETE · umbralbim.io'",
+     "problema": "Es texto turquesa al tamaño mínimo (unos 14 px CSS en vista de 1280), sin forma de botón y en la misma línea que el logo. El título lo supera unas 4,4 veces en altura de mayúscula. Se lee de cerca, pero en el feed pesa menos que el logo.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "Kicker, subtítulo, números y CTA en #99F6E4",
+     "problema": "El turquesa claro tiene casi la misma luminancia que el título #ECEDEE: el contraste entre ambos es 1,08:1, frente a 1,67:1 con #2DD4BF. El subtítulo ocupa todo el ancho del panel y queda casi tan brillante como el título, así que la jerarquía depende solo del tamaño. El CTA sí gana visibilidad.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "Logo junto al CTA",
+     "problema": "El ícono y el 'BIM' del logo siguen en #2DD4BF y el CTA que está al lado pasa a #99F6E4. En la misma línea se ven dos turquesas distintos.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "Etiquetas FECHA, HORA y LUGAR",
+     "problema": "Las etiquetas quedan en el mismo blanco que el dato. Se pierde el escalón gris (etiqueta por debajo del dato) y el bloque de datos baja de tres niveles a dos. Solo se nota de cerca porque las etiquetas son chicas.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "4",
+     "donde": "Panel #1A1A2E junto a la imagen",
+     "problema": "Al lado de los negros neutros y del turquesa de la imagen, el panel azul violáceo hace que el corte se lea como dos superficies de distinta temperatura. El contraste mínimo baja a 6,69:1 en las etiquetas grises. No cambia el orden de lectura.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1, 2, 3, 4",
+     "donde": "Panel, entre el subtítulo y la primera línea de datos",
+     "problema": "Queda una banda vacía de unos 430 px, el 20 % de la altura, que separa el bloque del título del de datos. El título se redujo de 176 a 98 px por el ancho de 'WORKSHOP', no por falta de alto.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "1",
+   "veredicto": "sirve",
+   "resumen": "La 1° tiene la jerarquía más limpia: título blanco grande, luego el acento turquesa (#2DD4BF, un escalón por debajo del título), después el dato blanco y al final la etiqueta gris. El logo y el CTA comparten color. La 2° aplana la etiqueta contra el dato. En la 3° el turquesa claro casi iguala la luminancia del título y el subtítulo compite con él; además el logo queda en un turquesa distinto. La 4° mantiene el orden de la 1°, pero el panel azul se despega de la imagen y el contraste baja un poco. Hay dos problemas que comparten las cuatro y que no se deciden en este paso: la mancha cian junto al corte le quita protagonismo al título en el feed, y el CTA es texto mínimo sin forma de botón."
+  },
+  {
+   "id": "G05-v1-costuras",
+   "galeria": "G05",
+   "version": "v1",
+   "lente": "costuras",
+   "puntajes": {
+    "1": 6.5,
+    "2": 6.5,
+    "3": 6.5,
+    "4": 6
+   },
+   "hallazgos": [
+    {
+     "donde": "Costura panel–imagen, x=669 px, y≈150–650 (las 4 opciones; la imagen es la misma)",
+     "problema": "El haz turquesa principal queda cortado por el borde del panel: el turquesa llega a la costura (RGB 74,207,214 en y≈600) y se pierde su borde oscuro izquierdo (fuente x≈420–460, que cae detrás del panel). Se arreglaría corriendo la imagen ~100–110 px a la derecha, así el panel queda contra la banda teal oscura y el haz se ve entero.",
+     "gravedad": "media",
+     "opcion": "1, 2, 3, 4"
+    },
+    {
+     "donde": "Esquina inferior derecha de la imagen, x≈1717–1920, y≈971–1080 (las 4)",
+     "problema": "Viene del original de Midjourney: un tramo blanco puro y plano (255,255,255, desviación 0,7, contra 28 de la textura vecina). A tamaño de feed se lee como una esquina sin dibujo y en un feed blanco se funde con el fondo. No es un parche del motor (no hay fondo extendido) y su borde superior es el horizonte del cuadro, así que no cuenta como veto. Corriendo la imagen ~100 px a la derecha, este tramo baja de ~200 a ~55 px de ancho.",
+     "gravedad": "media",
+     "opcion": "1, 2, 3, 4"
+    },
+    {
+     "donde": "Costura panel–imagen, y≈700–950, opción 4",
+     "problema": "El azul de portada #1A1A2E se nota distinto del negro de tinta de la imagen (≈13,18,14) en la costura y su tono no pertenece a la paleta del cuadro, así que el panel se ve pegado encima. En las opciones 1 a 3, #111418 casi iguala esa tinta y la costura se funde con la imagen.",
+     "gravedad": "baja",
+     "opcion": "4"
+    },
+    {
+     "donde": "Base de la costura, y≈970–1080 (las 4)",
+     "problema": "La franja blanca inferior de la imagen choca en seco con el panel oscuro, y unos reflejos turquesa de esa franja quedan cortados por el borde del panel.",
+     "gravedad": "baja",
+     "opcion": "1, 2, 3, 4"
+    },
+    {
+     "donde": "Cruces de registro (32,32), (32,1048), (1888,32), (1888,1048) y cruces de las filas en x=64 y x=645",
+     "problema": "Ninguna choca con el dibujo. Las dos de la derecha caen sobre gris claro o blanco liso, sin trazos de tinta, y las de las filas quedan a 24 px de la costura. Sin problema para esta lente: es una comprobación hecha.",
+     "gravedad": "baja",
+     "opcion": "1, 2, 3, 4"
+    }
+   ],
+   "mejor": "1",
+   "veredicto": "sirve con ajustes",
+   "resumen": "Para las costuras, las opciones 1, 2 y 3 son iguales: misma imagen, mismo recorte y mismo panel #111418. Elijo la 1 como base del empate. La 4 queda un poco más abajo porque su azul de portada abre un escalón de tono en la costura oscura. Ninguna tiene veto: no hay fondo extendido ni un parche del motor. Dos problemas, presentes en las cuatro, piden ajuste: el haz turquesa queda cortado por el borde del panel y en la esquina inferior derecha queda un tramo blanco plano que viene del original. Los dos se resuelven con un solo cambio: correr la imagen ~100–110 px a la derecha. Las cruces de registro no chocan con el dibujo."
+  }
+ ]
+}

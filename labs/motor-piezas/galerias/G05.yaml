@@ -1,0 +1,31 @@
+id: G05
+fecha: 2026-11-06
+titulo: "Galería 05 · paso 4: protección del texto (color)"
+descripcion: >
+  Paso 4 de 5. Quedan fijos el tercio, los datos fuertes y el sangrado lateral (G04 2°,
+  elegido por David). Con el sangrado lateral el texto ya no va sobre la imagen: lo que queda
+  por decidir es el color del texto y el del panel. Cada pieza cambia una sola cosa respecto de
+  la 1°. La hoja 01_detalle.jpg muestra los cuatro paneles lado a lado. Laboratorio: no publicar.
+como_elegir: >
+  Elige un número (1° a 4°) o una combinación (por ejemplo «2° con 3°») y dime qué te gusta o
+  qué cambiarías. Ese preset queda fijo y pasamos al paso 5 (pie y detalles), el último.
+contenido: contenido/workshop-bim-ia.yaml
+detalle:
+  titulo: "DETALLE · PANEL DE TEXTO"
+  recorte: [0, 0, 700, 1080]
+secciones:
+  - alternativa: paso4
+    titulo: "Paso 4 · Protección del texto (color)"
+    descripcion: >
+      Cada pieza hereda de la 1° (H1, que es la G04 2° sin cambios). Contraste medido sobre el
+      fondo liso del panel.
+    pasos:
+      - "Base: etiquetas en gris de marca (7,2:1) y acento turquesa #2DD4BF (9,9:1)"
+      - "Etiquetas blancas: FECHA, HORA y LUGAR en el color del texto (15,8:1)"
+      - "Turquesa claro: kicker, subtítulo, números y llamado en #99F6E4 (14,7:1), el token de texto de marca en oscuro"
+      - "Fondo de portada: el panel en #1A1A2E, el azul que el manual reserva para portadas de slides"
+    piezas:
+      - packs/H1-color-base.yaml
+      - packs/H2-color-etiquetas.yaml
+      - packs/H3-color-acento.yaml
+      - packs/H4-color-portada.yaml

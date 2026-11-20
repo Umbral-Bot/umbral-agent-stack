@@ -1,0 +1,66 @@
+{
+ "galeria": "G13",
+ "seccion": null,
+ "rubrica": "pred-crit2-a",
+ "retro": true,
+ "criterios_hasta": "G13",
+ "sellado": "2026-11-11T00:51:29",
+ "hash_rubrica": "b71ce177d875",
+ "hash_criterios": "11070cf84d18",
+ "votos": [
+  {
+   "id": "G13-raa-prediccion",
+   "galeria": "G13",
+   "version": "pred-crit2-a",
+   "lente": "prediccion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 8,
+    "2": 6.5,
+    "3": 5.5,
+    "4": 5
+   },
+   "hallazgos": [
+    {
+     "opcion": "2",
+     "donde": "banda oscura, entre el titular y el pie",
+     "problema": "Sin bajada, queda un vacío de ~13 % del alto sin función bajo el titular. La pieza pierde el contexto del artículo y se vuelve más simple y genérica. El titular de 186 px pega fuerte, pero entre opciones que ya se leen David decide por composición y sobriedad, no por el texto más grande.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "bajada de 3 líneas en 17,6 px CSS",
+     "problema": "La bajada sube a ~36 % del titular (136 px). Medido, cumple el 45 %, pero en masa gris compite con el titular, que pierde mando. La banda se ve densa. Gana legibilidad que no hacía falta: con 14 px CSS la bajada ya se leía.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4",
+     "donde": "titular de 110 px y tercio inferior de la banda",
+     "problema": "El titular baja a ~40 px CSS. El kicker ARTÍCULO (~40 %) y la bajada (~35 %) se acercan al límite del 45 %, y el titular deja de mandar con claridad. El aire ganado se acumula como vacío bajo la bajada, sin aportar a la composición.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "lado derecho de la primera línea del titular",
+     "problema": "Con 156 px, el titular deja ~20 % del ancho libre a la derecha de 'entra'. No molesta y la banda queda llena y equilibrada; es solo un detalle.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "común",
+     "donde": "pie, logotipo 'Umbral BIM'",
+     "problema": "Defecto común a las 4, no cuenta para elegir. El texto del logotipo es el más chico de la pieza (~11 px CSS) y en el celular se ve menor que el llamado; sobre la banda lisa el contraste alcanza.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "común",
+     "donde": "bajada gris (opciones 1, 3 y 4)",
+     "problema": "Es el texto con menos contraste de la pieza (7,24:1). Va sobre fondo liso y no sobre textura, así que se lee. Si se quiere más firmeza, conviene aclarar un punto el gris.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "1",
+   "veredicto": "sirve",
+   "resumen": "Elijo la opción 1. En el celular, el titular de 156 px manda con claridad y la bajada de 14 px CSS se lee sin competirle. La banda queda llena sin vacíos y conserva el contexto del artículo. La 2 tiene el titular más potente, pero deja un hueco sin función y simplifica la pieza. La 3 hace competir la bajada con el titular. La 4 le quita mando al titular y acumula el aire como vacío abajo. Las cuatro cumplen contraste (7,24 a 9,92:1) y el tamaño mínimo (11 px CSS), así que decide la jerarquía y no la legibilidad."
+  }
+ ]
+}

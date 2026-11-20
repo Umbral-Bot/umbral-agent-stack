@@ -1,0 +1,66 @@
+{
+ "galeria": "G16",
+ "seccion": null,
+ "rubrica": "pred-ej-a",
+ "retro": true,
+ "criterios_hasta": "G16",
+ "sellado": "2026-11-11T01:09:47",
+ "hash_rubrica": "b71ce177d875",
+ "hash_criterios": "c375ba4695d4",
+ "votos": [
+  {
+   "id": "G16-eja-prediccion",
+   "galeria": "G16",
+   "version": "pred-ej-a",
+   "lente": "prediccion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 8,
+    "2": 6.5,
+    "3": 5.5,
+    "4": 6
+   },
+   "hallazgos": [
+    {
+     "opcion": "3",
+     "donde": "pie de la banda, llamado",
+     "problema": "El botón turquesa ocupa más de la mitad del ancho de la banda y es el bloque saturado más grande del panel. El turquesa deja de ser acento (G05) y el llamado pasa a competir en peso con el titular y el kicker. En el Preset 01 (G06) David tampoco eligió el llamado como botón.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4",
+     "donde": "fondo de la banda de texto",
+     "problema": "Quita la trama de puntos, que fue justo lo que David eligió en el paso 5 del Preset 01 (G06 4°). La banda queda más plana y simple, rompe la coherencia de familia y va contra su preferencia por la composición más rica.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "esquinas del lienzo",
+     "problema": "Sin las cruces de registro la pieza se separa de la familia del Preset 01, donde David conservó las cruces junto a la trama. A tamaño de feed el cambio casi no se ve, así que no hay un beneficio visible que compense esa pérdida de coherencia.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1",
+     "donde": "cruz superior derecha, sobre la imagen",
+     "problema": "La cruz de arriba a la derecha cae sobre el límite entre el crema y el turquesa de la imagen y casi no se ve. Las cruces de arriba compiten con la textura de la ilustración. Es un detalle que solo se nota de cerca.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "trama y cruces vistas en el celular",
+     "problema": "Común a todas: a 390 px de ancho la trama de puntos y las cruces son casi imperceptibles. Entre 1, 2 y 4 la diferencia solo se ve en la hoja de detalle, y la única variante que cambia la pieza en el feed es la 3.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "logotipo del pie",
+     "problema": "Común a todas: el texto del logo «Umbral BIM» queda en el mínimo de 11 px CSS. Se lee, pero sin holgura frente al llamado, que tiene un cuerpo mayor.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "1",
+   "veredicto": "sirve",
+   "resumen": "Predigo la 1 (base). Repite lo que David eligió en el paso 5 del Preset 01: cruces y trama de puntos, con el llamado en texto. En G06 no eligió quitar las cruces ni el llamado como botón, y eligió agregar la trama. La 4 deshace esa elección y la 2 rompe la coherencia de familia sin ganar nada visible en el feed. La 3 es la única que cambia la pieza en el celular, pero el bloque turquesa grande saca al turquesa de su papel de acento y le resta protagonismo al titular. La lectura y el contraste (9,9:1) son iguales en las cuatro."
+  }
+ ]
+}

@@ -1,0 +1,48 @@
+id: G11
+fecha: 2026-11-09
+titulo: "Galería 11 · Preset 01 definitivo (con la jerarquía protegida)"
+descripcion: >
+  La familia presets/P01.yaml tal como queda: tercio en 16:9, columna ancha en 1:1 y 4:5,
+  LinkedIn pensado para computador y, desde G10, la jerarquía protegida (kicker y subtítulo
+  hasta el 45 % del título). Arriba con el contenido del workshop; abajo con el webinar de
+  prueba. Laboratorio: no publicar.
+resumen: >
+  El Preset 01 definitivo en sus cuatro formatos, con los dos contenidos de prueba. Respecto de
+  lo que ya habías aprobado, solo cambian un poco 1:1 y 4:5: el kicker y el subtítulo bajan unos
+  pocos px y, en 1:1, el título sube de 87 a 90 px.
+como_elegir: >
+  Si algo no te convence, dime el número y qué cambiarías. Si está bien, el Preset 01 queda
+  cerrado.
+contenido: contenido/workshop-bim-ia.yaml
+secciones:
+  - alternativa: workshop
+    titulo: "Workshop BIM + IA"
+    descripcion: >
+      El contenido con el que se eligió el preset.
+    pasos:
+      - "16:9: igual que en G07 (el kicker ya era el 30 % del título)"
+      - "1:1: «Save the date» y el subtítulo bajan de 43 a 40 px; el título gana alto y sube de 87 a 90 px"
+      - "4:5: «Save the date» y el subtítulo bajan de 43 a 41 px"
+      - "LinkedIn: igual que en G09"
+    piezas:
+      - packs/P01-save-the-date-slide.yaml
+      - packs/K1-formato-1x1-columna.yaml
+      - packs/K3-formato-4x5-columna.yaml
+      - packs/L2-linkedin-computador.yaml
+  - alternativa: webinar
+    titulo: "Webinar de prueba"
+    descripcion: >
+      Otro contenido, con un título más largo: es la prueba de que el preset aguanta textos
+      distintos.
+    contenido: contenido/webinar-ejemplo.yaml
+    sufijo: web
+    pasos:
+      - "16:9"
+      - "1:1"
+      - "4:5"
+      - "LinkedIn"
+    piezas:
+      - packs/P01-save-the-date-slide.yaml
+      - packs/K1-formato-1x1-columna.yaml
+      - packs/K3-formato-4x5-columna.yaml
+      - packs/L2-linkedin-computador.yaml

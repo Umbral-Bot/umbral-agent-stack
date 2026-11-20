@@ -1,0 +1,72 @@
+{
+ "galeria": "G03",
+ "seccion": null,
+ "rubrica": "pred-sin-a",
+ "retro": true,
+ "criterios_hasta": null,
+ "sellado": "2026-11-11T00:45:34",
+ "hash_rubrica": "2afef7084991",
+ "hash_criterios": "fd98b8707561",
+ "votos": [
+  {
+   "id": "G03-qa-prediccion",
+   "galeria": "G03",
+   "version": "pred-sin-a",
+   "lente": "prediccion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 5.5,
+    "2": 7,
+    "3": 4.5,
+    "4": 7.5
+   },
+   "hallazgos": [
+    {
+     "opcion": "1",
+     "donde": "datos (fecha, hora, lugar) y pie (INSCRÍBETE · umbralbim.io)",
+     "problema": "Todo el texto chico queda en 14 px CSS. En una vista de feed de unos 375 px, los datos y el llamado bajan a unos 4 px y cuesta leerlos. El contraste mejoró (10,13:1), pero el tamaño sigue siendo el freno.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "centro de la columna, entre el subtítulo y los datos",
+     "problema": "El vacío central ocupa casi una quinta parte de la altura. Con datos chicos, la columna se ve partida en dos bloques débiles en lugar de un orden de lectura.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "pie: llamado y logo",
+     "problema": "Los datos crecen un 34 % y ahora se leen en el celular, pero el llamado y el logo siguen en 14 px. Lo que hay que hacer (inscribirse) es lo que menos se lee abajo a la izquierda, justo la zona que David pidió reforzar.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "subtítulo 'TALLER PRÁCTICO · UMBRAL BIM'",
+     "problema": "Al pasar a una sola línea del tamaño del kicker, el subtítulo pierde presencia y llega hasta el margen derecho de la columna (x≈858 de 898).",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "tercio superior de la columna",
+     "problema": "Todo el texto se apoya abajo y arriba queda solo la etiqueta EJEMPLO. El título deja de mandar desde arriba y la pieza se ve cargada en la parte baja. Los datos siguen en 14 px, igual que en la 1.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4",
+     "donde": "subtítulo en dos líneas",
+     "problema": "El subtítulo turquesa crece y, a tamaño de feed, compite con los datos y casi con el título. Gana legibilidad, pero se aplana un poco la jerarquía título > datos > subtítulo.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "4",
+     "donde": "bloque entre el subtítulo y el logo",
+     "problema": "Queda poco aire entre los bloques y el logo queda solo abajo tras mover el llamado. La columna se ve densa, aunque ordenada.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "4",
+   "veredicto": "sirve",
+   "resumen": "Vista en el celular, la 4 es la única donde todo se lee: el texto más chico pasa de 14 a 18 px CSS, el contraste sobre la imagen llega a 10,61:1 y el llamado queda bajo los datos. Eso responde a lo que David pidió para abajo a la izquierda. La 2 queda cerca porque tiene la jerarquía más limpia y datos fuertes, pero el llamado sigue diminuto. La 1 y la 3 dejan los datos en 14 px, y la 3 además vacía la parte de arriba. Ajuste sugerido para la 4: bajar un poco el subtítulo para que no compita con los datos."
+  }
+ ]
+}

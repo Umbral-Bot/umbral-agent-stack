@@ -1,0 +1,118 @@
+{
+ "galeria": "G28",
+ "seccion": null,
+ "rubrica": "pred-crit2-a",
+ "retro": false,
+ "criterios_hasta": null,
+ "sellado": "2026-11-11T00:51:27",
+ "hash_rubrica": "b71ce177d875",
+ "hash_criterios": "11070cf84d18",
+ "votos": [
+  {
+   "id": "G28-pred2a-prediccion",
+   "galeria": "G28",
+   "version": "pred-crit2-a",
+   "lente": "prediccion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 6,
+    "2": 7.5,
+    "3": 5.5,
+    "4": 7,
+    "5": 6.5,
+    "6": 3.5,
+    "7": 3,
+    "8": 4
+   },
+   "hallazgos": [
+    {
+     "opcion": "2",
+     "donde": "pieza 11° (slide) y 9°/13° (cuadrados): imagen apaisada nb-a1",
+     "problema": "La apaisada es una elevación frontal y no una isometría como la principal, y el trazo es más grueso que la línea de trazo fino. Llena bien la banda, a un 85 % del ancho. Es un ajuste de coherencia de campaña que se anota, no un veto.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "pieza 13° (cuadrado 2,05:1)",
+     "problema": "El objeto es bajo y ancho dentro de una banda más alta y deja franjas vacías arriba y abajo. A tamaño de feed se ve fino.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1",
+     "donde": "pieza 4° (slide 3,64:1) y 2° (cuadrado 2,66:1): apaisada formula-a1",
+     "problema": "El objeto de la apaisada mide cerca de 2:1 y en la banda 3,64:1 solo ocupa alrededor del 52 % del ancho, con vacíos a los lados. Es el caso de un objeto alto en una banda ancha: hay que pedir otra imagen.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "imagen apaisada formula-a1 (piezas 2°, 4° y 6°)",
+     "problema": "Tiene un trazo abocetado de líneas dobles en perspectiva oblicua y no se lee como la isometría plana y clara de la principal. En el celular se ve más sucia que la principal de trazo fino.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "piezas 15° (vertical) y 17° (historia)",
+     "problema": "Al anclar por el acento, el cubo queda corrido a la izquierda dentro de su máscara, con más aire a la derecha. Es un objeto corrido respecto de su máscara.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "imagen apaisada nb-a2 (piezas 16°, 18° y 20°)",
+     "problema": "La perspectiva de la losa es rara: los bordes se abren hacia arriba y tienen rellenos negros macizos, más pesados que la línea aprobada. Se lee como un error de dibujo.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4",
+     "donde": "piezas 23°, 25° y 27°: apaisada fondo-a1",
+     "problema": "Las losas turquesa grandes y macizas (4 o 5 por banda) cargan la máscara de turquesa más que la principal. Además aparecen muros en Π que la principal no tiene.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "5",
+     "donde": "piezas 30°, 32° y 34°: apaisada fondo-a2",
+     "problema": "Tiene un trazo más fino y gris, y la grilla de construcción se ve más que en la principal. Entre la apaisada y la principal cambian el grosor y la textura.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "4, 5, 6, 7, 8",
+     "donde": "zona de imagen de todas las piezas del camino A (por ejemplo, 22°, 25° y 26°)",
+     "problema": "Faltan las cruces de registro sobre la imagen; en el camino B sí están. Quitarlas no es una mejora: conviene moverlas o conservarlas sobre el fondo.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "6",
+     "donde": "pieza 36° (vertical) y principal gafi04",
+     "problema": "El recorte es un fragmento de objeto con dos losas turquesa enormes: carga la máscara de turquesa, el objeto queda cortado en el borde y el tercio izquierdo queda vacío. No se lee como fondo de densidad pareja.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "6",
+     "donde": "pieza 39° (slide): apaisada h063",
+     "problema": "La planta trae cotas con números y garabatos de texto dentro de la imagen, y eso es un veto de marca.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "7",
+     "donde": "piezas 43° y 46°: h021",
+     "problema": "Tiene composición de afiche (ciudad a la izquierda y el resto vacío), densidad despareja y un sombreado a lápiz casi de render, fuera de la línea isométrica plana. No sirve como fondo recortable.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "8",
+     "donde": "piezas 50° y 53°",
+     "problema": "La principal es el mismo fragmento turquesa de R1. La retícula apaisada de H023 cuenta bien el tema, pero corta la estructura en el borde superior, deja la derecha rala y se lee como objeto, no como fondo.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "todas",
+     "donde": "piezas linkedin sin bajada (7°, 14°, 21°, 28°, 35°, 42° y 49°)",
+     "problema": "El botón queda en 7,1 px CSS. Es solo un aviso, porque David aceptó un botón así y sigue leyéndose como botón. El panel de texto es idéntico en todas las opciones y no desempata.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "2",
+   "veredicto": "sirve",
+   "resumen": "David elegiría la opción 2 (Nano Banana 2.1, variante 1). El cubo es isométrico, limpio y legible en el celular, y el choque tubo-viga queda marcado en turquesa. Queda bien centrado en todas las máscaras, y la apaisada llena cerca del 85 % de cada banda (vertical, cuadrados, historia, slide y LinkedIn). Hay que anotar que la apaisada se ve en elevación frontal y no en isometría, y que su trazo es más grueso. Magnific One (1) tiene la principal más fina, pero su apaisada abocetada no llena la banda 16:9. NB2 (3) corre el objeto a la izquierda y su apaisada tiene un error de dibujo. En el camino A, A1 (4) es un fondo correcto que funciona en todos los formatos y sirve como variante de ese camino; A3 (5) es parecido, con una apaisada de trazo más gris. Los rescates (6, 7 y 8) no sirven: traen fragmentos de objeto cargados de turquesa, composición de afiche o números dentro de la imagen. Todo el camino A pierde las cruces de registro sobre la imagen."
+  }
+ ]
+}

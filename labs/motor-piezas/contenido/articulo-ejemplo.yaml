@@ -1,0 +1,8 @@
+# Contenido de ejemplo del Preset 02 (post de noticia o artículo). No publicar.
+id: articulo-ia-obra
+ejemplo: true              # muestra el chip EJEMPLO
+chip: EJEMPLO
+kicker: Artículo
+titulo: [La IA entra, a la obra]
+cuerpo: "Qué cambia en la coordinación BIM cuando los modelos se revisan con IA, y qué sigue dependiendo del equipo."
+cta: "LEE EL ARTÍCULO · umbralbim.io"

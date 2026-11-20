@@ -1,0 +1,258 @@
+{
+ "galeria": "G22",
+ "seccion": null,
+ "rubrica": "v2",
+ "retro": true,
+ "criterios_hasta": "G22",
+ "sellado": "2026-11-11T00:33:18",
+ "hash_rubrica": "f69064585452",
+ "hash_criterios": "fd98b8707561",
+ "votos": [
+  {
+   "id": "G22-v2-lectura",
+   "galeria": "G22",
+   "version": "v2",
+   "lente": "lectura",
+   "puntajes": {
+    "1": 6.5,
+    "2": 6,
+    "3": 8.5
+   },
+   "hallazgos": [
+    {
+     "opcion": "1",
+     "donde": "Columna de texto, entre el titular y el botón",
+     "problema": "Las separaciones no son parejas. Medido de tinta a tinta, «Artículo» queda a 32 px del titular y el botón a unos 68 px del titular, más del doble. El criterio de la pieza apaisada sin bajada da prioridad al botón al pie, así que no se veta. Pero la opción 3 muestra que se pueden cumplir las dos cosas, y aquí el botón se ve suelto del bloque a tamaño de feed.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "Botón «Lee el artículo» y pie del panel",
+     "problema": "Las separaciones son parejas (32 y 31 px), pero el botón ya no cierra la columna al pie: queda al medio y deja unos 105 px vacíos abajo, frente a unos 64 px de margen arriba. En la pieza apaisada sin bajada, David da más peso al botón al pie que a la separación pareja.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "Bloque kicker, titular y botón apoyado abajo",
+     "problema": "No hay defecto de lectura propio. Las separaciones son parejas (32 px de «Artículo» al titular y 30,5 px del titular al botón, medidas siempre de tinta a tinta). El botón cierra la columna al pie, con el mismo margen de 64 px que arriba, y el logo queda separado arriba. Cumple a la vez la separación pareja y la excepción del botón al pie.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "Texto del botón «LEE EL ARTÍCULO / umbralbim.io»",
+     "problema": "Es el texto más chico de las tres: 9,3 px CSS en una vista de 390 px, bajo la referencia de 11 px para el celular. Es solo un aviso, no un veto, porque es texto de botón y David eligió botones así. El contraste es oscuro sobre turquesa liso y se lee. Es igual en las tres opciones, así que no desempata.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "Logotipo «Umbral BIM», arriba a la izquierda",
+     "problema": "La palabra del logo queda en unos 6 px CSS en el celular, con un alto de mayúscula de 13 px en la pieza de 1200 px. Se reconoce por su forma y está sobre el panel liso, con buen contraste. Es igual en las tres opciones y se anota como detalle común.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "Panel liso izquierdo",
+     "problema": "El contraste mínimo es de 9,92:1, medido sobre el fondo real. Todo el texto va sobre el panel oscuro liso y nada cae sobre la textura de la imagen. El chip EJEMPLO no le quita espacio al texto ni choca con el logo. No hay defecto: se anota para dejar constancia de que es igual en las tres.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "3",
+   "veredicto": "sirve",
+   "resumen": "Las tres opciones tienen el mismo tamaño de texto y el mismo contraste: 9,92:1 sobre el panel liso, y 9,3 px CSS en el botón, que es solo un aviso. Por eso la diferencia está en las separaciones y en dónde queda el botón. Mejor la 3: separaciones parejas de unos 32 px, medidas de tinta a tinta, y botón al pie de la columna, con el logo solo arriba. La 1 deja el botón a unos 68 px del titular, más del doble que entre «Artículo» y el titular. La 2 empareja las separaciones, pero saca el botón del pie y deja aire muerto abajo, justo lo que David pone por delante en el LinkedIn sin bajada."
+  },
+  {
+   "id": "G22-v2-composicion",
+   "galeria": "G22",
+   "version": "v2",
+   "lente": "composicion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 7,
+    "2": 5.5,
+    "3": 8
+   },
+   "hallazgos": [
+    {
+     "opcion": "1",
+     "donde": "columna de texto, entre el titular y el botón",
+     "problema": "Los 32 px solo se aplican entre «Artículo» y el titular. El botón queda a unos 68 px del titular, más del doble. Por la excepción de David para el apaisado sin bajada (botón al pie de la columna), esto no invalida la opción, pero en esta galería la 3 consigue el botón al pie y además la separación pareja.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "pie del panel de texto, bajo el botón",
+     "problema": "El bloque se centra bajo el logo y el botón deja el pie de la columna. Su borde inferior queda a unos 105 px del borde, frente a los 64 px de margen de las otras dos opciones. Esto deja un vacío sin función bajo los datos, hace que el bloque flote sin apoyarse en el margen y va contra la regla de David de que en el apaisado sin bajada el botón cierre la columna al pie.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "tercio superior del panel, entre el logo y «Artículo»",
+     "problema": "Entre el logo y «Artículo» quedan unos 100 a 110 px, y el logo y el chip quedan solos arriba. Es una decisión legible: agrupa los tres textos por proximidad y deja la marca aparte. Aun así, a tamaño de feed la pieza carga un poco el peso hacia abajo.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "entre el titular y el botón (también en la 3)",
+     "problema": "Medida sobre la tinta, la separación entre el titular y el botón es de 30,5 a 31 px, frente a 32 px entre «Artículo» y el titular. No se percibe.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "botón «LEE EL ARTÍCULO / umbralbim.io»",
+     "problema": "Defecto común a las tres, no desempata: el texto espaciado casi toca los bordes laterales y superior del botón, con poco relleno interior.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "3",
+   "veredicto": "sirve",
+   "resumen": "La única diferencia está en cómo se reparte el texto en vertical dentro del panel. Las medidas están a 1x, con el lienzo de 1200×627. La 3 es la única que cumple las dos reglas de David a la vez. «Artículo», el titular y el botón quedan a 32 px parejos. El botón sigue cerrando la columna sobre el margen inferior de 64 px, el mismo que en la 1. El aire de unos 100 px bajo el logo separa la marca del bloque de lectura de forma deliberada. La 1 cumple la excepción del botón al pie, pero deja separaciones de 32 y 68 px. La 2 pierde el apoyo al pie y deja unos 105 px vacíos bajo el botón, por eso queda como «sirve con ajustes». La división del lienzo (panel de unos 609 px e imagen a sangre) y el chip EJEMPLO, que no choca ni quita espacio, son iguales en las tres."
+  },
+  {
+   "id": "G22-v2-jerarquia",
+   "galeria": "G22",
+   "version": "v2",
+   "lente": "jerarquia",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 8,
+    "2": 6.5,
+    "3": 7.5
+   },
+   "hallazgos": [
+    {
+     "opcion": "2",
+     "donde": "pie de la columna de texto",
+     "problema": "El bloque queda alto: hay unos 60 px entre el logo y «Artículo» y unos 106 px vacíos bajo el botón. La columna termina en vacío y el botón ya no la cierra, así que el pie pierde su ancla y el bloque queda flotando.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "titular → botón (31 px)",
+     "problema": "Pegado al titular, el botón turquesa saturado (301×74) forma una sola masa con él y le carga la base. El titular sigue mandando, pero la llamada a la acción deja de leerse como el cierre de la pieza.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "titular → botón (31 px)",
+     "problema": "Igual que en la 2°: el botón se suma al bloque del titular y pierde su papel de cierre separado. Lo compensa estar apoyado en el pie.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "zona alta de la columna",
+     "problema": "El logo queda aislado, con unos 100 px de aire hasta «Artículo», y el centro del titular baja a unos 371 de 627 px. La lectura sigue siendo clara, pero el titular cae bajo la mitad y la parte alta queda poco ocupada.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "botón «LEE EL ARTÍCULO / umbralbim.io»",
+     "problema": "Defecto común a las tres. El texto del botón, en versales con tracking y en dos líneas, mide casi lo mismo de ancho que «ARTÍCULO» (unos 275 frente a 272 px a 1x) y es la masa más saturada del panel. Le disputa al kicker el segundo nivel de lectura. No compite con el titular.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "todas",
+     "donde": "kicker «ARTÍCULO» frente al titular",
+     "problema": "Defecto común a las tres. La versal del kicker mide 69 px y la del titular 152 px (a 2x), cerca del 45 %. Queda justo en el tope de la regla. Es la base ya elegida y no se vuelve a discutir; se anota por si el titular se achica con otro contenido.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "1",
+   "veredicto": "sirve",
+   "resumen": "Las tres opciones tienen el mismo titular de 102 px y en todas manda sin discusión. La imagen va en su propio panel y no le disputa la zona de lectura. La diferencia está en dónde va el botón. En la 1° el ritmo es parejo: unos 63 px del logo a «Artículo», unos 69 px del titular al botón y unos 64 px hasta el borde. «Artículo» y el titular forman el grupo de contenido y el botón queda aparte, cerrando la columna, así que la separación desigual (32 px frente a unos 77 px en el código) ordena la jerarquía en vez de dañarla. La 3° funciona: el bloque queda apoyado abajo, pero el titular cae bajo la mitad y el logo queda aislado. La 2° es la más débil: el bloque flota alto y la columna termina en vacío. Con los tres textos a 32 px el botón saturado se pega al titular y deja de leerse como cierre. Defecto común a las tres: el botón es tan ancho como el kicker y es la masa más saturada del panel, conviene aligerarlo. El chip EJEMPLO va en la fila del logo, no choca con nada ni le quita espacio al texto. Aviso de transparencia: al buscar medidas en el código vi por accidente la elección de David en G22 (en elecciones.yaml y en el pack AA1). Puntué por mi lente, pero este voto no es ciego."
+  },
+  {
+   "id": "G22-v2-costuras",
+   "galeria": "G22",
+   "version": "v2",
+   "lente": "costuras",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 7.5,
+    "2": 7.5,
+    "3": 7.5
+   },
+   "hallazgos": [
+    {
+     "opcion": "todas",
+     "donde": "zona de imagen (x 1216–2400 en el PNG 2x)",
+     "problema": "Mi lente no ve ninguna diferencia entre las opciones. La zona de imagen es idéntica en las tres piezas: el recorte de los píxeles da el mismo md5. Solo cambia la pila de texto del panel oscuro, y eso no lo juzgo. No hay fondo extendido: las franjas crema de arriba (0–55 px) y de abajo (1192–1254 px) son el margen propio de la ilustración escalado ×1,54, y su color es el mismo en ambos extremos (246,233,206). No hay escalón de color ni parche rectangular, así que no hay veto.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "cruz de registro superior derecha (≈2336, 63 en 2x)",
+     "problema": "La cruz cae justo en el borde entre el margen crema y el campo turquesa del dibujo, unos 8 px dentro del turquesa. Una cruz turquesa sobre turquesa casi desaparece y además choca con el canto del dibujo. Propongo bajarla al centro de la franja crema superior (y≈28 en 2x) o correrla para que quede entera sobre la crema. No propongo quitarla.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "cruz de registro inferior derecha (≈2336, 1190 en 2x)",
+     "problema": "La cruz pisa la esquina del bloque negro escalonado que cierra el dibujo abajo a la derecha: el brazo horizontal y el vertical quedan medio sobre el negro. Propongo moverla al centro de la franja crema inferior (y≈1223 en 2x), donde queda limpia.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "borde de la división panel/imagen (x 1216)",
+     "problema": "El recorte deja en el borde izquierdo de la imagen negros casi iguales al panel. El medio círculo mide (17,18,8) y la franja vertical de x 1216–1250 e y 480–1190 mide (12,14,5), frente al panel (17,20,24). En esos tramos la costura de la división se pierde: el medio círculo se lee como una protuberancia del panel y la franja ensancha el panel unos 17 px en la mitad baja. No es un parche, pero el filo de la división queda irregular.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "borde de la división, y 805–865 (2x)",
+     "problema": "Del cuadrado turquesa del dibujo queda una astilla de unos 34×60 px pegada al panel. Se lee como una muesca turquesa en el filo de la división. Es turquesa de la ilustración, no un acento de marca.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "borde derecho de la imagen",
+     "problema": "El recorte (foco 0,5/0,5, unos 770 px de ancho útil de los 1456 de la fuente) deja fuera el codo y la base del brazo robótico, que entra desde la esquina superior derecha. Se lee como algo intencional (la IA «entra»), así que lo anoto solo como detalle del recorte.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "",
+   "veredicto": "sirve",
+   "resumen": "Desde costuras no hay diferencia entre las opciones: la zona de imagen es idéntica en las tres, con el mismo md5, y no elijo por otra lente. El recorte es limpio: no hay fondo extendido, ni escalón, ni parche, y no hay veto. Los defectos son comunes a las tres. Las dos cruces de la derecha chocan con el dibujo: la de arriba queda sobre el canto turquesa y la de abajo sobre el bloque negro. Propongo moverlas al centro de las franjas crema, no quitarlas. El filo de la división se pierde donde el negro de la ilustración toca el panel."
+  },
+  {
+   "id": "G22-v2-posicion",
+   "galeria": "G22",
+   "version": "v2",
+   "lente": "posicion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 4,
+    "2": 4,
+    "3": 4
+   },
+   "hallazgos": [
+    {
+     "opcion": "1, 2 y 3 (común)",
+     "donde": "zona de imagen: borde derecho del lienzo (x=1200) y la división (x=608)",
+     "problema": "Se cumple el veto: la máscara corta el brazo robótico. El recorte está centrado (foco [0.5, 0.5], sangrado_lateral) y solo conserva x≈343–1113 de una fuente de 1456 px. El robot ocupa x≈770–1410, así que en la pieza quedan la pinza, el antebrazo y el hombro (≈54 % de su ancho) y se pierden el codo, la columna y la base. Es el caso que prevé el requisito técnico: la fuente tiene composición de afiche, con el sujeto a la derecha. El defecto es común a las tres opciones, la zona de imagen es idéntica píxel a píxel, viene de la base de G20 y G21 y no desempata. Arreglo propuesto: foco x≈0.73 (ventana 686–1456 de la fuente), que muestra el robot entero con la pinza apuntando al texto, o bien una imagen con el sujeto al centro.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "1, 2 y 3 (común)",
+     "donde": "borde izquierdo de la imagen, junto al panel oscuro (x 608–682, y≈30–235)",
+     "problema": "La división parte por la mitad el círculo negro de la fuente (x≈163–440): queda una media luna de 74 px pegada al panel de texto, a 16 px del chip EJEMPLO. Se lee como una forma cortada y no como un borde intencional. Con el foco corrido a x≈0.73, el círculo desaparece y el corte cae sobre el bloque crema.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1, 2 y 3 (común)",
+     "donde": "marco de papel crema de la ilustración",
+     "problema": "Los márgenes no son parejos: la banda crema mide ≈28 px arriba y ≈32 px abajo, pero 0 px a los lados, porque el recorte la elimina. El marco propio de la ilustración queda incompleto.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1, 2 y 3 (común)",
+     "donde": "cruces de registro de la derecha: (1167, 595) y (1167, 31)",
+     "problema": "La cruz inferior derecha cae justo en el límite entre el bloque negro escalonado y la banda crema, y queda a medias sobre el dibujo. Conviene bajarla a la banda crema (y≈611) o correrla, sin quitarla. La superior derecha, turquesa sobre el límite crema/turquesa, casi no se ve en su mitad turquesa.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "",
+   "veredicto": "no sirve",
+   "resumen": "Mi lente no ve diferencia entre las opciones: la imagen tiene la misma fuente, el mismo encaje y el mismo foco, y su zona es idéntica píxel a píxel en las tres. El texto queda siempre en x 64–592 y la imagen empieza en x 608. Por eso las puntúo igual y no elijo ninguna. Las tres comparten un defecto heredado de la base de G20: con el recorte centrado, el brazo robótico queda cortado (faltan el codo y la base), lo que es el veto de mi lente. Además, el círculo negro queda partido contra el panel. El arreglo está en el encuadre de la imagen (foco x≈0.73), no en la elección de esta galería."
+  }
+ ]
+}

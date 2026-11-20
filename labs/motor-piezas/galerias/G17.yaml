@@ -1,0 +1,34 @@
+id: G17
+fecha: 2026-11-09
+titulo: "Galería 17 · Preset 02, resultado y prueba con otro artículo"
+descripcion: >
+  El Preset 02 en un solo pack plano (packs/P02-noticia-4x5.yaml): banda abajo, titular grande,
+  imagen a sangre, bajada blanca y llamado como botón, sin trama. Reproduce la elección de G16
+  («3 y 4»). Abajo, la prueba con otro artículo, que trae su propia imagen en el contenido.
+  Laboratorio: no publicar.
+resumen: >
+  El Preset 02 terminado en 4:5 y la prueba con otro artículo (titular más largo y otra imagen).
+como_elegir: >
+  Dime si algo no te convence. Si está bien, el siguiente paso es llevar el Preset 02 a los
+  otros formatos.
+contenido: contenido/articulo-ejemplo.yaml
+secciones:
+  - alternativa: p02
+    titulo: "Preset 02 · «La IA entra a la obra»"
+    descripcion: >
+      El artículo con el que se eligió el preset.
+    pasos:
+      - "4:5: el resultado de los cinco pasos"
+    piezas:
+      - packs/P02-noticia-4x5.yaml
+  - alternativa: prueba
+    titulo: "Prueba · «Del plano al modelo en tres semanas»"
+    descripcion: >
+      Otro artículo: titular más largo, otro kicker («Caso») y su propia imagen (un patrón de
+      íconos BIM).
+    contenido: contenido/articulo-ejemplo-2.yaml
+    sufijo: caso
+    pasos:
+      - "4:5: el mismo preset con otro contenido"
+    piezas:
+      - packs/P02-noticia-4x5.yaml

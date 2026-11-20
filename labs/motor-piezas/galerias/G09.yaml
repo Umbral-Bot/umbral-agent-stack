@@ -1,0 +1,29 @@
+id: G09
+fecha: 2026-11-07
+titulo: "Galería 09 · el Preset 01 en LinkedIn (1200×627)"
+descripcion: >
+  El último formato del Preset 01. En 627 px de alto, a tamaño de celular solo cabe la fecha;
+  para mostrar los tres datos hay que suponer que la imagen se ve en el computador (el feed mide
+  unos 555 px CSS) y pasar a una banda. Se mantienen sangrado lateral o superior, color de marca,
+  trama en el panel y datos fuertes. Laboratorio: no publicar.
+resumen: >
+  Tres opciones. La pregunta de fondo: ¿la imagen de LinkedIn se piensa para el celular o para
+  el computador? En celular solo cabe la fecha; en computador caben los tres datos en una banda.
+como_elegir: >
+  Elige un número (1° a 3°) y dime qué cambiarías. Con eso el Preset 01 queda completo en los
+  cuatro formatos.
+contenido: contenido/workshop-bim-ia.yaml
+secciones:
+  - alternativa: linkedin
+    titulo: "LinkedIn · imagen de publicación (1200×627)"
+    descripcion: >
+      Imagen de un post o de un enlace. Celular: 390 px CSS de ancho; computador: unos 555 px
+      CSS (supuesto).
+    pasos:
+      - "Celular, columna: texto en la mitad, solo la fecha, a tamaño de celular"
+      - "Computador, columna: la misma composición con el texto más chico y más aire"
+      - "Computador, banda: imagen arriba; título a la izquierda y los tres datos a la derecha"
+    piezas:
+      - packs/L1-linkedin-celular.yaml
+      - packs/L2-linkedin-computador.yaml
+      - packs/L3-linkedin-banda.yaml

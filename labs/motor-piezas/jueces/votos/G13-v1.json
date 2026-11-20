@@ -1,0 +1,155 @@
+{
+ "galeria": "G13",
+ "seccion": null,
+ "rubrica": "v1",
+ "retro": true,
+ "criterios_hasta": null,
+ "sellado": "2026-11-11T00:00:25",
+ "hash_rubrica": "de3f9cdef0fe",
+ "hash_criterios": "-",
+ "votos": [
+  {
+   "id": "G13-v1-jerarquia",
+   "galeria": "G13",
+   "version": "v1",
+   "lente": "jerarquia",
+   "puntajes": {
+    "1": 8,
+    "2": 7,
+    "3": 6,
+    "4": 5
+   },
+   "hallazgos": [
+    {
+     "opcion": "1",
+     "donde": "banda inferior, entre la bajada y el pie",
+     "problema": "La banda queda densa: entre la última línea de la bajada y el logo/llamado hay solo ~90 px de lienzo (de 2700). No llegan a chocar y la lectura kicker > titular > bajada > llamado sigue clara (titular 156 px frente a bajada de ~39 px, unas 4 veces).",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1",
+     "donde": "bajada (14 px CSS, gris)",
+     "problema": "A tamaño de feed, la bajada se lee como textura de tercer nivel. Para la jerarquía es correcto, pero el contenido apenas se lee en la miniatura.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "banda inferior, bajo «a la obra»",
+     "problema": "Queda un hueco vacío de ~330 px de lienzo entre el titular y el pie. El peso se va arriba en la banda y el llamado queda aislado. El titular de 186 px es el que mejor le gana a la imagen, pero la banda se ve sin terminar. Ajuste: centrar el bloque verticalmente o bajar el titular hacia el pie.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "domde": "",
+     "donde": "titular frente a bajada",
+     "problema": "La proporción titular/bajada cae a ~2,8 (136 px frente a ~49 px). La bajada en gris ocupa tres líneas a todo el ancho y forma un bloque que compite con el titular como segundo foco. Además, el titular más chico pesa menos contra el círculo y el brazo negro de la imagen.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "bajada → pie",
+     "problema": "La última línea de la bajada queda a ~85 px de lienzo del logo y del llamado. No hay choque, pero la banda se ve apretada.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "4",
+     "donde": "titular frente a la imagen",
+     "problema": "Con 110 px, el titular ocupa ~55 % del ancho y pierde frente a las masas negras de la imagen (círculo, bloques, brazo). A tamaño de feed, lo primero que se ve es la ilustración y no el titular: la imagen compite y gana.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4",
+     "donde": "banda inferior, bajo la bajada",
+     "problema": "El «aire» que gana la banda se junta abajo, en una franja vacía de ~245 px de lienzo antes del pie, en lugar de repartirse alrededor del titular. Además, el lado derecho del titular queda vacío.",
+     "gravedad": "media"
+    }
+   ],
+   "mejor": "1",
+   "veredicto": "sirve",
+   "resumen": "Desde la jerarquía, la opción 1 es la que mejor reparte el peso: el titular de 156 px llena la banda y aguanta frente a una imagen muy contrastada, y la escala kicker > titular > bajada > llamado se lee sin ambigüedad (proporción ~4:1). El logo y el llamado se leen en las cuatro. La opción 2 tiene el titular más fuerte, pero deja un hueco de ~330 px sobre el pie: sirve si se reparte ese espacio. La opción 3 aplana la jerarquía, porque la bajada compite con el titular. En la opción 4, el titular de 110 px pierde frente a la imagen y el aire se junta abajo."
+  },
+  {
+   "id": "G13-v1-posicion",
+   "galeria": "G13",
+   "version": "v1",
+   "lente": "posicion",
+   "puntajes": {
+    "1": 8,
+    "2": 5.5,
+    "3": 7.5,
+    "4": 6
+   },
+   "hallazgos": [
+    {
+     "opcion": "2",
+     "donde": "banda de texto, entre el titular y el pie (y 2135 a 2466 px)",
+     "problema": "Sin bajada, el bloque de texto queda colgado arriba y deja un hueco de 331 px sobre el pie. El aire debajo es cinco veces el que queda entre el kicker y el titular (65 px), así que los márgenes verticales de la banda quedan disparejos.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4",
+     "donde": "banda de texto, entre la bajada y el pie (y 2228 a 2466 px)",
+     "problema": "Con el titular de 110 px, el aire que gana la banda se junta abajo: queda un hueco de 238 px sobre el pie en vez de repartirse. El bloque se ve cargado hacia arriba.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "bajada, segunda línea (x hasta 1986 px)",
+     "problema": "La bajada de 17,6 px llega justo al margen derecho (el chip EJEMPLO termina en 1994) y quedan 78 px hasta el pie. Cabe, pero la banda queda al límite y sin holgura.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "marca de registro superior derecha (≈2092, 63)",
+     "problema": "La marca cae 4 px dentro del borde superior de la imagen (el borde está en y≈59): queda verde sobre turquesa, casi invisible, y toca la ilustración. La marca superior izquierda, en cambio, cae sobre crema.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "codo del robot, borde derecho (x≈2106 de 2160)",
+     "problema": "El robot está entero, así que no hay veto. Pero el anillo del codo queda a 54 px del borde derecho, más justo que su aire superior (≈81 px desde el borde de la imagen). El pedestal sale por la derecha, como corresponde a un sangrado lateral.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "inicio de la banda oscura (y 1323) frente al kicker (y 1373)",
+     "problema": "El kicker queda a 50 px del borde de la banda, menos que los márgenes laterales del texto (≈132 px). Se ve un poco pegado al corte entre la imagen y la banda.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "1",
+   "veredicto": "sirve",
+   "resumen": "La imagen es la misma en las cuatro y el robot está entero, así que ninguna tiene veto. Lo que las distingue es cómo se reparte el texto en la banda. La 1 es la más pareja: deja 65 px entre el kicker y el titular y 83 px entre la bajada y el pie. La 3 también está equilibrada, pero queda al límite: la bajada toca el margen derecho y deja 78 px hasta el pie. La 2 y la 4 cuelgan el bloque arriba y dejan huecos de 331 y 238 px sobre el pie. Hay tres detalles comunes de baja gravedad: la marca superior derecha cae sobre el turquesa de la imagen, el codo del robot queda a 54 px del borde y el kicker queda pegado al corte de la banda. Elijo la 1."
+  },
+  {
+   "id": "G13-v1-costuras",
+   "galeria": "G13",
+   "version": "v1",
+   "lente": "costuras",
+   "puntajes": {
+    "1": 9,
+    "2": 9,
+    "3": 9,
+    "4": 9
+   },
+   "hallazgos": [
+    {
+     "donde": "Cruz de registro arriba a la derecha (1048,32 en 1080 px)",
+     "problema": "Cae justo en el borde superior del rectángulo turquesa de la ilustración, donde termina la franja crema (y≈30 px). El brazo vertical queda mitad sobre crema y mitad sobre turquesa, y el horizontal se pierde: es #2DD4BF sobre un turquesa de ≈(104,203,195). La cruz de arriba a la izquierda queda entera sobre crema, y las dos de abajo, sobre la banda oscura, están limpias.",
+     "gravedad": "baja",
+     "opcion": "todas"
+    },
+    {
+     "donde": "Franjas crema de la ilustración, arriba (≈30 px) y abajo (≈35 px, justo encima de la banda)",
+     "problema": "El margen de papel del original de Midjourney sobrevive arriba y abajo, pero el sangrado lateral lo recorta por completo a los lados. Por eso el marco se lee como dos franjas horizontales y no como un passe-partout. Viene del original, no es un escalón del motor: es parejo y de lado a lado.",
+     "gravedad": "baja",
+     "opcion": "todas"
+    }
+   ],
+   "mejor": "",
+   "veredicto": "sirve",
+   "resumen": "Las cuatro opciones empatan en costuras. La zona de imagen es idéntica en todas, píxel a píxel (diferencia máxima 0), así que esta lente no las distingue y no elijo ninguna. No hay fondo extendido: la fuente de 1456×816 se escala ×0,8125 y cubre justo 1080×663, recortando unos 51 px por lado. Por eso no hay parches ni rectángulos. La unión con la banda #111418 en y=663 es un corte limpio, sin filas intermedias. El borde izquierdo no conserva restos del margen crema de la fuente, que se recortó entero. El salto vertical de turquesa en x≈543 viene del original (son dos paneles), no es costura. Los acentos de marca (kicker, llamado, logo, chip) no tocan el borde, y la trama de puntos queda dentro de los márgenes. Solo hay detalles finos: la cruz de registro de arriba a la derecha queda montada sobre el borde de un bloque turquesa de la ilustración y se camufla, y el margen crema del original queda como dos franjas horizontales.",
+   "no_aplica": false
+  }
+ ]
+}

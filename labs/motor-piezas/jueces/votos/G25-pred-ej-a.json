@@ -1,0 +1,65 @@
+{
+ "galeria": "G25",
+ "seccion": null,
+ "rubrica": "pred-ej-a",
+ "retro": true,
+ "criterios_hasta": "G25",
+ "sellado": "2026-11-11T01:09:48",
+ "hash_rubrica": "b71ce177d875",
+ "hash_criterios": "c375ba4695d4",
+ "votos": [
+  {
+   "id": "G25-eja-prediccion",
+   "galeria": "G25",
+   "version": "pred-ej-a",
+   "lente": "prediccion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 6,
+    "2": 7.3,
+    "3": 7.7
+   },
+   "hallazgos": [
+    {
+     "opcion": "1",
+     "donde": "G25-T6-o75 (16:9) y G25-T1-o75 / G25-T2-o75 (bandas 1:1)",
+     "problema": "Al 75 %, el edificio queda como una figura chica al medio de una banda baja y ancha. Deja mucho aire arriba, abajo y a los lados, y en el celular la imagen pierde presencia frente al titular. Son vacíos grandes sin función, cuando David prefiere que la imagen mande en su zona.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "G25-P02-o75 (4:5) y G25-T6-o75",
+     "problema": "Al achicar el objeto, el motor estira el fondo propio de la imagen. La retícula de la imagen se corta antes del borde y el resto queda liso, así que se nota el corte del borde difuso. Al 85 % casi no pasa en el 4:5, porque la imagen cubre la máscara.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "G25-T3-o85-75 (9:16), G25-U2-o85-75 y G25-AB2-o85-75",
+     "problema": "Mezcla dos reglas. En las columnas y en la historia vuelve al 75 %, y el edificio pierde presencia frente al 85 % sin ganar nada visible, porque al 85 % tampoco quedaba apretado. La diferencia con la opción 3 está solo en tres piezas, y David puede leer la mezcla como una inconsistencia del sistema.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "G25-U2-o85 (LinkedIn con bajada)",
+     "problema": "En la columna de imagen más angosta, el edificio llega a unos 120 px de cada borde lateral (en una columna de unos 1000 px) y a unos 95 px arriba y abajo. Cabe entero y centrado, pero va justo. Conviene vigilar que no se acerque a las cruces de registro de las esquinas.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "",
+     "donde": "Todas: 16:9 (T6) y bandas 1:1 (T1, T2)",
+     "problema": "Este defecto es común a las tres opciones y no las desempata. En las bandas apaisadas el tamaño lo limita la altura, así que incluso al 85 % el edificio ocupa poco ancho y los lados quedan como fondo extendido y liso.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "",
+     "donde": "Todas: AB2 (LinkedIn sin bajada)",
+     "problema": "Es común a las tres opciones. El texto del botón mide 7,1 px CSS a ancho de celular. Es un aviso y no un veto, porque se aceptó en G23 y el botón se sigue leyendo como botón. El chip EJEMPLO no le quita espacio al texto.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "3",
+   "veredicto": "sirve",
+   "resumen": "Las tres opciones arreglan lo que David reclamó en G24: el edificio queda entero y centrado en su máscara en los siete formatos, sin cortes ni desplazamientos. Lo que cambia entre ellas es el tamaño. Al 75 % (opción 1), las bandas y la diapositiva quedan con el objeto chico y mucho aire sin función. Al 85 % en todo (opción 3), la imagen gana presencia sin quedar apretada, ni siquiera en la columna angosta del LinkedIn con bajada. Además aplica una sola regla en todos los formatos, que se lee mejor como sistema. Predigo que David elige la 3, con la 2 cerca. El defecto común es el fondo liso a los lados en el 16:9 y en las bandas 1:1."
+  }
+ ]
+}

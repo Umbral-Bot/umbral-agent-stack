@@ -1,0 +1,66 @@
+{
+ "galeria": "G13",
+ "seccion": null,
+ "rubrica": "pred-crit-b",
+ "retro": true,
+ "criterios_hasta": "G13",
+ "sellado": "2026-11-11T00:43:04",
+ "hash_rubrica": "2afef7084991",
+ "hash_criterios": "fd98b8707561",
+ "votos": [
+  {
+   "id": "G13-pcb-prediccion",
+   "galeria": "G13",
+   "version": "pred-crit-b",
+   "lente": "prediccion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 7.5,
+    "2": 5.5,
+    "3": 8,
+    "4": 5
+   },
+   "hallazgos": [
+    {
+     "opcion": "2",
+     "donde": "banda oscura, entre «a la obra» y el pie (logo y llamado)",
+     "problema": "Al quitar la bajada queda un vacío sin función de unos 250 px bajo el titular. Además, en el feed el titular solo («La IA entra a la obra») no dice de qué trata la noticia: la pieza pierde contexto y queda más simple que las demás. Su contraste mínimo es el mejor (9,92:1), pero eso es porque no tiene texto gris.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4",
+     "donde": "banda oscura, tercio inferior bajo la bajada",
+     "problema": "El aire que se gana no se reparte: el bloque de texto queda pegado arriba y abajo se abre un vacío grande sin función. El titular a 110 px pierde fuerza frente a la imagen en el celular, y el kicker «ARTÍCULO» (cerca del 40 % del titular) y el llamado turquesa empiezan a competirle.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "bajada, tres líneas en gris",
+     "problema": "La bajada de 14 px CSS se lee, pero en el celular queda chica y gris (7,24:1) bajo un titular muy grande. La jerarquía es correcta, aunque el dato que explica la noticia queda más débil que en la 3.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "titular, a 136 px",
+     "problema": "El titular baja un escalón respecto de la 1, pero sigue mandando: la bajada queda en cerca del 36 % de su tamaño, dentro del 45 %. Es un detalle y no un defecto.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1, 3 y 4 (común)",
+     "donde": "bajada gris sobre la banda oscura",
+     "problema": "El contraste mínimo medido es 7,24:1, por debajo de la referencia de 10:1 del laboratorio. Cae sobre un fondo plano con una grilla de puntos tenue, no sobre textura, así que es un aviso y no un veto. No desempata entre opciones.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas (común)",
+     "donde": "esquina inferior izquierda, texto «Umbral BIM» del logo",
+     "problema": "Es el texto más chico de la pieza (unos 11 px CSS), justo en el mínimo para el celular. Es común a las cuatro y no cambia la elección.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "3",
+   "veredicto": "sirve",
+   "resumen": "Predigo que David elige la 3. El titular sigue mandando: la bajada queda en cerca del 36 % de su tamaño, dentro del límite del 45 %. Además, la bajada sube a 17,6 px CSS y se lee con holgura en el celular, que es su criterio de datos fuertes, y la banda queda llena, sin vacíos. La 1 queda muy cerca, con un titular más imponente pero una bajada chica y gris. La 2 gana impacto pero pierde el contexto de la noticia y deja un vacío bajo el titular. La 4 debilita el titular y deja todo el aire abajo. Hay dos defectos comunes que no cambian la elección: la bajada gris mide 7,24:1, bajo la referencia de 10:1, y el texto del logo queda en unos 11 px CSS."
+  }
+ ]
+}

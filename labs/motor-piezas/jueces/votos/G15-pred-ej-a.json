@@ -1,0 +1,71 @@
+{
+ "galeria": "G15",
+ "seccion": null,
+ "rubrica": "pred-ej-a",
+ "retro": true,
+ "criterios_hasta": "G15",
+ "sellado": "2026-11-11T01:09:47",
+ "hash_rubrica": "b71ce177d875",
+ "hash_criterios": "c375ba4695d4",
+ "votos": [
+  {
+   "id": "G15-eja-prediccion",
+   "galeria": "G15",
+   "version": "pred-ej-a",
+   "lente": "prediccion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 8,
+    "2": 7,
+    "3": 4.5
+   },
+   "hallazgos": [
+    {
+     "opcion": "3",
+     "donde": "bajada gris sobre el panel claro",
+     "problema": "La bajada mide 4,63:1, justo en el rango de 4,6 a 6,3:1 que David ya vio flojo. En el celular se ve lavada frente al titular negro.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "3",
+     "donde": "unión entre la imagen y la banda",
+     "problema": "El crema del borde inferior de la imagen se funde con el panel claro. Se pierde el corte claro entre imagen y banda de texto, y la división que eligió en G12 queda menos nítida.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "pie: logo y llamado",
+     "problema": "El turquesa oscuro del llamado y del «BIM» del logo pesa menos sobre el fondo claro. Además, la pieza se separa de la familia oscura del Preset 01.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "bajada blanca",
+     "problema": "La bajada en el mismo blanco del titular se acerca a él en peso. La jerarquía «titular protagonista, bajada claramente secundaria» de G13 queda menos marcada. En G05, ante este mismo cambio (gris de marca contra blanco a 15,8:1), David se quedó con el gris.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "bajada gris",
+     "problema": "La bajada mide 7,24:1, lejos de la referencia de 10:1 del laboratorio. Sobre fondo liso y sin textura se lee bien, así que queda como aviso y no como veto.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "común",
+     "donde": "imagen arriba",
+     "problema": "Común a las tres: la imagen trae su propio margen crema arriba y abajo, con cruces de registro, y no se lee del todo a sangre. Es una diferencia que este paso no decide.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "común",
+     "donde": "texto más chico",
+     "problema": "Común a las tres: el texto más chico queda en 11,0 px CSS, justo en el mínimo para el celular.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "1",
+   "veredicto": "sirve",
+   "resumen": "Predigo que David elige la 1. Ya prefirió en G05 el gris de marca con acento turquesa frente al blanco. Con el gris, la bajada queda claramente debajo del titular, como en G13, y la pieza sigue la familia oscura del Preset 01. La 2 sirve, aunque la bajada blanca le compite algo al titular. La 3 no sirve tal cual: la bajada mide 4,6:1, un valor que ya se vio flojo, y el panel claro se funde con el crema de la imagen."
+  }
+ ]
+}

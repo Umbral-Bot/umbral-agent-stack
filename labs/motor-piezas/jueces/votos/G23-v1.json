@@ -1,0 +1,144 @@
+{
+ "galeria": "G23",
+ "seccion": null,
+ "rubrica": "v1",
+ "retro": true,
+ "criterios_hasta": null,
+ "sellado": "2026-11-11T00:00:26",
+ "hash_rubrica": "de3f9cdef0fe",
+ "hash_criterios": "-",
+ "votos": [
+  {
+   "id": "G23-v1-posicion",
+   "galeria": "G23",
+   "version": "v1",
+   "lente": "posicion",
+   "puntajes": {
+    "1": 8,
+    "2": 8.5,
+    "3": 6
+   },
+   "hallazgos": [
+    {
+     "donde": "Opción 3, botón (x 128–584, y 1021–1125 en 2400×1254)",
+     "problema": "La tilde de la Í de «ARTÍCULO» queda pegada al borde superior del botón, a unos 0–1 px de la fila 1021. El relleno vertical es de 8 px, contra 17–20 px a los lados, así que el texto se ve apretado y los márgenes internos son disparejos. Ya se nota en la hoja.",
+     "gravedad": "media",
+     "opcion": "3"
+    },
+    {
+     "donde": "Opciones 1 y 2, borde superior del botón",
+     "problema": "La tilde de la Í queda a unos 5 px del borde superior. Las mayúsculas están parejas (16 px arriba y 16 abajo), pero el acento roza la caja. Solo se ve de cerca.",
+     "gravedad": "baja",
+     "opcion": "1"
+    },
+    {
+     "donde": "Todas, imagen: borde derecho del lienzo (x 2400, y ≈150–400)",
+     "problema": "La base del brazo robótico sale por el borde derecho. No lo corta la máscara de la división. La pinza, que es el acento, queda entera y con aire en la zona turquesa. Es igual en las tres.",
+     "gravedad": "baja",
+     "opcion": "1"
+    },
+    {
+     "donde": "Todas, marcas «+» del lado derecho (≈2335,63 y ≈2335,1190)",
+     "problema": "Las dos marcas caen sobre la ilustración. La inferior queda encima de los bloques negros escalonados y casi no se ve. No tocan el brazo.",
+     "gravedad": "baja",
+     "opcion": "1"
+    },
+    {
+     "donde": "Todas, encuadre de la ilustración",
+     "problema": "La franja crema del original aparece arriba (≈55 px) y abajo (≈64 px), pero no a la derecha, donde el turquesa llega al borde. El marco queda asimétrico.",
+     "gravedad": "baja",
+     "opcion": "1"
+    }
+   ],
+   "mejor": "2",
+   "veredicto": "sirve",
+   "resumen": "La imagen y su posición son idénticas en las tres. La pinza queda entera y en la zona libre, y el brazo sale por el borde del lienzo, no por la máscara, así que no hay veto. Los márgenes externos son parejos en todas: 128 px para el logo, el borde izquierdo y el pie del botón. La 1 y la 2 tienen el mismo relleno interno (16 px arriba y abajo, 26–28 px a los lados). La 2 deja un poco más de aire entre el titular y el botón (157 px contra 151), así que gana por poco: en posición, la 1 y la 2 están casi empatadas. La 3 recorta tanto el relleno que la tilde de la Í toca el borde superior del botón y el texto se ve apretado, así que necesita ajuste."
+  },
+  {
+   "id": "G23-v1-costuras",
+   "galeria": "G23",
+   "version": "v1",
+   "lente": "costuras",
+   "puntajes": {
+    "1": 8,
+    "2": 8,
+    "3": 7.5
+   },
+   "hallazgos": [
+    {
+     "donde": "Cruz de registro superior derecha (centro ≈ 2336,63 px; mismo lugar en las 3)",
+     "problema": "Queda montada sobre el borde entre el margen crema de la ilustración (termina en y≈56) y el panel turquesa. Casi toda la cruz cae sobre el turquesa de la imagen, así que se pierde y parece cortada.",
+     "gravedad": "baja",
+     "opcion": "1, 2, 3"
+    },
+    {
+     "donde": "Cruz de registro inferior derecha (centro ≈ 2336,1190 px; mismo lugar en las 3)",
+     "problema": "Su centro coincide con el borde inferior del bloque negro escalonado: el brazo de arriba va sobre el negro y el de abajo sobre el crema. Choca con el dibujo en vez de quedar en zona libre.",
+     "gravedad": "baja",
+     "opcion": "1, 2, 3"
+    },
+    {
+     "donde": "Botón «LEE EL ARTÍCULO» (opción 3, un módulo menos de relleno)",
+     "problema": "La tilde de «ARTÍCULO» queda a pocos píxeles del borde superior del botón turquesa. No llega a cortarse, pero la caja se ve justa y es la opción con menos margen ante un corte.",
+     "gravedad": "baja",
+     "opcion": "3"
+    }
+   ],
+   "mejor": "1",
+   "veredicto": "sirve",
+   "resumen": "Las tres opciones son idénticas fuera del botón: el diff de píxeles solo cambia dentro de x 127–1120. Por eso esta lente casi no las distingue. No hay fondo extendido con parche: la imagen usa todo el alto de la fuente (escala ≈1,54) y las franjas crema de arriba y abajo son el margen propio de la ilustración. Esas franjas son planas (desviación ≈0,4) y no muestran escalón de color en ninguna columna. El corte en la división es limpio, sin halo, y ningún acento turquesa queda cortado contra el borde del lienzo. Lo único que se nota es que las dos cruces de registro de la derecha caen justo sobre los bordes del dibujo (margen crema/turquesa arriba y bloque negro/crema abajo). Es un detalle que solo se ve de cerca y conviene correr esas cruces a zona libre. Elijo la 1 por empate técnico con la 2. La 3 pierde medio punto porque el texto queda justo contra el borde del botón."
+  },
+  {
+   "id": "G23-v1-jerarquia",
+   "galeria": "G23",
+   "version": "v1",
+   "lente": "jerarquia",
+   "puntajes": {
+    "1": 7.5,
+    "2": 8,
+    "3": 5.5
+   },
+   "hallazgos": [
+    {
+     "donde": "Opción 2 y 3 · botón, línea «umbralbim.io»",
+     "problema": "El texto del botón queda en 7,1 px CSS en la vista de 390 px, contra 8,2 px en la 1°. La URL en minúsculas y con espaciado es lo primero que se empasta en el feed del celular. Se puede compensar con un poco más de peso antes de achicar más.",
+     "gravedad": "media",
+     "opcion": "2"
+    },
+    {
+     "donde": "Opción 3 · relleno del botón",
+     "problema": "El relleno vertical baja de unos 16 a unos 8 px en el lienzo de 2400 px, y el lateral de unos 26 a unos 17 px. La tilde de «ARTÍCULO» casi toca el borde superior. A tamaño de feed se ve como una etiqueta apretada y no como un botón, y eso le quita el lugar de llamada a la acción.",
+     "gravedad": "media",
+     "opcion": "3"
+    },
+    {
+     "donde": "Todas · logo arriba a la izquierda",
+     "problema": "El nombre «Umbral BIM» mide unos 25 px de alto en 2400 px, que en el celular quedan en unos 5,5 px CSS. Es más chico que el texto del botón en las tres opciones. A tamaño de feed solo se reconoce el isotipo.",
+     "gravedad": "media",
+     "opcion": "todas"
+    },
+    {
+     "donde": "Opción 1 · botón",
+     "problema": "El botón mide 537×135 px y es el bloque más saturado de la columna. No le gana al titular (unos 150 px de altura de mayúscula, contra 38), pero pesa un poco más de lo necesario para un elemento de tercer nivel.",
+     "gravedad": "baja",
+     "opcion": "1"
+    },
+    {
+     "donde": "Todas · franja superior",
+     "problema": "El sello «EJEMPLO», crema y con mayúsculas de unos 50 px, pesa más que el logo en la misma fila. Es una marca de laboratorio, pero en la jerarquía le roba atención a la firma.",
+     "gravedad": "baja",
+     "opcion": "todas"
+    },
+    {
+     "donde": "Todas · imagen a la derecha",
+     "problema": "El campo turquesa y las masas negras atraen la vista, y el turquesa es el mismo del antetítulo y del botón, así que el acento deja de ser exclusivo. Aun así, el titular blanco sobre negro domina, y la división limpia mantiene a la imagen como acompañamiento.",
+     "gravedad": "baja",
+     "opcion": "todas"
+    }
+   ],
+   "mejor": "2",
+   "veredicto": "sirve",
+   "resumen": "La jerarquía es la misma en las tres: titular > antetítulo > botón > logo, y la imagen acompaña sin competir. La 2° subordina mejor el botón y conserva el relleno, así que sigue leyéndose como botón. Su riesgo es que el texto queda en 7,1 px CSS en el celular. La 1° es la más legible, pero su botón pesa un poco más. La 3° aprieta el relleno a la mitad y el botón parece una etiqueta pegada. En las tres, el nombre del logo es ilegible en el celular: solo se reconoce el isotipo."
+  }
+ ]
+}

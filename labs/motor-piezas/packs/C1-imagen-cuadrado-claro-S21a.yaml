@@ -1,0 +1,18 @@
+id: C1
+nombre: "Imagen primero · 1:1 claro · infografía S21a, texto en su zona más limpia"
+alternativa: C
+contenido: contenido/workshop-bim-ia.yaml
+corrige: "la imagen define dónde va el texto; velo plano (sin degradado) solo donde se lee"
+decision_david: null
+valores:
+  proceso: C_imagen
+  formato: cuadrado
+  modo: claro
+  columnas: 6
+  imagen_fuente: mj3_V-S21a_0
+  imagen_encaje: fondo_completo_con_velo
+  imagen_foco: [0.5, 0.6]
+  zona_libre: auto
+  velo_opacidad: 0.6
+  trama_visible: false
+  densidad_texto: minima

@@ -1,0 +1,8 @@
+id: F1
+nombre: "A sangre bajo velo · la imagen cubre todo y se ve detrás del texto (base: G03 2°)"
+alternativa: paso3
+paso: imagen
+hereda: packs/E2-jerarquia-datos.yaml
+decision_david: null
+valores:
+  imagen_registro: lienzo   # la imagen queda quieta entre presets; cambia solo por dónde se ve

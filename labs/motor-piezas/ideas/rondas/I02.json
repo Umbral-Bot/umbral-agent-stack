@@ -1,0 +1,743 @@
+{
+ "id": "I02",
+ "fecha": "2026-11-16",
+ "intro": "Segunda ronda. La 2 es la idea de la resistencia joven de I01, reescrita. Las otras cuatro son nuevas y están pensadas para que las entienda y le importen a la mayoría de tu público, no solo a quien sabe de software. Cada una viene contada como la dirías tú.",
+ "base": "material de I01 (38 semillas, ideas/rondas/I01.json); lecciones C54–C57",
+ "material_de": "I01",
+ "fichas": [
+  {
+   "id": "I02-A1",
+   "titulo": "Resisten los que mejor la usan",
+   "relato": "Hice un diagnóstico de IA en una consultora de ingeniería. La idea de siempre es que frenan los más antiguos. La responsable de planeamiento me contó otra cosa. La resistencia más fuerte venía de la gente joven, la que mejor se maneja con la tecnología. Lo que pesaba era el miedo al control. El resto tenía otro miedo: hacerlo mal o tardar. Y no había ningún plan para acompañar el cambio. Es un solo caso, visto por una persona, no algo medido. Pero alcanza para revisar a quién va el curso. Un curso para los mayores no toca ninguno de esos dos miedos. Antes del primero, yo diría dos frases en la reunión. Medimos cuánto tarda el informe, no cuánto tarda cada persona. Y el piloto es para equivocarse.",
+   "tema": "Cómo lidera un gerente la llegada de la IA a su equipo: quién resiste y por qué",
+   "manantial": "dolor",
+   "formula": "contraria",
+   "evidencia": {
+    "tipo": "dolor (lo que declaró la responsable de planeamiento en un diagnóstico; no medido)",
+    "referencia": "Bitácora «Planificado — 1:1 7 sep 2026 (Diagnóstico IA)», matriz de medición, fila D7 Continuidad, columna comprobada el 7-sep-2026: https://app.notion.com/p/3d45f443fb5c81e28bd6e4712df85d7b · contraste: Informe de la sesión Evaluación 1 Máster AEC 4.0 V2, 25-jun-2026, §3 (las resistencias como temores legítimos): https://app.notion.com/p/a59b39af50b14f9f9dfa14bc0b1c1343",
+    "afirmacion": "hecho (lo que dijo la entrevistada); que valga más allá de ese caso es hipótesis"
+   },
+   "premisa": "Lo que sostengo es que, cuando llega la IA a un equipo, la resistencia se ordena por miedo y no por edad: unos temen quedar controlados y otros temen hacerlo mal. Un plan que solo capacita a los mayores no atiende a ninguno.",
+   "hipotesis": "Con la IA frenan los profesionales de más años y los jóvenes se suben solos, así que la capacitación y el acompañamiento van para los mayores.",
+   "respuesta": "En el diagnóstico de una consultora de ingeniería, la resistencia fuerte venía de gente joven y hábil, por miedo al control, y el resto temía hacerlo mal o tardar. Ninguno de esos miedos se quita con un curso. El primero pide que el gerente diga qué se va a medir y qué no; el segundo, un piloto donde equivocarse no cuente.",
+   "cadena_tesis": {
+    "evidencia": "Hecho declarado: en el diagnóstico del 7-sep-2026, la responsable de planeamiento de una consultora de ingeniería dijo que la gente joven con soltura técnica resiste más por miedo al control, que el resto teme no hacerlo bien o tardar, y que no había plan de gestión del cambio. Es lo que dijo ella; no está medido.",
+    "inferencia": "Si su lectura es correcta, un plan que reparte la capacitación por edad pone el esfuerzo en un grupo que no es el freno principal y deja sin tocar los dos miedos que sí frenan.",
+    "salto": "Quien lidera el cambio tiene que decir, antes de capacitar, qué se va a medir y qué no: del proceso y no de la persona. Y tiene que dar un lugar para probar donde el error no tenga costo. Son decisiones de gerencia, no contenidos de un curso.",
+    "no_afirmado": "No se afirma que los jóvenes resistan más en el sector ni en general: es un caso, contado por una persona. No se afirma que medir el proceso en vez de la persona quite el miedo: es una propuesta por probar."
+   },
+   "contraargumento": "Es una sola entrevista y es la lectura de quien lidera el área, no un dato. «Miedo al control» es el registro de la conversación, no una cita, y leerlo como miedo a quedar medido es una interpretación. Además, en muchas oficinas sí hay gente de más años que no sabe usar el sistema, y negar esa brecha la deja sin apoyo.",
+   "residuo": "Medimos cuánto tarda el informe, no cuánto tarda cada persona.",
+   "gancho": {
+    "tipo": "creencia equivocada",
+    "texto": "En una consultora de ingeniería, quienes más frenaban la IA eran los jóvenes que mejor la manejaban."
+   },
+   "arco": "Una consultora de ingeniería quería sumar IA y la idea de siempre era que frenarían los profesionales de más años (punto de partida: la resistencia se lee por edad). En el diagnóstico, la responsable de planeamiento contó que la oposición fuerte venía de gente joven y hábil, por miedo al control, y que el resto temía hacerlo mal o tardar (tensión: dos miedos distintos que un curso no toca, y ningún plan para acompañar el cambio). Antes de capacitar, el gerente dice qué se mide y qué no, y abre un piloto donde equivocarse no cuenta (cierre: la resistencia dice qué teme la gente que el sistema haga con su trabajo).",
+   "escena": "Conversación de diagnóstico con la responsable de planeamiento de una consultora de ingeniería. Se repasa cómo trabaja el equipo, quién automatiza y dónde queda lo que se hace. Cuando sale la gestión del cambio, ella cuenta que quienes más se oponen son los jóvenes que mejor se manejan con la tecnología, y que nadie ha planeado cómo acompañar el cambio.",
+   "arquitectura": "postura",
+   "pilar": "La resistencia no es el problema",
+   "marco": "Automatización Empática: diseñar desde lo que siente quien recibe el sistema; aquí la frustración que hay que quitar es sentirse vigilado o expuesto al error",
+   "audiencia": "Gerentes y dueños de constructoras y oficinas de ingeniería o arquitectura que lideran la llegada de IA a su equipo, y jefes de proyecto (segmentos: empresas que implementan copilotos o agentes; PMs y gerentes de operaciones de contratistas)",
+   "canales": {
+    "linkedin": "Post de postura en primera persona: lo que escuché en el diagnóstico, los dos miedos y las dos frases que diría un gerente antes del primer curso.",
+    "x": "Tesis: la resistencia a la IA se ordena por miedo, no por edad; condición: cuando el equipo no sabe qué se va a medir; cierre: medimos el informe, no a la persona.",
+    "blog": "Historias y casos: el diagnóstico anónimo de una consultora, por qué repartir la capacitación por edad apunta mal y qué decide el gerente antes del curso.",
+    "clase": "Gestión del cambio: cada alumno separa las objeciones de su equipo entre miedo al control y miedo a hacerlo mal, y escribe qué se mide y qué no."
+   },
+   "por_que_ahora": "Los copilotos y agentes dejan registro de cada paso del trabajo, y con ellos llega la pregunta de qué se mide de cada persona. El diagnóstico es de septiembre y la consultora seguía sin plan para acompañar el cambio.",
+   "riesgo": "Claim débil si se generaliza: una sola entrevista, declarada, en una bitácora titulada «Planificado» con una columna comprobada; David confirma que el registro refleja lo que se dijo. Puede leerse como ataque a los jóvenes. Cliente anónimo: sin rubro fino, ciudad ni cargo que lo identifique.",
+   "procedencia": {
+    "david": "El diagnóstico IA 1:1 del 7-sep-2026 con una consultora de ingeniería y su pilar «La resistencia no es el problema»; las resistencias como temores legítimos, registradas en el informe de la Evaluación 1 del Máster V2.",
+    "agente": "El relato en primera persona, la lectura por miedo y no por edad, las dos frases para la reunión, el residuo, el gancho y la conexión con Automatización Empática."
+   },
+   "validacion": {
+    "errores": [],
+    "avisos": []
+   }
+  },
+  {
+   "id": "I02-A2",
+   "titulo": "El taller para los más antiguos",
+   "relato": "Piensen en la reunión de arranque de un piloto de IA. El gerente propone partir con un taller para los más antiguos. Desde el fondo, el ingeniero joven que mejor maneja el chat tira una broma: ahora van a saber cuánto se demora en cada informe. Todos se ríen. Yo me quedaría con la broma. En un diagnóstico que hice a una consultora de ingeniería, la responsable de planeamiento me contó que la resistencia más fuerte venía justo de ahí: gente joven y hábil, con miedo al control. Los demás temían hacerlo mal o tardar. Es un solo caso y es su lectura. Pero el taller para los antiguos no responde a ninguno de los dos. La próxima vez que alguien bromee con que lo van a medir, no se rían. Díganle qué se mide y qué no.",
+   "tema": "Cómo lidera un gerente la llegada de la IA a su equipo: a quién se capacita y qué se dice en el arranque",
+   "manantial": "dolor",
+   "formula": "contraria",
+   "evidencia": {
+    "tipo": "dolor (lo que declaró la responsable de planeamiento en un diagnóstico; no medido)",
+    "referencia": "Bitácora «Planificado — 1:1 7 sep 2026 (Diagnóstico IA)», matriz de medición, fila D7 Continuidad, columna comprobada el 7-sep-2026: https://app.notion.com/p/3d45f443fb5c81e28bd6e4712df85d7b · contraste: Informe de la sesión Evaluación 1 Máster AEC 4.0 V2, 25-jun-2026, §3 (las resistencias como temores legítimos): https://app.notion.com/p/a59b39af50b14f9f9dfa14bc0b1c1343",
+    "afirmacion": "hecho (lo que dijo la entrevistada); que valga más allá de ese caso es hipótesis"
+   },
+   "premisa": "Lo que sostengo es que el taller para «los más antiguos» apunta a la resistencia que se espera, no a la que hay. La que frena habla de control o de miedo a fallar, y se responde en la reunión de arranque, no en un curso.",
+   "hipotesis": "Con la IA frenan los profesionales de más años y los jóvenes se suben solos, así que la capacitación y el acompañamiento van para los mayores.",
+   "respuesta": "Un taller para los más antiguos ataca la resistencia esperada. En una consultora de ingeniería, quienes más frenaban eran jóvenes con soltura técnica, por temor al control; los demás, por temor a fallar o demorarse. Lo que corresponde se anuncia en el arranque: que se mide el proceso y no a cada uno, y que habrá un espacio de prueba sin castigo.",
+   "cadena_tesis": {
+    "evidencia": "Hecho declarado: en el diagnóstico del 7-sep-2026, la responsable de planeamiento de una consultora de ingeniería dijo que la gente joven con soltura técnica resiste más por miedo al control, que el resto teme no hacerlo bien o tardar, y que no había plan de gestión del cambio. No está medido.",
+    "inferencia": "Si eso se repite en otro equipo, la señal de la resistencia importante no llega como queja formal sino como comentario al pasar, y un plan pensado por edad no la escucha.",
+    "salto": "Lo que dice el gerente en la reunión de arranque pesa más que el taller: anunciar qué se mide, del proceso y no de la persona, y dónde se puede probar sin costo, responde a los dos miedos antes de que se instalen.",
+    "no_afirmado": "La reunión y la broma son una escena construida, no algo que pasó en esa consultora. No se afirma que los jóvenes resistan más en general ni que anunciar qué se mide baste para quitar el miedo: es una propuesta por probar."
+   },
+   "contraargumento": "Es una sola entrevista y es la lectura de quien lidera el área, no un dato. «Miedo al control» es el registro de la conversación, no una cita, y leerlo como miedo a quedar medido es una interpretación. Además, en muchas oficinas sí hay gente de más años que no sabe usar el sistema, y negar esa brecha la deja sin apoyo.",
+   "residuo": "Cuando alguien bromea con que lo van a medir, no se rían: díganle qué se mide y qué no.",
+   "gancho": {
+    "tipo": "contraste",
+    "texto": "Mientras se arma un taller para los más antiguos, el joven que mejor maneja la IA bromea con que ahora lo van a medir."
+   },
+   "arco": "En el arranque de un piloto de IA, el gerente propone un taller para los más antiguos y el joven que mejor maneja el chat bromea con que lo van a medir (punto de partida: la resistencia se espera de los mayores). En un diagnóstico real, la responsable de planeamiento de una consultora de ingeniería contó que la oposición fuerte venía de gente joven y hábil, por miedo al control, y que el resto temía hacerlo mal o tardar (tensión: el taller apunta a un grupo y deja intactos los dos miedos). La respuesta va en la misma reunión: qué se mide y qué no, y dónde se puede probar sin costo (cierre: la broma era la señal que había que escuchar).",
+   "escena": "Sala de reuniones de una oficina técnica, arranque de un piloto de IA. El gerente anota en la pizarra «taller para los más antiguos». Desde el fondo, el ingeniero joven que más usa el chat comenta, medio en broma, que ahora van a saber cuánto se demora en cada informe. Hay risas y se pasa al siguiente punto.",
+   "arquitectura": "dolor",
+   "pilar": "La resistencia no es el problema",
+   "marco": "Automatización Empática: diseñar desde lo que siente quien recibe el sistema; aquí la frustración que hay que quitar es sentirse vigilado o expuesto al error",
+   "audiencia": "Gerentes y dueños de constructoras y oficinas de ingeniería o arquitectura que lideran la llegada de IA a su equipo, y jefes de proyecto (segmentos: empresas que implementan copilotos o agentes; PMs y gerentes de operaciones de contratistas)",
+   "canales": {
+    "linkedin": "Post que abre con la escena de la reunión y la broma, sigue con lo que escuché en el diagnóstico y termina en qué responderle al que bromea.",
+    "x": "Tesis: el taller para los más antiguos apunta a la resistencia esperada; condición: cuando nadie dijo qué se va a medir; cierre: a la broma sobre el control se le responde.",
+    "blog": "Tendencias y opinión: la reunión de arranque como el momento donde se gana o se pierde la adopción, con el diagnóstico anónimo de una consultora.",
+    "clase": "Gestión del cambio: los alumnos reescriben la agenda de arranque de un piloto e incluyen qué se mide, qué no y dónde se puede probar sin costo."
+   },
+   "por_que_ahora": "Muchas empresas están arrancando pilotos de copilotos y agentes, y esas herramientas dejan registro de cada paso; la pregunta de qué se mide de cada uno aparece en la primera reunión. El diagnóstico es de septiembre y seguía sin plan de cambio.",
+   "riesgo": "La escena es construida: si se publica, tiene que leerse como imaginada («Piensen en…»), nunca como algo que pasó en esa consultora. Una sola entrevista, declarada, en una bitácora «Planificado» con una columna comprobada; David confirma el registro. Puede leerse como burla al gerente o ataque a los jóvenes. Cliente anónimo.",
+   "procedencia": {
+    "david": "El diagnóstico IA 1:1 del 7-sep-2026 con una consultora de ingeniería y su pilar «La resistencia no es el problema»; las resistencias como temores legítimos, registradas en el informe de la Evaluación 1 del Máster V2.",
+    "agente": "La escena de la reunión de arranque y la broma, el relato que parte de ella, la lectura de la broma como señal, el residuo, el gancho y la conexión con Automatización Empática."
+   },
+   "validacion": {
+    "errores": [],
+    "avisos": []
+   }
+  },
+  {
+   "id": "I02-B1",
+   "titulo": "El dato va a donde ya trabaja quien decide",
+   "relato": "En OXXO quise que todas las áreas siguieran los proyectos dentro de la plataforma BIM. Comercial, Legal, Operaciones, Marketing. Era la plataforma correcta y la defendí. No resultó: no pude justificar una licencia para cada persona que no trabajaba con modelos. Ese fue mi error. Pensé que el problema era convencerlos de entrar. Rehíce el seguimiento con lo que la empresa ya pagaba: listas compartidas, avisos automáticos y Teams, donde esa gente ya pasaba el día. El modelo siguió en Arquitectura. Lo que salió hacia afuera fue el estado de cada proyecto, en la pantalla que cada área ya abría. La gerencia lo aprobó sin comprar nada nuevo. Ahí ya no me pudieron decir que no. Desde entonces, antes de proponer una plataforma, pregunto dónde trabaja el que tiene que decidir.",
+   "tema": "Adopción de un sistema de seguimiento de proyectos entre áreas que no trabajan con BIM",
+   "manantial": "experiencia",
+   "formula": "experiencia_a_criterio",
+   "evidencia": {
+    "tipo": "experiencia (caso propio contado con su error, en informes de clase y tutoría, y en el CV v6)",
+    "referencia": "Máster AEC 4.0 V1, clase 32 «Azure AI + Escalabilidad» (31-mar-2026, informe con transcripción), https://app.notion.com/p/634d57f6119d4bd19647d154435d4ae1 · Diplomado BIM + IA, informe de la Tutorización 1, https://app.notion.com/p/42aa0e048f3645ce8b75ef011508609c · CV v6, línea «Coordinador BIM | OXXO Chile, jul 2022 – sep 2024» (seguimiento con Power Automate, SharePoint y Kanban entre Comercial, Operaciones, Marketing, Desarrollo Inmobiliario y Legal)",
+    "afirmacion": "experiencia"
+   },
+   "premisa": "Lo que sostengo es que un sistema de seguimiento se adopta cuando llega a la pantalla que cada área ya abre, no cuando se le pide a todos entrar a la plataforma técnica. La adopción la define dónde trabaja quien decide.",
+   "hipotesis": "Para que toda la empresa vea los proyectos hay que meter a todas las áreas en la mejor plataforma disponible y convencerlas de usarla.",
+   "respuesta": "En OXXO esa ruta se cayó: no se justificaba una licencia de la plataforma BIM para cada persona de Comercial o Legal. Funcionó al revés. El modelo se quedó en Arquitectura y hacia afuera salió el estado de cada proyecto, en lo que la empresa ya pagaba y esas áreas ya usaban. La pregunta de diseño es dónde pasa el día quien tiene que decidir, antes que cuál plataforma es mejor.",
+   "cadena_tesis": {
+    "evidencia": "Experiencia de David como coordinador BIM en OXXO Chile (2022–2024), contada en la clase 32 del Máster V1 y en la tutoría 1 del Diplomado: el intento de llevar a ACC la coordinación con áreas no AEC se cayó porque no se pudieron justificar licencias para ese personal; el flujo se rehízo con SharePoint, Power Automate y Teams y la gerencia lo aprobó sin licencias nuevas.",
+    "inferencia": "La adopción la decidieron el lugar donde ya trabajaba cada área y el costo de sumarla, no la potencia de la plataforma.",
+    "salto": "Antes de elegir una plataforma conviene preguntar quién tiene que decidir con ese dato y en qué pantalla pasa el día; el sistema se diseña hacia esa pantalla.",
+    "no_afirmado": "No se afirma que ACC sea una mala plataforma: siguió sirviendo dentro de Arquitectura. No se afirma que Microsoft 365 sirva en todos los casos ni se dan cifras de ahorro o de tiempo."
+   },
+   "contraargumento": "Repartir el dato en varias pantallas crea copias y versiones que no calzan, y una sola plataforma para todos da una única fuente de verdad. Además, un seguimiento armado con lo que ya hay puede quedar en manos de una persona y morir con ella.",
+   "residuo": "No lleves a la gente al sistema. Lleva el dato a donde ya trabaja quien decide.",
+   "gancho": {
+    "tipo": "error caro",
+    "texto": "Mi primer intento en OXXO fracasó con la plataforma correcta: quise que Legal y Comercial entraran al sistema BIM, y la empresa no iba a pagar una licencia por cada uno."
+   },
+   "arco": "En OXXO quise que todas las áreas siguieran los proyectos dentro de la plataforma BIM (punto de partida: la creencia de que la visibilidad se logra metiendo a todos en la mejor plataforma). No se pudo justificar una licencia para cada persona que no modelaba, y el intento se cayó (tensión: la plataforma correcta perdió frente a la que ya estaba pagada). El seguimiento se rehízo con lo que la empresa ya tenía, en la pantalla donde cada área trabajaba, y la gerencia lo aprobó sin comprar nada (cierre: antes de elegir plataforma, preguntar dónde trabaja quien decide).",
+   "escena": "Reunión semanal de expansión de una cadena con muchos locales en desarrollo. Arquitectura proyecta el modelo coordinado. La abogada pregunta en qué va el permiso del local de la esquina y la jefa comercial abre su Excel. El modelo está impecable y nadie fuera de Arquitectura lo ha abierto.",
+   "arquitectura": "transformación",
+   "pilar": "BIM no basta si no conecta datos y decisiones",
+   "marco": "Puentes Digitales (Datos ↔ Decisiones): el puente se construye hacia la pantalla de quien decide",
+   "audiencia": "Project Managers y gerentes de operaciones de contratistas; dueños y directores de PYMEs AECO",
+   "canales": {
+    "linkedin": "Post Historia: el error de OXXO contado en primera persona, la vuelta a lo que ya pagaban y la pregunta que quedó.",
+    "x": "Tesis: el seguimiento se adopta donde ya trabaja quien decide; condición: cuando la plataforma exige una licencia por persona; cierre: lleva el dato, no a la gente.",
+    "blog": "Historias y casos: cómo el seguimiento entre áreas de OXXO pasó de la plataforma BIM a Microsoft 365, con el error incluido y lo que ACC siguió haciendo dentro de Arquitectura.",
+    "clase": "Gestión del cambio: cada alumno anota quién decide con su dato y en qué pantalla pasa el día, antes de nombrar ninguna plataforma."
+   },
+   "por_que_ahora": "En AU 2026 Autodesk presentó agentes para obra que solo vienen en ciertos tipos de suscripción, y Microsoft anuncia agentes que trabajan desde Teams y Outlook: la pregunta de dónde trabaja cada área y qué licencia tiene vuelve a decidir quién ve qué.",
+   "riesgo": "Que se lea como un ataque a Autodesk, cuando ACC siguió sirviendo en Arquitectura. Es el caso estrella de David y se gasta si se repite seguido. El detalle de licencias tiene que quedar como escena, no como tema.",
+   "procedencia": {
+    "david": "El caso OXXO con su error y su frase «Ahí ya no me pudieron decir que no» (clase 32 del Máster V1); la línea del CV v6 sobre el seguimiento entre Comercial, Operaciones, Marketing, Desarrollo Inmobiliario y Legal; su regla de que la consultoría parte de la licencia disponible.",
+    "agente": "La regla «el dato va a donde ya trabaja quien decide», el relato, la escena de la reunión, el gancho, el residuo y el cruce con los anuncios de Autodesk y Microsoft."
+   },
+   "validacion": {
+    "errores": [],
+    "avisos": []
+   }
+  },
+  {
+   "id": "I02-B2",
+   "titulo": "Pruébalo en la habitación de al lado",
+   "relato": "Hace poco le pedí a un copiloto dentro de Revit algo simple: una vista recortada de una habitación. Me respondió que estaba listo. Fui a mirar el modelo y faltaban detalles. Lo corregí, quedó bien y lo guardé como comando para usarlo de nuevo. Lo probé en otra habitación. Apareció un techo que la regla no consideraba, y unas luminarias. En la primera habitación funcionaba. En la segunda, no. En obra esto lo sabemos hace rato: nadie recibe un edificio revisando dos veces el mismo departamento. El «listo» de la máquina vale lo mismo que el «ya está» de un subcontrato: hay que ir a ver. Y la prueba que sirve es la que cambia de habitación. Cuando alguien me muestra algo que funcionó, ahora pregunto una sola cosa: ¿lo probaste en la de al lado?",
+   "tema": "Cómo comprobar que un trabajo hecho con IA funciona antes de darlo por bueno",
+   "manantial": "experiencia",
+   "formula": "experiencia_a_criterio",
+   "evidencia": {
+    "tipo": "experiencia (demostración propia en clase, con informe y contraste con la transcripción)",
+    "referencia": "Máster AEC 4.0 V2, C33 «Copilotos BIM (…): comparar y reutilizar» (22-oct-2026), secciones «La demostración de la clase» y «Cómo comprobar el aprendizaje»: https://app.notion.com/p/06c33a0f8bb94fd8aff6a58953ec97aa · contraste con la transcripción en el «Informe provisional · revisión documental»",
+    "afirmacion": "experiencia"
+   },
+   "premisa": "Lo que sostengo es que el «listo» de un asistente con IA no prueba nada: una solución está probada cuando funciona con otra entrada, no cuando repite bien la primera. Es la misma regla de una recepción de obra.",
+   "hipotesis": "Si el asistente dice que terminó y el resultado se ve bien en el caso que se probó, la solución funciona y se puede usar en el resto del proyecto.",
+   "respuesta": "Al comparar dos copilotos dentro de Revit, el mensaje de éxito llegó antes de que el modelo lo confirmara, y la solución que andaba en una habitación falló en otra por un techo y unas luminarias que la regla no contemplaba. La prueba que vale cambia la entrada. Y después de corregir se vuelve a revisar lo anterior, para ver que el arreglo no rompió lo que ya andaba.",
+   "cadena_tesis": {
+    "evidencia": "En la clase del 22-oct-2026 del Máster V2, David comparó dos copilotos comerciales dentro de Revit con la misma tarea, una vista isométrica recortada de una habitación. La primera petición no resolvió todos los detalles y el mensaje de éxito no bastó: hubo que revisar el modelo. Al reutilizar la solución en otras habitaciones aparecieron un techo y luminarias no contemplados; se corrigió y se volvió a probar.",
+    "inferencia": "El mensaje de éxito describe lo que la herramienta cree que hizo, y un caso que funciona no dice cómo se comporta con el siguiente.",
+    "salto": "La regla de terreno sirve tal cual en la oficina: no se recibe por lo que dice quien entrega, se recibe yendo a ver, y se revisa en un lugar distinto del que ya se vio.",
+    "no_afirmado": "No se afirma que un copiloto sea peor que otro ni se nombran. No se afirma que estos asistentes fallen siempre: es una demostración con una tarea."
+   },
+   "contraargumento": "Probar cada solución en varios casos cuesta tiempo, y en tareas chicas y reversibles revisar a ojo puede bastar. Además, quien no sabe qué buscar en el modelo tampoco va a ver el techo que falta.",
+   "residuo": "Que funcione en una habitación no significa que funcione. Pruébalo en la de al lado.",
+   "gancho": {
+    "tipo": "contraste",
+    "texto": "El copiloto me dijo que estaba listo. En la habitación de al lado aparecieron un techo y unas luminarias que nadie había previsto."
+   },
+   "arco": "Le pedí a un copiloto dentro de Revit una vista recortada de una habitación y me respondió que estaba listo (punto de partida: la confianza en el mensaje de éxito). Hubo que revisar el modelo para corregir detalles, y al usar la misma solución en otra habitación aparecieron un techo y unas luminarias que la regla no consideraba (tensión: lo que funcionó una vez se confunde con lo que funciona). Se corrigió y se volvió a probar todo, como en una recepción de obra donde se va a ver y se cambia de departamento (cierre: la prueba que vale es la que cambia de habitación).",
+   "escena": "Oficina técnica, viernes en la tarde. El modelador muestra la vista que armó el asistente para el baño del tercer piso y dice que ya está para todas las plantas. El jefe de proyecto le pide que abra la cocina del primer piso. Ahí aparece un cielo falso cortado por la mitad.",
+   "arquitectura": "postura",
+   "pilar": "IA sin flujo es humo",
+   "marco": "Puentes Digitales (Oficina ↔ Terreno): la costumbre de terreno de ir a ver, llevada a la oficina técnica",
+   "audiencia": "Project Managers y gerentes de operaciones de contratistas; BIM managers y coordinadores",
+   "canales": {
+    "linkedin": "Post Expertise: la demostración contada en primera persona y la comparación con una recepción de obra; termina en la pregunta para la próxima reunión.",
+    "x": "Tesis: el «listo» de la IA no prueba nada; condición: cuando la solución se va a reutilizar; cierre: pruébalo en la habitación de al lado.",
+    "blog": "Expertise técnico: cómo recibir el trabajo de un asistente con IA igual que se recibe una partida de obra, con el caso del techo y las luminarias.",
+    "clase": "Comprobación: cada alumno lleva su solución a un segundo caso distinto del primero y anota qué apareció."
+   },
+   "por_que_ahora": "Los copilotos que trabajan dentro de Revit y los agentes para obra anunciados en septiembre y octubre responden con mensajes de éxito cada vez más seguros; la demostración es del 22-oct y la pregunta de cómo recibir ese trabajo ya llega a las jefaturas de proyecto.",
+   "riesgo": "Que se lea como un tema de modeladores: la escena es Revit, la regla es para cualquiera que recibe trabajo. Es una sola demostración; no generalizar a todos los copilotos ni nombrarlos. Puede sonar obvio si no se cuentan el techo y las luminarias.",
+   "procedencia": {
+    "david": "Su demostración del 22-oct-2026 en el Máster V2 comparando dos copilotos en Revit, el techo y las luminarias que aparecieron al reutilizar la solución y la decisión de volver a probar después de corregir; su paso por la obra como pintor y en terminaciones (CV v6).",
+    "agente": "La traducción a la recepción de obra, la regla «la prueba que vale cambia de habitación», la escena del viernes, el gancho y el residuo."
+   },
+   "validacion": {
+    "errores": [],
+    "avisos": []
+   }
+  },
+  {
+   "id": "I02-B3",
+   "titulo": "El borrador lo hace cualquiera; la firma, no",
+   "relato": "Lo escuché en una sesión con una ingeniería. Un ingeniero entregó un trabajo preliminar hecho con IA. El cliente le respondió que, si era así, lo podían hacer ellos mismos. La tentación es esconder la IA la próxima vez. O cobrar menos. Las dos salidas dicen lo mismo: que el cliente pagaba por el tecleo. No paga por eso. Paga porque alguien con nombre revisa, corrige y responde si el cálculo falla. Eso el cliente no lo puede hacer solo, y la IA tampoco. La respuesta que se dio ahí fue otra: decir cómo se usa, según la política de la empresa, y mostrar en qué momentos revisa una persona. El borrador lo puede hacer cualquiera. La firma, no. Si un cliente les dice que lo puede hacer solo, pregúntenle quién va a firmar.",
+   "tema": "Cómo presentar y cobrar al cliente un trabajo profesional hecho con ayuda de IA",
+   "manantial": "dolor",
+   "formula": "experiencia_a_criterio",
+   "evidencia": {
+    "tipo": "dolor declarado por un ingeniero en una sesión de acompañamiento de David con una ingeniería; caso aislado",
+    "referencia": "Informe sesión S3 «Acompañamiento Mes 1 — Productividad documental», 30-jun-2026, §2 Debate de apertura: https://app.notion.com/p/35fbaf55447c43bc80257707b3a25bcd",
+    "afirmacion": "hecho (lo que contó el ingeniero y lo que respondió el panel); la lectura del valor es opinión de David por confirmar"
+   },
+   "premisa": "Lo que sostengo es que, cuando un cliente ve IA en un entregable y concluye que puede hacerlo solo, esconderla o bajar el precio es la respuesta equivocada. Lo que el cliente paga es que alguien con nombre revise y responda.",
+   "hipotesis": "Si el cliente sabe que el trabajo se hizo con IA va a pensar que vale menos, así que conviene no decirlo o cobrar menos.",
+   "respuesta": "La IA hace el borrador y eso cualquiera lo puede pedir. Lo que el cliente no puede hacer solo es revisar, corregir y responder si el cálculo falla. Por eso conviene decir cómo se usa, según la política de la empresa, y mostrar en qué momentos revisa una persona. Se ofrece la firma, no el tecleo.",
+   "cadena_tesis": {
+    "evidencia": "En la sesión de acompañamiento del 30-jun-2026 con una ingeniería, un ingeniero contó que un cliente, al recibir un trabajo preliminar hecho con IA, le dijo que entonces podían hacerlo ellos mismos. La respuesta del panel fue transparentar el uso según la política interna y poner hitos de control humano: la IA hace el borrador y el profesional lo valida.",
+    "inferencia": "El cliente leyó «IA» como menos trabajo y, por lo tanto, menos valor; si el profesional responde escondiendo el uso o rebajando, confirma esa lectura.",
+    "salto": "El valor de un servicio profesional está en la revisión y en la responsabilidad que alguien asume con su nombre, y eso es lo que hay que hacer visible en el entregable.",
+    "no_afirmado": "No se afirma que el cliente esté equivocado al pedir otro precio si el tiempo de trabajo bajó. No se afirma que el caso se repita: aparece una vez en las fuentes. No se habla de la política de precios de ninguna empresa."
+   },
+   "contraargumento": "Si la IA hizo en una tarde lo que antes tomaba una semana, el cliente tiene algo de razón: el precio por horas ya no calza. Y si la revisión no se nota en el entregable, decir que alguien revisó no prueba nada.",
+   "residuo": "El borrador lo puede hacer cualquiera. La firma, no.",
+   "gancho": {
+    "tipo": "creencia equivocada",
+    "texto": "Un cliente recibió un trabajo preliminar hecho con IA y respondió que, entonces, lo podían hacer ellos mismos."
+   },
+   "arco": "En una sesión con una ingeniería, un ingeniero contó que un cliente recibió un preliminar hecho con IA y respondió que entonces lo podían hacer ellos (punto de partida: el cliente lee IA como trabajo que vale menos). La tentación es esconderla la próxima vez o cobrar menos, y las dos salidas confirman que se pagaba por el tecleo (tensión: el profesional regala justo lo que vende). La respuesta fue transparentar el uso y marcar los momentos en que revisa una persona, porque eso es lo que el cliente no puede hacer solo (cierre: se ofrece la firma, no el borrador).",
+   "escena": "Reunión de entrega de un anteproyecto de ingeniería. El cliente hojea el informe y comenta que esto se lo pide a un chat en diez minutos. El jefe de proyecto no discute: abre la página donde aparecen las revisiones que hizo el equipo, con nombre y fecha, y los supuestos que cambió en cada una.",
+   "arquitectura": "postura",
+   "pilar": "Tesis central: la tecnología no reemplaza criterio profesional; lo amplifica cuando se integra a un proceso bien diseñado",
+   "marco": "Puentes Digitales (Datos ↔ Decisiones): la revisión con nombre es el puente entre el borrador y la decisión del cliente",
+   "audiencia": "Project Managers y gerentes de operaciones de contratistas, consultoras e ingenierías AECO que entregan a cliente",
+   "canales": {
+    "linkedin": "Post de postura: la frase del cliente, las dos salidas equivocadas y lo que sí se ofrece; termina en la pregunta por quién firma.",
+    "x": "Tesis: el cliente no paga el borrador, paga la firma; condición: cuando ve IA en el entregable; cierre: muestra dónde revisa una persona.",
+    "blog": "Tendencias y opinión: cómo presentar un entregable hecho con IA sin esconderla ni rebajarlo, con el caso anónimo y los hitos de revisión.",
+    "clase": "Ejercicio: cada alumno marca en un entregable propio los momentos de revisión con nombre y lo defiende como si el cliente hubiera dicho la frase."
+   },
+   "por_que_ahora": "Los anuncios de este año repiten que la decisión sigue siendo de la persona, como dijo Autodesk en AU 2026 al presentar sus agentes para obra, y cada vez más entregables preliminares pasan por IA: la conversación de precio con el cliente ya está ocurriendo.",
+   "riesgo": "Caso aislado: aparece una vez en las fuentes. La ingeniería no está en el CV v6, así que va anónima, sin rubro ni país que la identifique. Puede leerse como defensa de honorarios altos si no se reconoce que el precio por horas cambia. No consta si David integraba el panel que respondió; se cuenta como algo que escuchó.",
+   "procedencia": {
+    "david": "La sesión de acompañamiento del 30-jun-2026 con una ingeniería, donde se contó la frase del cliente y se respondió con transparencia y control humano; su tesis central de que la tecnología amplifica el criterio profesional.",
+    "agente": "La lectura de que esconder o rebajar confirma que se pagaba por el tecleo, la frase «la firma, no el borrador», la escena de la entrega, el gancho y el residuo."
+   },
+   "validacion": {
+    "errores": [],
+    "avisos": []
+   }
+  },
+  {
+   "id": "I02-C1",
+   "titulo": "El tablero que depende de un viernes",
+   "relato": "Lo vi en un diagnóstico reciente en una consultora de ingeniería. La gerencia tenía sus tableros. Se veían ordenados, con colores, al día. Detrás de todos había un Excel. Una sola persona lo consolidaba a mano cada viernes. Si ella faltaba, esa semana no había foto. Y no es un caso raro. En una masterclass abierta para ingenieros de toda la región, la tarea que más gente quiso mejorar primero fue esa misma: consolidar reportes. El gerente cree que tiene visibilidad porque tiene un tablero. Lo que tiene es lo que alguien alcanzó a copiar. La visibilidad aparece cuando el dato se registra donde se hace el trabajo, en la obra, en el momento. El gráfico es lo último. Antes de pedir otro tablero, pregunten quién lo llena y qué pasa la semana que esa persona sale de vacaciones.",
+   "tema": "Visibilidad de gerencia sobre los proyectos y de dónde salen los números de los tableros",
+   "manantial": "dolor",
+   "formula": "contraria",
+   "evidencia": {
+    "tipo": "Patrón de dolor en tres fuentes: informe de masterclass abierta, bitácora de diagnóstico y informe de curso de Power Automate",
+    "referencia": "Informe de la masterclass «Diseña tu primera automatización», 5-nov-2026, P01 y P03 (patrón anónimo; https://app.notion.com/p/4105f443fb5c817ba1d1f584d5167115) · bitácora «Planificado — 1:1 7 sep 2026 (Diagnóstico IA)», matriz D2 y D7 (https://app.notion.com/p/3d45f443fb5c81e28bd6e4712df85d7b) · Informe Sesión 6 Power Automate, 30-abr-2026, §7 (https://app.notion.com/p/4a9dfb0f455e48eab96539c9549bcf1a) · material I02, semilla de dolor «visibilidad»",
+    "afirmacion": "Hecho en cada fuente: en la masterclass, «Consolidar reportes» fue la tarea más elegida para mejorar primero y «tiempo de respuesta» el resultado más pedido; en la consultora diagnosticada, los tableros de gerencia los alimenta un Excel que una sola persona consolida a mano cada viernes; en otra empresa, el informe de Power BI se actualiza a mano y el registro en Excel choca cuando escriben dos a la vez. El patrón conjunto es inferencia."
+   },
+   "premisa": "Lo que sostengo es que un tablero no da visibilidad si detrás hay una persona consolidando a mano. La visibilidad empieza cuando el dato se registra donde ocurre el trabajo, no cuando se dibuja el gráfico.",
+   "hipotesis": "Si la gerencia tiene tableros de avance de sus proyectos, tiene visibilidad. El paso que falta para ver mejor es un tablero más completo o una herramienta de reportes más potente.",
+   "respuesta": "El tablero muestra lo que alguien alcanzó a copiar el viernes. Mientras la foto dependa de una persona y de un día de la semana, la gerencia ve con retraso y con un punto único de falla. La inversión que da visibilidad está aguas arriba: que el dato quede registrado en una lista compartida o un formulario en el momento en que pasa, y que el tablero solo lo lea.",
+   "cadena_tesis": {
+    "evidencia": "En la consultora diagnosticada los tableros existen y los alimenta un Excel que consolida a mano una sola persona cada viernes; sin ella no hay foto. En la masterclass, consolidar reportes fue la tarea más elegida para mejorar. En otra empresa, el Power BI se actualiza a mano y el Excel de registro choca con dos personas escribiendo.",
+    "inferencia": "En empresas distintas, la capa visible (el tablero) está resuelta y la capa que nadie mira (cómo llega el dato) sigue siendo trabajo manual de una persona.",
+    "salto": "La visibilidad de un gerente se decide en el registro del dato, no en el tablero; pedir un tablero mejor sin cambiar la captura es pagar por un informe con colores.",
+    "no_afirmado": "No se dan cifras de horas ni de errores, no se nombra la consultora ni a la persona que consolida, y no se afirma que todo tablero de gerencia esté alimentado a mano. No se afirma que el Excel o el Power BI sean malos: el problema es el traspaso manual."
+   },
+   "contraargumento": "Una foto semanal consolidada a mano alcanza para decidir en muchas obras, y quien consolida no solo copia: revisa, detecta inconsistencias y llama al jefe de obra cuando algo no cuadra. Ese filtro humano es parte del valor del reporte, y capturar el dato en terreno cuesta tiempo de gente que ya está saturada.",
+   "residuo": "Un tablero que una persona llena a mano es un informe con colores.",
+   "gancho": {
+    "tipo": "dolor oculto",
+    "texto": "En un diagnóstico reciente, todos los tableros de gerencia dependían de un Excel que una sola persona consolidaba a mano cada viernes."
+   },
+   "arco": "En una consultora de ingeniería, la gerencia tenía tableros de avance que se veían completos y al día. (punto de partida: la gerencia cree que ya tiene visibilidad) Detrás de todos había un Excel que una sola persona consolidaba a mano cada viernes, y si ella faltaba no había foto de la semana. (tensión: la visibilidad depende de una persona y de un día, no del sistema) En una masterclass abierta, consolidar reportes fue la tarea que más gente quiso mejorar primero, así que el patrón no es de una sola empresa. (tensión: el dolor se repite en empresas distintas y está escondido detrás del gráfico) La visibilidad se gana cuando el dato queda registrado donde ocurre el trabajo y el tablero solo lo lee. (cierre: antes de pedir otro tablero, preguntar quién lo llena y qué pasa cuando esa persona no está)",
+   "escena": "Lunes, reunión de gerencia en una constructora mediana. En pantalla, el tablero con el avance de las obras. La administrativa que consolida el Excel estuvo con licencia médica la semana anterior, así que el tablero muestra los números de un viernes que ya pasó. Nadie lo nota hasta que el jefe de obra dice que la losa que aparece pendiente se hormigonó hace días.",
+   "arquitectura": "dolor",
+   "pilar": "BIM no basta si no conecta datos y decisiones",
+   "marco": "Puentes Digitales (Datos ↔ Decisiones, Oficina ↔ Terreno)",
+   "audiencia": "Project Managers y gerentes de operaciones de contratistas; dueños de PYMEs AECO",
+   "canales": {
+    "linkedin": "Post de Expertise que abre con el Excel del viernes detrás de los tableros, explica por qué eso no es visibilidad y termina con la pregunta que conviene hacer en la próxima reunión: quién llena el tablero.",
+    "x": "Tesis: un tablero que llena una persona a mano no es visibilidad. Condición: si la foto depende de un viernes y de alguien que no falte. Cierre: la visibilidad se decide en el registro, no en el gráfico.",
+    "blog": "Artículo en «Historias y casos»: el patrón del consolidador de los viernes en tres empresas, qué cambia cuando el dato se registra en la obra y cuánto del filtro humano conviene conservar.",
+    "clase": "Ejercicio: cada alumno elige un tablero de su empresa y dibuja el camino del dato desde la obra hasta el gráfico, marcando cada paso que hace una persona a mano."
+   },
+   "por_que_ahora": "La masterclass del 5-nov-2026 dejó «Consolidar reportes» como la tarea más elegida, y el 6-oct-2026 McKinsey reconoció que los equipos se resisten a registrar el avance diario porque lo viven como carga administrativa. Además, en noviembre las gerencias cierran el año y arman el presupuesto del siguiente, y es cuando más se pide un tablero nuevo.",
+   "riesgo": "La fuente de la consultora es una bitácora de diagnóstico marcada como Planificado, con hechos comprobados en la matriz: confirmar con David que lo del Excel de los viernes es un hallazgo verificado antes de contarlo en primera persona. No nombrar la consultora ni a la persona. Cuidar que no se lea como desprecio por quien consolida: esa persona es la que sostiene la foto. No usar cifras del artículo de McKinsey.",
+   "procedencia": {
+    "david": "El diagnóstico de la consultora, la masterclass y el curso de Power Automate son trabajo de David; el mensaje a gerentes «No tienes visibilidad real» y el pilar sobre conectar datos y decisiones son suyos.",
+    "agente": "La creencia a discutir (tablero igual a visibilidad), el cruce de las tres fuentes como un solo patrón, el residuo del informe con colores, la escena de la losa y la pregunta final para la reunión."
+   },
+   "validacion": {
+    "errores": [],
+    "avisos": []
+   }
+  },
+  {
+   "id": "I02-C2",
+   "titulo": "El cliente paga la firma, no el borrador",
+   "relato": "En una sesión con una ingeniería, un ingeniero contó lo que le pasó con un cliente. Le entregó un trabajo preliminar hecho con ayuda de IA. El cliente le respondió que, si era así, lo podían hacer ellos mismos. Muchos dueños de oficinas sacan de ahí una de dos conclusiones. Esconder la IA. O cobrar menos. Las dos regalan lo único que el cliente no puede hacer solo. El cliente nunca pagó por el tecleo. Paga porque alguien con nombre revisa, corrige y responde si algo falla. La IA hace el borrador. El profesional lo revisa y lo firma. Eso se dice en la propuesta, con los puntos donde una persona revisa. Si su cotización no dice quién firma y dónde se revisa, el cliente va a pensar que paga por el borrador.",
+   "tema": "Cómo cambia el valor de un servicio de ingeniería o arquitectura cuando el cliente sabe que se usó IA",
+   "manantial": "dolor",
+   "formula": "contraria",
+   "evidencia": {
+    "tipo": "Informe de sesión de acompañamiento con una ingeniería (cliente anónimo)",
+    "referencia": "Informe sesión S3 «Acompañamiento Mes 1 — Productividad documental», 30-jun-2026, §2 Debate de apertura (https://app.notion.com/p/35fbaf55447c43bc80257707b3a25bcd) · material I02, semilla de dolor «si va a usar IA»",
+    "afirmacion": "Hecho registrado en el informe: un ingeniero contó que un cliente, al recibir un trabajo preliminar hecho con IA, le dijo que entonces podían hacerlo ellos mismos; la respuesta del panel fue transparentar el uso según la política interna y poner hitos de control humano, con la IA en el borrador y el profesional en la validación. Es un caso aislado en las fuentes leídas. Que esa reacción sea frecuente entre clientes es inferencia."
+   },
+   "premisa": "Lo que sostengo es que la IA no abarata lo que una oficina técnica cobra, porque el cliente nunca pagó por el tecleo: paga por la revisión y la responsabilidad. Esconder la IA o bajar el precio regala justo eso.",
+   "hipotesis": "Si el cliente se entera de que usamos IA, va a valorar menos el trabajo y pedirá descuento; lo prudente es no decirlo o cobrar menos para no perder el contrato.",
+   "respuesta": "La reacción del cliente aparece cuando la propuesta solo muestra el entregable y no quién lo revisa. Lo que hay que hacer visible es el control humano: dónde revisa una persona, quién firma y quién responde. Con eso escrito, la IA deja de ser un descuento y pasa a ser un detalle de cómo se hizo el borrador.",
+   "cadena_tesis": {
+    "evidencia": "En la sesión, un ingeniero relató que un cliente, al saber que el trabajo preliminar se hizo con IA, concluyó que podía hacerlo por su cuenta. El panel respondió con transparencia según la política interna e hitos de control humano: borrador de la IA, validación del profesional.",
+    "inferencia": "El cliente leyó «IA» como «trabajo que cualquiera hace», porque lo único que vio fue el entregable, sin la revisión ni la responsabilidad detrás.",
+    "salto": "El valor cobrable de una oficina técnica está en la revisión firmada y la responsabilidad, y por eso hay que ponerlo por escrito en la propuesta en vez de esconder la IA o rebajar el precio.",
+    "no_afirmado": "No se afirma que el cobro por hora-hombre siga intacto, ni que todo cliente reaccione así, ni que se deba informar el uso de IA contra la política de cada empresa. No se nombra la ingeniería ni al ingeniero. No se dan cifras de precios ni de descuentos."
+   },
+   "contraargumento": "Si la IA hace en una tarde lo que antes tomaba una semana, cobrar lo mismo por horas no se sostiene, y decir «se paga la firma» no resuelve cómo se cotiza. Además, hay clientes que sí pueden hacer el borrador por su cuenta y tienen razón en negociar: la oficina que solo entregaba borradores sí pierde valor.",
+   "residuo": "El cliente no paga el borrador. Paga la firma.",
+   "gancho": {
+    "tipo": "creencia equivocada",
+    "texto": "Un cliente le dijo a un ingeniero que, si usaba IA, ellos mismos podían hacer el trabajo, y la reacción de muchos dueños de oficina es esconder la IA o bajar el precio."
+   },
+   "arco": "Un ingeniero contó que un cliente, al recibir un trabajo preliminar hecho con IA, le dijo que entonces podían hacerlo ellos mismos. (punto de partida: el miedo de muchos dueños de oficina a que la IA baje lo que pueden cobrar) Las salidas habituales son esconder el uso de la IA o cobrar menos, y las dos entregan lo único que el cliente no puede hacer solo. (tensión: proteger el precio escondiendo la IA termina regalando la revisión y la responsabilidad) El cliente paga porque alguien con nombre revisa, corrige y responde, y eso tiene que estar escrito en la propuesta con los puntos donde una persona revisa. (cierre: si la cotización no dice quién firma y dónde se revisa, el cliente cree que paga por el borrador)",
+   "escena": "Reunión de cierre de una propuesta en una oficina de ingeniería. El cliente pregunta si la memoria de cálculo la escribió la IA. El jefe de proyecto duda, dice que en parte, y el cliente pide descuento. En la propuesta siguiente, la oficina agrega una línea: borrador asistido, revisión y firma del ingeniero responsable, con los dos puntos de control marcados en el cronograma.",
+   "arquitectura": "postura",
+   "pilar": "IA sin flujo es humo",
+   "marco": "Tesis central: la tecnología no reemplaza el criterio profesional, lo amplifica cuando se integra a un proceso bien diseñado",
+   "audiencia": "PYMEs AECO: dueños y gerentes de oficinas de ingeniería y arquitectura que cotizan servicios; Project Managers",
+   "canales": {
+    "linkedin": "Post de Expertise que abre con la frase del cliente, desarma las dos salidas habituales (esconder o rebajar) y termina en la línea que conviene agregar a la próxima cotización.",
+    "x": "Tesis: el cliente no paga el borrador, paga la firma. Condición: si la propuesta no dice quién revisa y quién responde. Cierre: escriban los puntos de control en la cotización.",
+    "blog": "Artículo en «Tendencias y opinión» sobre cómo cotizar servicios técnicos cuando hay IA en el borrador, con la objeción del cobro por horas tratada en serio.",
+    "clase": "Ejercicio: tomar una propuesta de servicios ya enviada y reescribir el alcance para que muestre dónde revisa una persona, quién firma y qué hizo la IA."
+   },
+   "por_que_ahora": "En AU 2026 (16-sep-2026) Autodesk presentó agentes para obra insistiendo en que la responsabilidad de la decisión sigue siendo de la persona: el propio proveedor pone la firma humana al centro. Y a fin de año las oficinas preparan propuestas y renovaciones de contrato para el siguiente, que es justo donde aparece la conversación del precio.",
+   "riesgo": "Es un caso aislado y anónimo: no presentarlo como tendencia medida ni nombrar a la ingeniería. Confirmar con David si la respuesta del panel fue suya antes de contarla como propia. No sonar a consejo comercial o legal sobre cómo cobrar; el foco es qué se hace visible en la propuesta. La objeción del cobro por horas es fuerte y la pieza pierde credibilidad si la esquiva.",
+   "procedencia": {
+    "david": "La sesión de acompañamiento, el relato del ingeniero y la respuesta registrada (transparentar según la política interna, hitos de control humano, IA en el borrador y profesional en la validación) vienen del informe de una sesión de David.",
+    "agente": "La creencia a discutir (la IA baja lo que se puede cobrar), el residuo de la firma, la línea concreta para la cotización, la escena de la memoria de cálculo y el cruce con la señal de Autodesk."
+   },
+   "validacion": {
+    "errores": [],
+    "avisos": []
+   }
+  },
+  {
+   "id": "I02-C3",
+   "titulo": "La licencia que ya pagan",
+   "relato": "En OXXO intenté primero lo que el sector llama la plataforma correcta. Quería que todas las áreas que tocaban un proyecto, comercial, legal, operaciones, trabajaran en la plataforma de coordinación de Autodesk. No pude justificar las licencias para gente que no era de arquitectura. El intento se cayó. Ahí cambié la pregunta. Dejé de buscar qué software comprar y miré lo que la empresa ya pagaba y dónde esa gente ya trabajaba: SharePoint, Teams, Power Automate. Rehíce el flujo ahí, lo armé con ayuda de IA, lo probamos y la gerencia lo aprobó sin comprar licencias nuevas. Ahí ya no me pudieron decir que no. Muchas empresas medianas no empiezan porque no pueden pagar la plataforma completa. Antes de pedir la próxima cotización, hagan la lista de lo que ya pagan y de quién lo abre todos los días.",
+   "tema": "Por dónde empieza una empresa constructora o una oficina técnica a digitalizar cuando no puede pagar la plataforma completa",
+   "manantial": "pilar",
+   "formula": "contraria",
+   "evidencia": {
+    "tipo": "Experiencia de David, contada en clase con su error y registrada en el CV v6",
+    "referencia": "Notion «Informe de análisis del perfil docente…» (2026-05-04), §4.1 y §4.5, que citan el informe de la clase 32 «Azure AI + Escalabilidad» del Máster AEC 4.0 (31-mar-2026, https://app.notion.com/p/634d57f6119d4bd19647d154435d4ae1) · Diplomado BIM + IA, informe de la Tutorización 1 (https://app.notion.com/p/42aa0e048f3645ce8b75ef011508609c) · CV v6, línea «Coordinador BIM | OXXO Chile, jul 2022 – sep 2024» · raiz-david.yaml, caso_estrella y defiende (Oferta y Servicios)",
+    "afirmacion": "Experiencia: el primer intento de llevar a ACC la coordinación con las áreas que no eran AEC se cayó porque no se pudieron justificar licencias para ese personal; David rehízo el flujo con SharePoint, Power Automate y Teams, que la empresa ya pagaba, lo pilotó con ayuda de IA y la gerencia lo aprobó sin licencias nuevas. Que el mismo patrón aplique a una PYME constructora es inferencia."
+   },
+   "premisa": "Lo que sostengo es que una empresa no necesita la plataforma completa para empezar a digitalizar. Lo que ya paga y el lugar donde su gente ya trabaja son datos del diseño, y muchas veces deciden la adopción más que la potencia del software.",
+   "hipotesis": "Digitalizar en serio exige comprar la plataforma especializada completa, con licencias para todos; si este año no alcanza el presupuesto, es mejor esperar que hacer algo a medias.",
+   "respuesta": "La plataforma correcta se cae si la gente que tiene que usarla no tiene licencia ni la abre cada día. El dato se lleva a donde esa gente ya trabaja, con lo que la empresa ya paga, y la plataforma especializada queda donde de verdad rinde, dentro del equipo técnico. Esperar el presupuesto ideal es la forma más cara de no empezar.",
+   "cadena_tesis": {
+    "evidencia": "En OXXO, el intento con ACC para las áreas no AEC fracasó por licencias. El flujo rehecho en SharePoint, Power Automate y Teams, ya licenciados, se pilotó con ayuda de IA y la gerencia lo aprobó sin comprar licencias nuevas. ACC siguió usándose dentro de Arquitectura.",
+    "inferencia": "La adopción la decidieron la licencia disponible y quién tenía que usar el sistema, no la potencia de la herramienta.",
+    "salto": "Lo que una empresa ya paga es el punto de partida de cualquier diseño digital, y esperar a poder pagar la plataforma completa es una decisión de no empezar.",
+    "no_afirmado": "No se afirma que ACC sea una mala plataforma ni que Microsoft 365 la reemplace: siguió sirviendo dentro de Arquitectura. No se dan cifras de ahorro ni de licencias. No se afirma que el patrón funcione igual en cualquier empresa ni que nunca convenga comprar la plataforma especializada."
+   },
+   "contraargumento": "Armar con lo que ya está pagado puede terminar en parches: flujos en espacios personales, sin versiones ni dueño, que mueren cuando su autor se va, como cuentan los propios equipos de automatización. Y si al final el proyecto necesita la plataforma especializada, empezar con lo barato solo posterga la compra y obliga a migrar dos veces.",
+   "residuo": "La licencia que ya pagan es un dato de diseño, no un límite.",
+   "gancho": {
+    "tipo": "error caro",
+    "texto": "Mi primer intento de digitalizar la coordinación en OXXO se cayó por apostar a la plataforma correcta; lo que la gerencia aprobó fue lo que la empresa ya pagaba."
+   },
+   "arco": "En OXXO intenté primero llevar a todas las áreas que tocaban un proyecto a la plataforma de coordinación de Autodesk. (punto de partida: la creencia de que digitalizar en serio empieza por la plataforma completa) No pude justificar licencias para la gente que no era de arquitectura y el intento se cayó. (tensión: la herramienta más potente perdió por algo que no tenía que ver con su potencia) Rehíce el flujo con lo que la empresa ya pagaba y donde esa gente ya trabajaba, lo piloteamos y la gerencia lo aprobó sin licencias nuevas. (tensión: lo que parecía un repliegue resultó ser lo único que se podía aprobar) Muchas empresas medianas siguen esperando el presupuesto para la plataforma completa y mientras tanto no empiezan. (cierre: antes de la próxima cotización, listar lo que ya se paga y quién lo abre cada día)",
+   "escena": "Reunión de presupuesto en una constructora mediana. El jefe de proyecto trae la cotización de una plataforma completa de gestión de obra, con licencias para todo el equipo. El gerente la mira y dice que este año no. La digitalización se archiva otra vez, mientras la oficina técnica, la bodega y la administración trabajan cada día en el correo, Teams y un Excel compartido que la empresa paga desde hace años.",
+   "arquitectura": "transformacion",
+   "pilar": "Innovar no es saber código, es saber dónde duele",
+   "marco": "Puentes Digitales (el dato se lleva a donde trabaja quien decide)",
+   "audiencia": "PYMEs AECO: dueños y gerentes de constructoras y oficinas técnicas; Project Managers y gerentes de operaciones de contratistas",
+   "canales": {
+    "linkedin": "Post de Historia contado con el error: el intento con la plataforma correcta, la caída por licencias y la aprobación con lo que ya se pagaba, terminado en la lista que conviene hacer antes de cotizar.",
+    "x": "Tesis: lo que ya pagan es un dato de diseño, no un límite. Condición: si quien tiene que usar el sistema no tiene licencia ni lo abre cada día. Cierre: antes de cotizar, listen lo que ya pagan.",
+    "blog": "Artículo en «Historias y casos» con el caso OXXO completo, incluida la objeción de los parches sin dueño y cómo se evita.",
+    "clase": "Ejercicio: cada alumno hace el inventario de lo que su empresa ya paga y de quién lo usa cada día, y elige un flujo que se pueda armar sin licencias nuevas."
+   },
+   "por_que_ahora": "En AU 2026 (16-sep-2026) Autodesk aclaró que sus nuevas capacidades de IA para obra solo están en suscripciones de tipo value-based: la conversación sobre IA vuelve a empezar por la licencia. Y en noviembre las empresas arman el presupuesto del año siguiente, cuando más se cotizan plataformas completas.",
+   "riesgo": "Que se lea como un ataque a Autodesk: dejar claro que ACC siguió sirviendo dentro de Arquitectura. Es el caso estrella de David y puede sonar repetido para quien ya lo oyó; el ángulo nuevo es el dueño de PYME que no empieza por presupuesto. La frase «Ahí ya no me pudieron decir que no» es suya y él la usa como canon: confirmar que quiere usarla tal cual. Sin cifras de ahorro.",
+   "procedencia": {
+    "david": "El caso OXXO con su error, la vuelta a Microsoft 365, el piloto con ayuda de IA, la aprobación sin licencias nuevas, la frase «Ahí ya no me pudieron decir que no» y la regla de que la consultoría parte de la licencia disponible son de David.",
+    "agente": "La creencia a discutir (esperar el presupuesto de la plataforma completa), el giro hacia el dueño de PYME, la escena de la reunión de presupuesto, el residuo y el cruce con la señal de AU 2026 sobre licencias."
+   },
+   "validacion": {
+    "errores": [],
+    "avisos": []
+   }
+  },
+  {
+   "id": "I02-D1",
+   "titulo": "La planilla del viernes",
+   "relato": "En un diagnóstico de IA para una consultora de ingeniería, los tableros de gerencia estaban y se veían bien. Detrás había un Excel. Una persona lo consolidaba a mano cada viernes, juntando las planillas de todos los proyectos. Si ella falta, no hay foto. En una masterclass abierta, la tarea que más gente quería mejorar primero fue justo esa: consolidar reportes. Y McKinsey publicó hace poco que los grandes proyectos planifican mal porque casi nadie registra cuánto se avanza por día, que es el dato que necesitaría cualquier agente para planificar mejor. La IA que la gerencia quiere comprar va a leer esa planilla. No va a ver la obra. Va a ver lo que alguien alcanzó a copiar el viernes. Lo primero que yo automatizaría es que al capataz le cueste menos reportar el avance que no reportarlo.",
+   "tema": "Qué ve una gerencia de constructora o ingeniería cuando le pone IA encima a su información de avance",
+   "manantial": "dolor",
+   "formula": "sintesis",
+   "evidencia": {
+    "tipo": "Síntesis de un dolor repetido en dos fuentes de David y una señal reciente",
+    "referencia": "Bitácora «Planificado — 1:1 7 sep 2026 (Diagnóstico IA)», matriz D2 y D7 (https://app.notion.com/p/3d45f443fb5c81e28bd6e4712df85d7b) · «Diseña tu primera automatización — Informe de la masterclass», 5-nov-2026, P01 y P03 (patrón anónimo; https://app.notion.com/p/4105f443fb5c817ba1d1f584d5167115) · «Using production rates to excel at executing construction projects», McKinsey, 6-oct-2026 (https://www.mckinsey.com/capabilities/operations/our-insights/using-production-rates-to-excel-at-executing-construction-projects)",
+    "afirmacion": "Hecho en cada fuente: en la consultora diagnosticada los tableros de gerencia los alimenta un Excel que una sola persona consolida a mano cada viernes; en la masterclass, «Consolidar reportes» fue la tarea más elegida para mejorar primero; McKinsey sostiene que las duraciones de los planes casi nunca salen de la tasa real de producción en terreno, que esos datos son la base para que la IA y una futura planificación con agentes sirvan, y que los equipos se resisten a medir porque lo viven como carga. Que la IA herede la captura manual es inferencia de ese cruce."
+   },
+   "premisa": "Lo que sostengo es que la IA no le da visibilidad a una gerencia que no la tenía: lee lo que alguien alcanzó a registrar. La primera inversión útil es que reportar el avance cueste menos que no reportarlo.",
+   "hipotesis": "La gerencia que ya tiene tableros cree que su problema de visibilidad está resuelto, y espera que un agente de IA encima de esos tableros le anticipe atrasos y le planifique mejor.",
+   "respuesta": "El agente va a razonar sobre la planilla que una persona consolida a mano el viernes, no sobre la obra. Si esa captura es tardía, incompleta o depende de alguien que no falte, la IA entrega con seguridad una foto vieja. Antes de comprar análisis, conviene abaratar la captura: un registro de avance desde el celular del capataz, al momento, que le pese menos que llenarlo de memoria el viernes.",
+   "cadena_tesis": {
+    "evidencia": "Tableros de gerencia alimentados por una persona que consolida planillas a mano cada viernes (diagnóstico de una consultora); consolidar reportes como la tarea que más participantes de una masterclass quisieron mejorar primero; McKinsey: los planes rara vez salen de tasas de producción medidas en terreno, ese dato es la base para que la IA planifique, y medir se vive como carga administrativa.",
+    "inferencia": "El dato que un agente necesitaría para ver el proyecto se captura tarde y a mano, y el dolor se repite en empresas de distinto tamaño: la IA llega a leer una captura que ya está rota.",
+    "salto": "Una gerencia que quiere IA tiene que empezar por abaratar la captura del avance en terreno, porque la frustración de reportar es lo que deja ciega a la IA (Automatización Empática).",
+    "no_afirmado": "No se dan cifras de McKinsey ni de ahorro. No se afirma que la consultora no pueda usar IA ni se la nombra. Que el formulario en el celular del capataz resuelva la captura es propuesta, no resultado medido. El artículo habla de megaproyectos; llevarlo a la obra mediana es traducción del agente."
+   },
+   "contraargumento": "Un gerente dirá que precisamente para eso compra IA: para que lea correos, planillas y fotos desordenadas y saque el avance sin pedirle nada a nadie. Y algo de razón tiene: los modelos ya extraen datos de documentos sueltos. Pero extraer del documento del viernes sigue dando la foto del viernes, y nadie sabe qué faltó.",
+   "residuo": "La IA no ve la obra. Ve la planilla del viernes.",
+   "gancho": {
+    "tipo": "dolor oculto",
+    "texto": "Los tableros de gerencia que vi en un diagnóstico se veían bien. Detrás había una persona copiando planillas a mano cada viernes."
+   },
+   "arco": "En un diagnóstico de IA, la gerencia de una consultora de ingeniería tenía tableros que se veían completos. (punto de partida: la empresa cree que ya tiene visibilidad) Al preguntar quién los alimenta, apareció una persona que consolida a mano cada viernes, y sin ella no hay foto. (tensión: la visibilidad depende de un viernes y de alguien que no falte) La misma tarea fue la que más gente quiso mejorar en una masterclass abierta, y McKinsey publicó que casi nadie registra cuánto se avanza por día, que es lo que un agente necesitaría para planificar. (tensión: la IA que se quiere comprar va a leer esa misma planilla) Lo primero que vale la pena automatizar es la captura: que al capataz le cueste menos reportar el avance que no hacerlo. (cierre: la IA ve lo que alguien registró, así que se empieza por lo que cuesta registrar)",
+   "escena": "Lunes de comité en una constructora mediana. El gerente proyecta el tablero de avance y pregunta por qué la obra del sur aparece al día si el jefe de terreno avisó de un atraso el miércoles. La administrativa que consolida explica que la planilla de esa obra llegó tarde y se usó la de la semana anterior. Alguien propone ponerle un asistente de IA al tablero.",
+   "arquitectura": "dolor",
+   "pilar": "BIM no basta si no conecta datos y decisiones",
+   "marco": "Automatización Empática (eliminar la frustración de reportar, no el trabajo de reportar)",
+   "audiencia": "Project Managers y gerentes de operaciones de contratistas; dueños de PYMEs AECO",
+   "canales": {
+    "linkedin": "Post de Historia: los tableros que se veían bien, la persona del viernes y lo que va a leer la IA que se quiere comprar.",
+    "x": "Tesis: la IA no ve la obra, ve la planilla del viernes. Condición: si reportar el avance pesa, el dato llega tarde. Cierre: automatiza primero la captura.",
+    "blog": "Artículo en «Tendencias y opinión» que cruza el estudio de McKinsey sobre tasas de producción con la obra mediana: dónde nace el dato de avance y cómo abaratarlo antes de comprar IA.",
+    "clase": "Ejercicio: cada alumno dibuja el camino del dato de avance de su obra, desde el terreno hasta el tablero, y marca dónde se copia a mano."
+   },
+   "por_que_ahora": "McKinsey publicó el estudio de tasas de producción el 6-oct-2026, y fin de año es cuando las gerencias arman presupuesto y deciden qué IA comprar para el próximo ejercicio. La masterclass del 5-nov-2026 confirmó que consolidar reportes es el dolor que más gente quiere resolver primero.",
+   "riesgo": "La escena de la consultora sale de una bitácora rotulada «Planificado», aunque la matriz marca la fila como comprobada: confirmar con David que lo vio en el diagnóstico antes de contarlo en primera persona, y no nombrar a la consultora. No reutilizar las cifras de ahorro del artículo de McKinsey. Riesgo de leerse como anti-IA: el cierre propone qué automatizar, no que no se compre.",
+   "procedencia": {
+    "david": "El diagnóstico de la consultora con la persona del viernes, la masterclass con «Consolidar reportes» como tarea más elegida, el pilar «BIM no basta si no conecta datos y decisiones», el mensaje a gerentes «No tienes visibilidad real» y el marco de Automatización Empática.",
+    "agente": "El cruce con el estudio de McKinsey, la tesis de que la IA hereda la captura manual, la propuesta del registro en el celular del capataz como primera automatización, la escena del comité y el residuo."
+   },
+   "validacion": {
+    "errores": [],
+    "avisos": []
+   },
+   "ajustes_editor": [
+    "relato: se quitó el diálogo inventado («pedí ver», «pregunté»); la fuente solo dice que los tableros los alimenta un Excel consolidado a mano cada viernes"
+   ]
+  },
+  {
+   "id": "I02-D2",
+   "titulo": "«Si es con IA, lo hacemos nosotros»",
+   "relato": "En una sesión con un equipo de ingeniería, un ingeniero contó lo que le dijo un cliente. Le había entregado un avance hecho con ayuda de IA. El cliente respondió que, si era con IA, lo podían hacer ellos mismos. La salida fácil es esconder la IA. Es la peor. Este año Autodesk presentó agentes que revisan documentos e insistió en que la decisión sigue siendo de la persona. Y a propósito de los premios de buildingSMART se propuso tratar lo que hace un agente como lo que hace un modelador junior: queda registrado, alguien lo revisa y alguien lo firma. Ninguna oficina le cobra al cliente el tecleo del junior. Le cobra la revisión del senior y la firma. Muestren quién revisó y quién firma, y ese cliente deja de creer que lo puede hacer solo.",
+   "tema": "Qué le pasa al precio y a la confianza del trabajo de una oficina de ingeniería cuando el cliente sabe que usa IA",
+   "manantial": "dolor",
+   "formula": "sintesis",
+   "evidencia": {
+    "tipo": "Síntesis de un dolor registrado en una sesión de David y dos señales recientes del sector",
+    "referencia": "Informe sesión S3 «Acompañamiento Mes 1 — Productividad documental», 30-jun-2026, §2 Debate de apertura (https://app.notion.com/p/35fbaf55447c43bc80257707b3a25bcd) · «Autodesk University 2026: Forma Product Highlights Across the Construction Lifecycle», blog Digital Builder de Autodesk, 16-sep-2026 (https://www.autodesk.com/blogs/construction/autodesk-university-2026-forma-product-highlights-across-the-construction-lifecycle/) · buildingSMART, openBIM Awards 2026 y su lectura secundaria «2026 openBIM Awards: Qonic Takes Technology — and AI Just Went Mainstream in BIM» (https://www.buildingsmart.org/the-buildingsmart-openbim-awards-2026-winners-announced/)",
+    "afirmacion": "Hecho en el informe: un ingeniero contó que un cliente, al recibir un trabajo preliminar hecho con IA, le dijo que entonces podían hacerlo ellos mismos; la respuesta en la sesión fue transparentar el uso según la política interna y poner hitos de control humano. Hecho de la fuente: Autodesk presenta agentes en beta para obra e insiste en que la responsabilidad de la decisión sigue en la persona. Lectura de una fuente secundaria: tratar las ediciones de un agente como las de un modelador junior, registradas, revisadas y firmadas. El paralelo con el cobro de una oficina es opinión."
+   },
+   "premisa": "Lo que sostengo es que cuando el cliente descubre la IA, la oficina no tiene que esconderla ni regalarla: tiene que mostrar quién revisó y quién firma, porque eso es lo que siempre cobró.",
+   "hipotesis": "Si el cliente sabe que el entregable se hizo con IA, va a pagar menos o lo va a hacer él mismo; por eso conviene no contarlo o bajar el precio.",
+   "respuesta": "El cliente ya paga un trabajo que en parte hace un junior y nadie lo considera barato, porque detrás hay revisión y firma. La IA entra en ese mismo lugar. Lo que una oficina tiene que hacer visible es el control: qué revisó una persona, contra qué, y quién responde. Esconder el uso deja a la oficina sin defensa el día que el cliente se entere.",
+   "cadena_tesis": {
+    "evidencia": "Un cliente reaccionó a un trabajo preliminar hecho con IA diciendo que podían hacerlo ellos mismos; en la sesión se respondió con transparencia según política interna e hitos de control humano. Autodesk, al presentar sus agentes para obra, deja la responsabilidad de la decisión en la persona. En la lectura de los premios openBIM se propone tratar las ediciones de un agente como las de un junior: registradas, revisadas y firmadas.",
+    "inferencia": "El propio sector está ubicando a la IA en el lugar del trabajo que alguien revisa y firma, que es la parte del servicio profesional que el cliente nunca pagó por tecleo.",
+    "salto": "La defensa del precio frente a la IA es hacer visible la revisión y la firma en el entregable, como ya se hace con el trabajo del junior, y no ocultar el uso.",
+    "no_afirmado": "No se nombra a la empresa ni al cliente. No se afirma que mostrar la revisión retenga a todos los clientes ni que el precio se mantenga igual. Que el caso se repita en otras oficinas no está registrado: es un caso aislado. Los ganadores de buildingSMART salen de fuentes secundarias que coinciden."
+   },
+   "contraargumento": "Algunos clientes sí pueden hacerlo ellos mismos: el mandante grande con equipo técnico propio y la misma IA. Para ese cliente, mostrar la revisión no basta, y la oficina tiene que bajar precio en la parte rutinaria o subir en lo que exige experiencia. Y hay oficinas donde la revisión también se hacía rápido y a ojo: mostrarla expone que no era tanta.",
+   "residuo": "El cliente nunca pagó el tecleo. Paga la revisión y la firma.",
+   "gancho": {
+    "tipo": "error caro",
+    "texto": "Un cliente le dijo a un ingeniero que, si el trabajo era con IA, lo hacían ellos. La reacción natural es esconder la IA, y es la que más cuesta."
+   },
+   "arco": "Un ingeniero contó en una sesión que su cliente, al ver un avance hecho con ayuda de IA, le respondió que entonces podían hacerlo ellos mismos. (punto de partida: el cliente lee IA como trabajo que vale menos) La reacción fácil es esconder el uso o regalarlo. (tensión: esconder deja a la oficina sin defensa el día que el cliente se entera) Autodesk presentó agentes para obra insistiendo en que la decisión sigue siendo de la persona, y en torno a los premios de buildingSMART se propuso tratar lo que hace un agente como lo que hace un modelador junior. (tensión: el sector ya ubicó a la IA donde siempre estuvo el junior, pero el cliente no lo sabe) Ninguna oficina cobra el tecleo del junior; cobra la revisión del senior y la firma, y eso es lo que hay que mostrar en el entregable. (cierre: se defiende el precio mostrando quién revisó y quién firma)",
+   "escena": "Reunión de entrega en una oficina de cálculo. El mandante hojea la memoria y pregunta si la redactó la IA. El jefe de proyecto duda un segundo. En otra versión de la misma reunión, el jefe de proyecto abre la última página: qué partes generó la IA, qué verificó el ingeniero contra qué norma y quién firma.",
+   "arquitectura": "postura",
+   "pilar": "IA sin flujo es humo (con la tesis central: la tecnología no reemplaza criterio profesional, lo amplifica)",
+   "marco": "IA como copiloto (tema de opinión): el copiloto no firma",
+   "audiencia": "Gerentes y dueños de oficinas de ingeniería y arquitectura; Project Managers de contratistas",
+   "canales": {
+    "linkedin": "Post de Expertise que abre con la frase del cliente y termina en la última página del entregable: quién revisó y quién firma.",
+    "x": "Tesis: el cliente nunca pagó el tecleo. Condición: si escondes la IA, no tienes cómo defender el precio. Cierre: muestra la revisión y la firma.",
+    "blog": "Artículo en «Tendencias y opinión»: qué dijeron Autodesk y los premios de buildingSMART sobre la responsabilidad, y cómo se ve una hoja de control humano en un entregable de ingeniería.",
+    "clase": "Ejercicio: tomar un entregable propio hecho con ayuda de IA y escribir su hoja de control, qué generó la IA, qué se verificó y quién firma."
+   },
+   "por_que_ahora": "Autodesk presentó sus agentes para obra en AU 2026 (16-sep) y los premios openBIM se entregaron en Tokio a inicios de octubre: la responsabilidad humana sobre la IA está en la conversación del sector. Y fin de año es temporada de licitaciones y renegociación de honorarios.",
+   "riesgo": "El caso es aislado en las fuentes: no presentarlo como tendencia. Confirmar con David que participó en la sesión antes de contarlo como algo que escuchó, y no nombrar a la ingeniería ni a su cliente. No citar en inglés la frase de Autodesk: parafrasearla. Puede leerse como defensa corporativa del precio; el contraargumento del mandante con equipo propio conviene dejarlo a la vista.",
+   "procedencia": {
+    "david": "La sesión de acompañamiento con la frase del cliente y la respuesta de transparentar con hitos de control humano; la tesis central de que la tecnología amplifica el criterio y no lo reemplaza.",
+    "agente": "El cruce con las señales de Autodesk y buildingSMART, el paralelo del cobro del junior, la idea de la hoja de control en el entregable, la escena de la reunión de entrega y el residuo."
+   },
+   "validacion": {
+    "errores": [],
+    "avisos": []
+   }
+  },
+  {
+   "id": "I02-D3",
+   "titulo": "La IA llega a la oficina, la obra sigue con el rodeo",
+   "relato": "En OXXO quise llevar la coordinación con todas las áreas a la plataforma BIM que usábamos en Arquitectura. Se cayó por las licencias. No logré justificar una licencia para gente de Legal o de Comercial. Lo rehice con lo que la empresa ya pagaba, y ahí ya no me pudieron decir que no. Con la IA veo la misma película. Autodesk presentó agentes para obra que, en letra chica, solo vienen en ciertas suscripciones. En una consultora de ingeniería no había licencias para todos. Unos entraban por la web, descargaban, trabajaban y volvían a subir. Otros le mandaban su material a quien sí tenía acceso. La IA llega a la oficina y la obra sigue con el rodeo. Antes de elegir el agente, cuenten cuántas personas de su equipo lo van a poder abrir.",
+   "tema": "Cómo se reparte la IA dentro de una constructora o ingeniería, y quién queda fuera cuando llega",
+   "manantial": "experiencia",
+   "formula": "sintesis",
+   "evidencia": {
+    "tipo": "Síntesis del caso estrella de David, un dolor repetido en varias fuentes y una señal reciente",
+    "referencia": "Máster AEC 4.0 V1, clase 32 «Azure AI + Escalabilidad» (31-mar-2026, informe con transcripción), https://app.notion.com/p/634d57f6119d4bd19647d154435d4ae1 · CV v6, línea «Coordinador BIM | OXXO Chile, jul 2022 – sep 2024» · Bitácora «Planificado — 1:1 7 sep 2026 (Diagnóstico IA)», hechos comprobados y matriz D3 (https://app.notion.com/p/3d45f443fb5c81e28bd6e4712df85d7b) · «Autodesk University 2026: Forma Product Highlights Across the Construction Lifecycle», blog Digital Builder de Autodesk, 16-sep-2026 (https://www.autodesk.com/blogs/construction/autodesk-university-2026-forma-product-highlights-across-the-construction-lifecycle/)",
+    "afirmacion": "Experiencia de David: en OXXO el primer intento de llevar la coordinación con las áreas no AEC a ACC se cayó porque no logró justificar licencias para ese personal, y lo rehízo con SharePoint, Power Automate y Teams, ya pagados. Hecho registrado en el diagnóstico: no hay licencias para todos, unos entran por web, descargan, trabajan y vuelven a subir, y los especialistas remotos mandan su material a un coordinador. Hecho de la fuente: Autodesk aclara que sus capacidades de IA solo están en suscripciones de tipo value-based. Que la IA reproduzca la misma brecha es inferencia."
+   },
+   "premisa": "Lo que sostengo es que la IA que llega con pocas licencias no acelera a la empresa: deja a la oficina con el agente y a la obra con el rodeo. La pregunta de compra es a quién le llega, antes que qué hace.",
+   "hipotesis": "Elegir bien la IA para una constructora es comparar qué agente hace más y mejor; una vez comprado, el beneficio se reparte solo por la empresa.",
+   "respuesta": "El beneficio llega hasta donde llega la licencia. Si el agente queda en manos de la oficina técnica, el resto del equipo descarga, trabaja aparte y vuelve a subir, o le pasa su material a quien tiene acceso, y la distancia entre oficina y terreno crece. La compra se diseña desde la licencia que la empresa ya paga y desde dónde trabaja cada persona, llevando el dato hasta ella.",
+   "cadena_tesis": {
+    "evidencia": "OXXO: la coordinación entre áreas no prosperó en la plataforma BIM porque no se justificaron licencias para quienes no eran AEC, y funcionó al rehacerse sobre Microsoft 365 ya licenciado. Consultora diagnosticada: sin licencias para todos, con descargas, trabajo aparte y material que pasa por un coordinador. Autodesk: sus agentes de IA para obra solo vienen en ciertas suscripciones.",
+    "inferencia": "La licencia ya decidió una vez quién entraba al flujo digital, y la IA se está vendiendo con la misma condición, así que va a repetir el mismo corte entre quien tiene acceso y quien hace rodeos.",
+    "salto": "Antes de comparar agentes, una empresa tiene que contar quién de su equipo lo va a poder abrir y diseñar desde lo que ya paga, porque una IA de pocas manos ensancha la brecha entre oficina y terreno (Puentes Digitales).",
+    "no_afirmado": "No se critica a Autodesk ni se afirma que sus agentes no sirvan; ACC siguió sirviendo dentro de Arquitectura en OXXO. No se dan precios ni cifras de licencias. No se nombra a la consultora. Que en la región la brecha de IA en obra sea primero de licencia y después de tecnología es hipótesis por contrastar."
+   },
+   "contraargumento": "Un gerente dirá que no todos necesitan IA: el capataz no va a revisar submittals, y pagar licencias para todos es tirar plata. Es cierto que no todos necesitan el mismo agente. Pero los que se quedan sin acceso siguen produciendo el dato que el agente lee, y si lo entregan por rodeos, el agente trabaja con información tardía.",
+   "residuo": "Antes de elegir el agente, cuenten cuántos lo van a poder abrir.",
+   "gancho": {
+    "tipo": "contraste",
+    "texto": "Mi primer intento de coordinar todas las áreas de OXXO en la plataforma BIM se cayó por las licencias. Con la IA veo la misma película."
+   },
+   "arco": "En OXXO, David quiso llevar la coordinación con Legal, Comercial y Operaciones a la plataforma BIM de Arquitectura, y el intento se cayó porque no se justificaban licencias para ellos. (punto de partida: la mejor plataforma pierde si no llega a quien la tiene que usar) Lo rehízo con lo que la empresa ya pagaba y la gerencia lo aprobó sin licencias nuevas. (tensión: la adopción la decidió la licencia, no la potencia) Autodesk presenta agentes para obra que solo vienen en ciertas suscripciones, y en una consultora sin licencias para todos los especialistas descargan, trabajan aparte o mandan su material a quien tiene acceso. (tensión: la IA se vende con el mismo corte y repite la brecha entre oficina y terreno) Antes de comparar agentes, la empresa cuenta quién lo va a poder abrir y diseña desde lo que ya paga. (cierre: la pregunta de compra es a quién le llega)",
+   "escena": "Una constructora compra un agente de IA que revisa documentos de obra. Queda en la oficina técnica. En terreno, el jefe de obra sigue sacando fotos al libro de obra y mandándolas por WhatsApp a la oficina, donde alguien las sube para que el agente las lea dos días después.",
+   "arquitectura": "comparacion",
+   "pilar": "IA sin flujo es humo",
+   "marco": "Puentes Digitales (Oficina ↔ Terreno)",
+   "audiencia": "Gerentes de operaciones de contratistas y dueños de PYMEs AECO que están por decidir qué IA comprar",
+   "canales": {
+    "linkedin": "Post de Historia con el error de OXXO como apertura y la compra de IA como vuelta: a quién le llega la licencia.",
+    "x": "Tesis: la IA llega hasta donde llega la licencia. Condición: si solo la tiene la oficina, la obra sigue con el rodeo. Cierre: cuenta quién la va a poder abrir.",
+    "blog": "Artículo en «Historias y casos»: el caso OXXO, la letra chica de las suscripciones de IA y cómo diseñar desde lo que la empresa ya paga.",
+    "clase": "Ejercicio: mapear quién del equipo de una obra tiene acceso a cada plataforma y dónde el dato hace un rodeo para llegar a la IA."
+   },
+   "por_que_ahora": "Autodesk presentó sus agentes para obra en AU 2026 (16-sep) con la aclaración de que solo vienen en ciertas suscripciones, y fin de año es cuando las constructoras renuevan licencias y deciden presupuesto de IA para el próximo año.",
+   "riesgo": "Puede leerse como ataque a Autodesk: dejar claro que ACC siguió sirviendo en Arquitectura y que el punto es la licencia, no la marca. El dato de la consultora sale de una bitácora rotulada «Planificado» con hechos comprobados: confirmar con David antes de contarlo y no nombrarla. OXXO ya se contó como caso estrella: el giro hacia la compra de IA tiene que ser lo nuevo, no el caso.",
+   "procedencia": {
+    "david": "El caso OXXO con su error y la frase «ahí ya no me pudieron decir que no»; el diagnóstico de la consultora sin licencias para todos; la regla de que la consultoría parte de la licencia disponible; el marco Puentes Digitales.",
+    "agente": "El cruce con la letra chica de las suscripciones de Autodesk, la tesis de que la IA de pocas licencias ensancha la brecha oficina-terreno, la escena del libro de obra por WhatsApp, la pregunta de compra y el residuo."
+   },
+   "validacion": {
+    "errores": [],
+    "avisos": []
+   }
+  },
+  {
+   "id": "I02-E1",
+   "titulo": "La pared empastada",
+   "relato": "Antes de ser arquitecto fui pintor de obra. En ese oficio uno entra de los últimos y recibe la pared como la dejaron los demás. Con pasta se tapa casi todo y la pared queda lisa. Pero si la grieta de abajo se mueve, vuelve a aparecer a las semanas, y nadie sabe de dónde salió. Lo vi otra vez en una consultora de ingeniería. La gerencia tenía sus tableros. Detrás había un Excel que una sola persona junta a mano cada viernes. Si esa persona falta, no hay foto. Y quien junta todo a mano también decide, sin que nadie lo vea, qué hacer con lo que llega incompleto. El tablero se ve liso. Antes de pedir uno nuevo, siéntese un viernes al lado de quien arma ese Excel y anote todo lo que tiene que arreglar para que cuadre.",
+   "tema": "La visibilidad de gerencia que depende de una persona que consolida datos a mano",
+   "manantial": "dolor",
+   "formula": "traduccion",
+   "evidencia": {
+    "tipo": "dolor (hecho en cada fuente; el patrón conjunto es inferencia) cruzado con experiencia del CV",
+    "referencia": "Bitácora «Planificado — 1:1 7 sep 2026 (Diagnóstico IA)», matriz D2 y D7 (https://app.notion.com/p/3d45f443fb5c81e28bd6e4712df85d7b) · Informe de la masterclass «Diseña tu primera automatización», 5-nov-2026, P01 y P03 (https://app.notion.com/p/4105f443fb5c817ba1d1f584d5167115) · CV v6, línea «Pintor | Pintores Hermanos Mercado, ene 2007 – ene 2010»",
+    "afirmacion": "hecho (los tableros alimentados por un Excel que consolida una sola persona cada viernes); experiencia (David fue pintor de obra); la traducción del empaste es opinión de David por confirmar"
+   },
+   "premisa": "Lo que sostengo es que un tablero de gerencia que se ve limpio puede estar empastado: detrás hay una persona que junta y arregla a mano cada semana, y ese arreglo es justo donde se rompe el dato.",
+   "hipotesis": "Si la gerencia ya tiene tableros, ya tiene visibilidad; lo que falta, en todo caso, es un tablero mejor o un software de inteligencia de negocios más potente.",
+   "respuesta": "El tablero muestra la terminación, no la pared. Cuando la foto depende de que alguien consolide a mano cada viernes, la gerencia ve lo que esa persona alcanzó a ordenar y no se entera de lo que llegó incompleto. El primer paso para ver de verdad es mirar qué tiene que corregir esa persona y por qué llega así, antes de cambiar el tablero.",
+   "cadena_tesis": {
+    "evidencia": "En el diagnóstico de una consultora de ingeniería, los tableros de gerencia existen, pero los alimenta un Excel que una sola persona consolida a mano cada viernes; sin ella no hay foto. En una masterclass abierta, consolidar reportes fue la tarea más elegida para mejorar primero. David trabajó como pintor y en terminaciones de obra entre 2007 y 2010.",
+    "inferencia": "Quien consolida a mano decide en silencio qué hacer con los datos incompletos o que no cuadran; ese criterio no queda escrito y no lo ve la gerencia.",
+    "salto": "Como en una pared empastada, la terminación lisa esconde la grieta: la visibilidad de gerencia empieza por ver el arreglo manual, no por un tablero más bonito.",
+    "no_afirmado": "No se afirma que la persona de la consultora corrija errores ni qué corrige: la fuente dice que consolida a mano. No se afirma que los tableros de esa empresa muestren datos falsos. No se afirma un recuerdo puntual de David como pintor: el oficio sale del CV y la escena del empaste tiene que confirmarla él."
+   },
+   "contraargumento": "Consolidar a mano también es control de calidad: la persona que arma el Excel conoce las obras y atrapa errores que un flujo automático dejaría pasar. Quitarla puede empeorar la foto en vez de mejorarla.",
+   "residuo": "Pregunte quién empasta su tablero los viernes.",
+   "gancho": {
+    "tipo": "dolor oculto",
+    "texto": "En una consultora de ingeniería, los tableros de gerencia se veían impecables y dependían de una sola persona que juntaba un Excel a mano cada viernes."
+   },
+   "arco": "Un pintor de obra sabe que con pasta se tapa casi cualquier grieta y que la pared queda lisa (punto de partida: la terminación limpia da confianza). En una consultora de ingeniería, el tablero de gerencia se veía igual de liso, pero lo alimentaba una sola persona que juntaba un Excel a mano cada viernes, y sin ella no había foto (tensión: lo que se ve limpio depende de un arreglo que nadie ve). Antes de pedir un tablero nuevo, el gerente se sienta un viernes al lado de quien arma el Excel y anota lo que tiene que arreglar para que cuadre (cierre: la visibilidad empieza por ver el empaste).",
+   "escena": "Viernes a las cinco de la tarde en una oficina técnica. La encargada de control de proyectos tiene abiertos los Excel de cada obra, copia avances a una planilla madre, llama a un jefe de terreno porque su hoja llegó sin fecha y completa una celda con el dato de la semana anterior. El lunes, en el comité, el gerente proyecta un tablero sin una sola celda vacía.",
+   "arquitectura": "dolor",
+   "pilar": "BIM no basta si no conecta datos y decisiones",
+   "marco": "Puentes Digitales (Datos ↔ Decisiones): el puente entre el dato de obra y la decisión de gerencia es, en muchas empresas, una persona con un Excel",
+   "audiencia": "Project Managers y gerentes de operaciones de contratistas; dueños de PYMEs AECO (mensaje a gerentes de operaciones: «No tienes visibilidad real»)",
+   "canales": {
+    "linkedin": "Post de Historia: el pintor de obra que fue David, la pared empastada y el Excel de los viernes, con la acción de sentarse al lado de quien lo arma.",
+    "x": "Tesis: un tablero limpio puede estar empastado; condición: cuando lo alimenta una persona que consolida a mano; cierre: mire qué arregla esa persona antes de cambiar el tablero.",
+    "blog": "Historias y casos: del oficio de pintor a la gerencia, cómo leer un tablero que depende de un arreglo manual y qué anotar el viernes que uno se sienta a mirar.",
+    "clase": "Los alumnos dibujan el camino de un dato de avance desde la obra hasta el tablero de su empresa y marcan cada punto donde alguien lo corrige a mano."
+   },
+   "por_que_ahora": "Mediados de noviembre: constructoras y oficinas preparan cierres de año y presupuestos, y la gerencia mira sus tableros más que nunca; es cuando la persona del Excel de los viernes está más cargada.",
+   "riesgo": "La escena del empaste es oficio general, no un recuerdo documentado: David tiene que confirmarla o cambiarla por un recuerdo suyo del período como pintor. La fuente del Excel es una bitácora «Planificado» con columna comprobada; mantener la consultora anónima. Puede leerse como crítica a quien consolida, cuando esa persona es la que sostiene la foto.",
+   "procedencia": {
+    "david": "Su paso por la obra como pintor y en terminaciones (CV v6), el diagnóstico de la consultora de ingeniería y el mensaje a gerentes «No tienes visibilidad real».",
+    "agente": "La traducción del empaste al tablero, la acción de sentarse un viernes al lado de quien arma el Excel, la escena del comité y el residuo."
+   },
+   "validacion": {
+    "errores": [],
+    "avisos": []
+   }
+  },
+  {
+   "id": "I02-E2",
+   "titulo": "El plato del día",
+   "relato": "En gastronomía, donde trabajé un año, hay una costumbre que en las empresas casi no usamos: el plato del día. Un plato nuevo se prueba con la cocina y los proveedores que ya existen. Si se vende, entra a la carta, y recién ahí se compra el equipo. En OXXO yo hice lo contrario. Quise llevar la coordinación con las áreas que no eran de arquitectura a la plataforma que todos recomendaban. Se cayó, porque no pude justificar licencias para esa gente. Rehíce el flujo con el Microsoft 365 que la empresa ya pagaba, lo piloteamos y gerencia lo aprobó sin comprar nada nuevo. Ahí ya no me pudieron decir que no. Cuando les rechacen una plataforma, prueben el proceso con lo que ya tienen. La licencia se pide cuando el plato ya se vende.",
+   "tema": "Cuándo comprar una plataforma nueva en una constructora u oficina técnica",
+   "manantial": "experiencia",
+   "formula": "traduccion",
+   "evidencia": {
+    "tipo": "experiencia de David, contada en clase con su error incluido",
+    "referencia": "Máster AEC 4.0 V1, clase 32 «Azure AI + Escalabilidad» (31-mar-2026, informe con transcripción), https://app.notion.com/p/634d57f6119d4bd19647d154435d4ae1 · Diplomado BIM + IA, informe de la Tutorización 1, https://app.notion.com/p/42aa0e048f3645ce8b75ef011508609c · CV v6, líneas «Coordinador BIM | OXXO Chile, jul 2022 – sep 2024» y «Consultor en T. Digital | Sector gastronómico, oct 2024 – oct 2025»",
+    "afirmacion": "experiencia (el caso OXXO, en informe y CV); la costumbre del plato del día es conocimiento general del rubro que David tiene que confirmar desde su consultoría gastronómica"
+   },
+   "premisa": "Lo que sostengo es que una empresa no debería comprar la plataforma antes de probar el proceso con lo que ya paga. La licencia nueva se justifica cuando el proceso ya se usa, no antes.",
+   "hipotesis": "Para ordenar la coordinación de un proyecto en serio hay que comprar primero la plataforma correcta, y si no hay presupuesto para todos, no vale la pena empezar.",
+   "respuesta": "El primer intento en OXXO se cayó por las licencias, no por la idea. El mismo proceso, montado sobre lo que la empresa ya pagaba, pasó sin discusión y la gerencia lo aprobó. Probado así, el proceso deja de ser una promesa y la conversación de compra cambia: ya no se discute si sirve, sino si conviene llevarlo a otra plataforma.",
+   "cadena_tesis": {
+    "evidencia": "Como coordinador BIM en OXXO Chile, David intentó llevar a ACC la coordinación con áreas que no eran AEC; el intento se cayó porque no logró justificar licencias para ese personal. Rehízo el flujo con SharePoint, Power Automate y Teams, ya pagados, lo pilotó y la gerencia lo aprobó sin licencias nuevas. Lo cuenta en clase como error. Entre 2024 y 2025 fue consultor de transformación digital en el sector gastronómico.",
+    "inferencia": "La gerencia no rechazó el proceso; rechazó el costo de habilitarlo para gente que no era de arquitectura. Cuando el costo desapareció, el rechazo también.",
+    "salto": "Como el plato del día en una cocina, el proceso se prueba con lo que ya existe y la compra viene después de que se usa; la licencia disponible es un dato de diseño, no un límite.",
+    "no_afirmado": "No se afirma que la plataforma rechazada sea mala: siguió sirviendo dentro de arquitectura. No se afirma que David haya visto la costumbre del plato del día en su consultoría gastronómica: es conocimiento general del rubro que él tiene que confirmar. No se dan cifras de ahorro."
+   },
+   "contraargumento": "Montar el proceso sobre lo que ya se tiene puede crear una solución a medias que después cuesta más migrar, y hay plataformas cuyo valor solo aparece cuando todos están adentro. Probar con lo barato también puede postergar para siempre la compra que sí hacía falta.",
+   "residuo": "La licencia se pide cuando el plato ya se vende.",
+   "gancho": {
+    "tipo": "contraste",
+    "texto": "Mi primer intento de ordenar la coordinación en OXXO se cayó por licencias, y el mismo proceso pasó sin discusión cuando lo monté sobre lo que la empresa ya pagaba."
+   },
+   "arco": "En una cocina, el plato nuevo se prueba como plato del día con lo que ya hay, y el equipo se compra cuando el plato se vende (punto de partida: un rubro que prueba antes de invertir). En OXXO David hizo lo contrario: quiso llevar a todas las áreas a la plataforma recomendada y la gerencia no aprobó las licencias (tensión: la idea era buena y se cayó por el costo de habilitarla). Rehízo el flujo con el Microsoft 365 que ya pagaban, lo pilotó y lo aprobaron sin compras nuevas (cierre: el proceso se prueba primero y la licencia se pide cuando ya se usa).",
+   "escena": "Comité de gerencia en una constructora mediana. El jefe de proyecto presenta una plataforma para que compras, legal y terreno sigan el mismo proyecto. El gerente de finanzas pregunta cuántas licencias son y para quiénes, y la propuesta queda para el próximo presupuesto. Nadie pregunta si el proceso se podía probar el lunes con lo que ya tienen instalado.",
+   "arquitectura": "transformacion",
+   "pilar": "La resistencia no es el problema",
+   "marco": "Citizen Developer: quien siente el dolor arma la primera versión sobre lo que la empresa ya tiene",
+   "audiencia": "Dueños y gerentes de PYMEs AECO; Project Managers y gerentes de operaciones de contratistas",
+   "canales": {
+    "linkedin": "Post de Historia: el plato del día, el intento fallido en OXXO por licencias y la frase «Ahí ya no me pudieron decir que no».",
+    "x": "Tesis: no compre la plataforma antes de probar el proceso; condición: cuando la gerencia frena por licencias; cierre: la licencia se pide cuando el plato ya se vende.",
+    "blog": "Historias y casos: el caso OXXO contado con su error y una guía corta para probar un proceso con lo que la empresa ya paga antes de pedir presupuesto.",
+    "clase": "Cada alumno toma un proceso de su empresa que espera una licencia y diseña su plato del día: qué parte puede probar el lunes con lo que ya tiene instalado."
+   },
+   "por_que_ahora": "Noviembre es mes de presupuestos para el próximo año, y en AU 2026 Autodesk anunció agentes para obra que solo vienen en suscripciones de tipo value-based: muchas gerencias van a discutir licencias antes de probar nada.",
+   "riesgo": "Puede leerse como ataque a Autodesk o a ACC, cuando siguió sirviendo dentro de arquitectura. La costumbre del plato del día tiene que confirmarla David desde su experiencia gastronómica o cambiarla por algo que vio allá. Mencionar software por nombre solo como escena; no dar cifras de ahorro.",
+   "procedencia": {
+    "david": "El caso OXXO con su error y su frase «Ahí ya no me pudieron decir que no» (clase 32 del Máster V1), su regla de que la consultoría parte de la licencia disponible y su año en el sector gastronómico (CV v6).",
+    "agente": "La traducción del plato del día, el cruce con la señal de AU 2026 en por qué ahora, la escena del comité y el residuo."
+   },
+   "validacion": {
+    "errores": [],
+    "avisos": []
+   }
+  },
+  {
+   "id": "I02-E3",
+   "titulo": "El escáner del taller",
+   "relato": "Cualquiera puede comprar por internet el escáner que usan los talleres mecánicos. Se enchufa al auto y entrega un código de falla. Igual uno lleva el auto al mecánico, porque el código dice dónde mirar, no qué hacer ni quién responde si el arreglo sale mal. Lo escuché en una sesión de acompañamiento con una ingeniería. Un ingeniero entregó un trabajo preliminar hecho con IA y el cliente le dijo que, entonces, podían hacerlo ellos mismos. La respuesta en la sesión fue mostrar el uso, según la política de la empresa, y poner puntos donde un profesional revisa y valida. El cliente nunca le pagó a nadie por teclear. Le paga a quien responde. Por eso basta una línea en la entrega: qué hizo la IA, qué revisó el ingeniero y con qué nombre firma.",
+   "tema": "Cómo cobrar y presentar un trabajo de ingeniería hecho con apoyo de IA",
+   "manantial": "dolor",
+   "formula": "traduccion",
+   "evidencia": {
+    "tipo": "dolor relatado en una sesión de acompañamiento (caso aislado, no se repite en las fuentes leídas)",
+    "referencia": "Informe sesión S3 «Acompañamiento Mes 1 — Productividad documental», 30-jun-2026, §2 Debate de apertura (https://app.notion.com/p/35fbaf55447c43bc80257707b3a25bcd)",
+    "afirmacion": "hecho (lo que contó el ingeniero y lo que respondió la sesión); la traducción del escáner y la línea de entrega son opinión por validar con David"
+   },
+   "premisa": "Lo que sostengo es que esconder la IA hace creer al cliente que paga el tecleo. Mostrar dónde trabajó la IA y dónde revisó y firmó el profesional deja a la vista lo que de verdad cobra una ingeniería.",
+   "hipotesis": "Si el cliente sabe que un trabajo se hizo con IA, va a pensar que vale menos o que lo puede hacer él, así que conviene no contarlo o cobrarlo más barato.",
+   "respuesta": "El cliente que dice «entonces lo hacemos nosotros» está viendo solo el borrador. Lo que paga a una ingeniería es la revisión y la responsabilidad de quien firma, igual que en el taller se paga al mecánico y no al escáner. Por eso la salida es la contraria a esconder: decir qué hizo la IA, dónde entró el control profesional y quién responde.",
+   "cadena_tesis": {
+    "evidencia": "En una sesión de acompañamiento con una ingeniería multinacional, un ingeniero contó que un cliente, al recibir un trabajo preliminar hecho con IA, le dijo que entonces podían hacerlo ellos mismos. La respuesta del panel fue transparentar el uso según la política interna y poner hitos de control humano: la IA hace el borrador y el profesional lo valida.",
+    "inferencia": "El cliente leyó la IA como trabajo que vale menos porque no vio el control profesional; si el ingeniero esconde la IA o la regala, confirma esa lectura.",
+    "salto": "Como con el escáner del taller, cualquiera puede tener la máquina; lo que se cobra es saber qué hacer con lo que entrega y responder por el arreglo. Ponerlo por escrito en cada entrega vuelve visible ese valor.",
+    "no_afirmado": "No se afirma que el caso se repita en el sector: es uno solo. No se afirma qué política interna tenía esa ingeniería ni cómo terminó la relación con ese cliente. La línea de entrega es una propuesta, no algo que la sesión haya probado."
+   },
+   "contraargumento": "Hay entregables donde el cliente sí podría hacerlo solo con IA, y transparentar el uso puede acelerar la presión por bajar honorarios. Además, no todas las empresas tienen una política que permita contar qué se hizo con IA.",
+   "residuo": "Que la IA haga el borrador no cambia quién firma.",
+   "gancho": {
+    "tipo": "creencia equivocada",
+    "texto": "Un cliente recibió un trabajo preliminar hecho con IA y le dijo al ingeniero que, entonces, lo podían hacer ellos mismos."
+   },
+   "arco": "Cualquiera compra el escáner que usan los talleres y aun así lleva el auto al mecánico, porque el código no dice qué hacer ni quién responde (punto de partida: tener la máquina no es saber arreglar). En una ingeniería, un cliente recibió un preliminar hecho con IA y concluyó que podía hacerlo solo (tensión: la IA visible parece trabajo que vale menos). La salida fue mostrar el uso y los puntos de control, y dejar escrito en cada entrega qué hizo la IA, qué revisó el ingeniero y quién firma (cierre: lo que se cobra es la responsabilidad, y se muestra).",
+   "escena": "Reunión de revisión de un informe preliminar con el mandante. El ingeniero proyecta el documento y el representante del cliente comenta que salió muy rápido, que si lo hizo la IA ellos también tienen esa licencia. El jefe de proyecto no tiene a mano qué partes revisó su equipo ni quién responde por cada una.",
+   "arquitectura": "postura",
+   "pilar": "IA sin flujo es humo",
+   "marco": "Conecta con la tesis central: la tecnología amplifica el criterio profesional cuando se integra a un proceso con puntos de control y firma",
+   "audiencia": "Dueños y gerentes de oficinas de ingeniería y arquitectura (PYMEs AECO); jefes de proyecto que entregan a mandantes",
+   "canales": {
+    "linkedin": "Post de postura: el cliente que dijo «entonces lo hacemos nosotros», el escáner del taller y la línea de entrega con qué hizo la IA, qué revisó el ingeniero y quién firma.",
+    "x": "Tesis: esconder la IA hace creer que se paga el tecleo; condición: cuando el cliente ve un borrador rápido; cierre: escriba qué hizo la IA y quién firma.",
+    "blog": "Tendencias y opinión: cómo presentar y cobrar un entregable hecho con apoyo de IA, con el caso anónimo y una propuesta de nota de entrega.",
+    "clase": "Los alumnos toman un entregable suyo hecho con apoyo de IA y redactan la nota de entrega: qué hizo la IA, qué revisaron y quién responde por cada parte."
+   },
+   "por_que_ahora": "En AU 2026 Autodesk presentó agentes para obra insistiendo en que la decisión sigue siendo de la persona; los mandantes ya oyen que la IA hace el trabajo y la pregunta por honorarios va a llegar a más oficinas en las próximas licitaciones.",
+   "riesgo": "Es un caso aislado relatado en una sesión, no un patrón: no presentarlo como tendencia. La ingeniería y el cliente deben quedar anónimos. La analogía del escáner puede sonar a menospreciar al cliente; contarla sin burla. La línea de entrega es propuesta del agente y David tiene que validarla.",
+   "procedencia": {
+    "david": "La sesión de acompañamiento en que se trabajó el caso, la respuesta de transparentar el uso con hitos de control y su tesis central de que la tecnología amplifica el criterio.",
+    "agente": "La traducción del escáner del taller, la línea de entrega con nombre, la escena con el mandante y el residuo."
+   },
+   "validacion": {
+    "errores": [],
+    "avisos": []
+   }
+  }
+ ],
+ "presentadas": [
+  "I02-E3",
+  "I02-A2",
+  "I02-D1",
+  "I02-B1",
+  "I02-B2"
+ ],
+ "monotonia": [],
+ "editor": {
+  "quien": "Claude (sesión principal), no un agente aparte",
+  "elegidas": [
+   "I02-E3",
+   "I02-A2",
+   "I02-D1",
+   "I02-B1",
+   "I02-B2"
+  ],
+  "motivo": "Las 14 fichas caen en cinco grupos: la firma (B3, C2, D2, E3), el tablero del viernes (C1, D1, E1), lo que ya se paga (B1, C3, D3, E2), la resistencia (A1, A2) y la prueba en otra habitación (B2). Se presenta una por grupo. E3: la analogía del escáner la entiende cualquiera. A2: abre con una escena y una broma, para enganchar (C51), y se queda con lo que pidió David de la 3. D1: es la frase que más conecta la IA con el dato. B1: es su error en OXXO contado en primera persona. B2: es una tesis distinta de las demás (verificar).",
+  "descartes": {
+   "A1": "misma idea que A2, más plana",
+   "B3": "grupo firma; E3 engancha mejor",
+   "C2": "grupo firma",
+   "D2": "grupo firma; se apoya en señales y no en un caso",
+   "C1": "grupo viernes; D1 cierra mejor",
+   "E1": "grupo viernes; la analogía del empaste es forzada y usa «usted»",
+   "C3": "grupo licencia; B1 es más claro",
+   "D3": "grupo licencia; mezcla dos casos",
+   "E2": "grupo licencia; «donde trabajé un año» sugiere que trabajó en cocina, y el CV dice consultor"
+  },
+  "monotonia_no_detectada": "ideas.py no marcó ningún par: compara palabras de la respuesta y estos grupos repiten la tesis con otras palabras. Queda como pendiente medir la monotonía por la frase que queda."
+ }
+}

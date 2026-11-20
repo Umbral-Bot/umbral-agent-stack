@@ -1,0 +1,8 @@
+id: R2
+nombre: "Bajada blanca · la bajada en el color del texto (15,8:1 en vez de 7,2:1)"
+alternativa: p02-paso4
+paso: proteccion
+hereda: packs/R1-noticia-color-base.yaml
+decision_david: "G15 2°, 2026-11-09: elegida para el paso 4 del Preset 02 («2° Bajada blanca»)"
+roles_texto:
+  cuerpo: {color: tinta}    # de --ub-text-muted a --ub-text

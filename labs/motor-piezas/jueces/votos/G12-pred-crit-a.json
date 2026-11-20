@@ -1,0 +1,78 @@
+{
+ "galeria": "G12",
+ "seccion": null,
+ "rubrica": "pred-crit-a",
+ "retro": true,
+ "criterios_hasta": "G12",
+ "sellado": "2026-11-11T00:43:04",
+ "hash_rubrica": "2afef7084991",
+ "hash_criterios": "fd98b8707561",
+ "votos": [
+  {
+   "id": "G12-pca-prediccion",
+   "galeria": "G12",
+   "version": "pred-crit-a",
+   "lente": "prediccion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 8,
+    "2": 7,
+    "3": 4,
+    "4": 5.5
+   },
+   "hallazgos": [
+    {
+     "opcion": "3",
+     "donde": "franja de imagen a la derecha",
+     "problema": "La franja recorta el brazo robótico: solo asoma un fragmento de la pinza, pegado al borde. En el celular la imagen se lee como bloques abstractos y se pierde el sujeto. Es el mismo defecto de objeto mal ubicado en la máscara del que ya se quejó David.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "3",
+     "donde": "columna de texto, entre el llamado y el logo",
+     "problema": "Queda un vacío oscuro sin función de cerca de un tercio del alto bajo los datos. Además, el titular baja a 107 px, frente a 156 px en las otras opciones, y pierde peso en el feed. Conserva la familia del Preset 01, pero con esta imagen fija no le alcanza.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "4",
+     "donde": "velo bajo el texto (mitad inferior)",
+     "problema": "Con opacidad 0,86 el velo se ve gris turbio y no del oscuro de marca, así que la serie con el Preset 01 se diluye. Los bloques de la imagen se transparentan con cortes de tono bajo la bajada, y abajo queda una banda gris más clara bajo el llamado. Los 10,19:1 medidos cumplen, pero la pieza se ve sucia.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4",
+     "donde": "pinza del robot y borde superior del velo, junto a 'EJEMPLO' y 'entra'",
+     "problema": "La pinza cruza el borde del velo y queda bajo el titular, compitiendo con él. El recorte ampliado corta el círculo en el borde izquierdo y el brazo en el derecho: el sujeto queda partido.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "orden de lectura",
+     "problema": "Es el espejo de la 1, pero el llamado queda a media pieza y la lectura termina en la imagen, no en la acción. El brazo apunta hacia abajo, lejos del texto. La composición es correcta, aunque algo menos dirigida que la 1.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1",
+     "donde": "unión entre la imagen y la banda oscura",
+     "problema": "El borde crema propio de la ilustración deja una franja crema arriba y otra justo antes de la banda, así que se ve como un cuadro enmarcado y no a sangre. Es un detalle que conviene recortar.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1, 2 y 3",
+     "donde": "bajada en gris secundario",
+     "problema": "Defecto común: la bajada mide 7,24:1 sobre el panel liso con trama. Se lee, pero se ve algo apagada frente al titular. No desempata.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "palabra 'Umbral BIM' del logo y etiqueta 'EJEMPLO'",
+     "problema": "Defecto común: el texto más chico mide 11 px CSS, justo en la referencia de lectura en el celular, sin margen. No desempata.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "1",
+   "veredicto": "sirve",
+   "resumen": "Predigo que David elige la 1. La imagen completa arriba frena el scroll, el brazo apunta hacia el titular, que manda con claridad, y el llamado cierra la lectura abajo sobre el panel liso. La 2 es su espejo y queda cerca, pero el llamado cae a media pieza. La 4 cumple el contraste de 10:1, aunque el velo gris enturbia la pieza y la pinza compite con el titular. La 3 mantiene la familia del Preset 01, pero con esta imagen fija corta el robot y deja un gran vacío bajo los datos."
+  }
+ ]
+}

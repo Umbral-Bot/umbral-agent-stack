@@ -1,0 +1,8 @@
+id: Y3
+nombre: "LinkedIn con bajada · como la 1°, con la bajada más chica (12 px CSS en vez de 14) y más diferencia con el titular"
+alternativa: p02-linkedin-ajuste
+paso: distribución del texto
+hereda: packs/Y1-noticia-linkedin-centro-aire.yaml
+decision_david: null
+valores:
+  escala_cuerpo: 1.1

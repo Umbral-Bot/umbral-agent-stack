@@ -1,0 +1,53 @@
+{
+ "galeria": "G22",
+ "seccion": null,
+ "rubrica": "pred-crit-a",
+ "retro": true,
+ "criterios_hasta": "G22",
+ "sellado": "2026-11-11T00:43:05",
+ "hash_rubrica": "2afef7084991",
+ "hash_criterios": "fd98b8707561",
+ "votos": [
+  {
+   "id": "G22-pca-prediccion",
+   "galeria": "G22",
+   "version": "pred-crit-a",
+   "lente": "prediccion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 8,
+    "2": 5,
+    "3": 6.5
+   },
+   "hallazgos": [
+    {
+     "opcion": "1",
+     "donde": "columna de texto, entre titular y botón",
+     "problema": "Separación despareja: 32 px de «Artículo» al titular y unos 68 px del titular al botón. Es justo la excepción de David para la pieza apaisada sin bajada (que el botón cierre la columna al pie pesa más que la separación pareja), así que no se castiga. Queda anotado por si se quiere afinar.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "bloque de texto al medio y pie del panel",
+     "problema": "El botón deja de cerrar la columna al pie, cosa que David ya eligió en G20 4°. El bloque queda flotando: hay unos 105 px libres bajo el botón frente a los 64 px de margen superior, un vacío sin función bajo los datos. La columna pierde el encuadre logo arriba y botón abajo.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "mitad superior del panel, entre el logo y «Artículo»",
+     "problema": "La separación queda pareja y el botón sigue al pie, pero el bloque se hunde. Quedan unos 100 px vacíos entre el logo y «Artículo», y la mitad superior del panel lleva solo el logo y el chip, así que la pieza se ve cargada abajo. Además cambia una segunda cosa sobre la base de G20 4° (mueve el titular), cuando la galería solo pedía aplicar los 32 px.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "texto del botón y logotipo",
+     "problema": "El texto más chico mide 9,3 px CSS en una vista de 390 px, bajo la referencia de 11 px. Es igual en las tres opciones. Es aviso y no veto, porque se trata del texto del botón en un LinkedIn pensado para computador. El contraste medido (9,92:1) también es igual en las tres y no desempata.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "1",
+   "veredicto": "sirve",
+   "resumen": "Predigo la 1. Aplica exactamente lo que David pidió en G21: 32 px entre «Artículo» y el titular sobre la base de G20 4°. Además conserva el botón cerrando la columna al pie, que según su criterio pesa más que la separación pareja en la pieza apaisada sin bajada. Con el logo arriba y el botón abajo, los márgenes quedan simétricos (unos 64 px) y la columna se ve encuadrada. La 3 es la alternativa razonable: separación pareja con el botón al pie, pero hunde el bloque y deja un hueco de 100 px bajo el logo. La 2 hace flotar el bloque al medio, deja un vacío bajo el botón y rompe el botón al pie. Contraste y texto mínimo son iguales en las tres y no deciden."
+  }
+ ]
+}

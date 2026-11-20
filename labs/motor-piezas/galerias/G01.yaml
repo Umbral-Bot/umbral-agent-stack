@@ -1,0 +1,75 @@
+id: G01
+fecha: 2026-11-06
+titulo: "Galería 01 · tres procesos, mismo contenido"
+descripcion: >
+  Doce piezas del motor paramétrico: tres alternativas de proceso (A grilla primero,
+  B contenido primero, C imagen primero) en cuatro formatos (1:1, 4:5, LinkedIn y 16:9),
+  todas con el mismo contenido de ejemplo (Workshop BIM + IA). Cada pieza sale solo de su
+  pack: los valores están a la vista bajo la imagen. Las imágenes Midjourney son imágenes
+  fijas (no reproducibles). Laboratorio: no publicar.
+como_elegir: >
+  Para elegir, dime el número de posición (1°, 2°…) y tu comentario con tus palabras; queda
+  registrado en decisiones.csv junto al código y al pack. Puedes elegir piezas de distintos
+  procesos: lo que se aprende es qué pack funciona para qué contenido. Las piezas se muestran
+  al ancho de un celular (390 px CSS); las 16:9, al de una ventana de notebook reducida.
+contenido: contenido/workshop-bim-ia.yaml
+nota_control: >
+  La diferencia que queda es de fuente, no de composición: la v2 usó Inter Variable 4.001,
+  cuyo eje de tamaño óptico dibuja los títulos con el corte Inter Display (≈4 % más estrecho);
+  el motor usa las woff2 canónicas del Design System (corte de texto). Con el mismo corte, los
+  anchos coinciden al décimo de píxel. Los números de fila salen en turquesa como en la v2 y la
+  verificación lo marca: por eso este control figura como exploración.
+secciones:
+  - alternativa: A
+    titulo: "A · Grilla primero"
+    descripcion: >
+      La grilla manda y el contenido se acomoda: columnas y filas fijas, cada bloque cae en
+      celdas y la ilustración o la imagen ocupa una celda, no un lugar suelto.
+    pasos:
+      - "Formato y modo → lienzo y colores de marca"
+      - "Grilla: margen, columnas, filas, medianil y módulo (múltiplos de 4)"
+      - "Zonas por celdas: texto, título, ilustración o imagen, pie"
+      - "Tamaños: texto mínimo legible en el celular; el título se reduce si no cabe en sus columnas"
+      - "Pila de texto; las filas saltan a la siguiente línea de grilla"
+      - "Ilustración o imagen en su celda; logo y llamado en la última fila"
+    piezas:
+      - packs/A1-grilla-cuadrado-claro.yaml
+      - packs/A2-grilla-vertical-oscuro-imagen.yaml
+      - packs/A3-grilla-linkedin-claro.yaml
+      - packs/A4-grilla-slide-oscuro-portada.yaml
+  - alternativa: B
+    titulo: "B · Contenido primero"
+    descripcion: >
+      El tipo de pieza y la cantidad de texto definen la jerarquía; la grilla se deriva de
+      lo que el texto mide y la ilustración toma la zona libre más grande.
+    pasos:
+      - "Contenido y densidad → qué bloques entran"
+      - "Escala tipográfica desde el texto mínimo legible; el título crece hasta su ancho máximo"
+      - "Medir el bloque de texto → cuántas columnas necesita (grilla derivada)"
+      - "Ubicar las filas: bajo el título, al pie o en la columna derecha"
+      - "La ilustración ocupa la zona libre mayor (derecha o debajo)"
+      - "Pie: logo y llamado"
+    piezas:
+      - packs/B1-contenido-cuadrado-oscuro.yaml
+      - packs/B2-contenido-vertical-claro-al-pie.yaml
+      - packs/B3-contenido-linkedin-oscuro.yaml
+      - packs/B4-contenido-slide-claro.yaml
+  - alternativa: C
+    titulo: "C · Imagen primero"
+    descripcion: >
+      La imagen define la zona libre y el texto se ubica ahí: se mide el detalle de la imagen,
+      el texto va a la franja más limpia y un velo plano (sin degradado) sube lo justo para
+      que todo texto cumpla 4,5:1 sobre el fondo real.
+    pasos:
+      - "Imagen del catálogo y encaje (fondo completo o sangrado lateral)"
+      - "Zona libre: la franja con menos detalle medido (o la que fije el pack)"
+      - "Texto en esa franja, alineado a las columnas"
+      - "Velo plano en la zona de lectura; opacidad automática hasta 4,5:1"
+      - "Variante del logo según el fondo real bajo el logo"
+    piezas:
+      - packs/C1-imagen-cuadrado-claro-S21a.yaml
+      - packs/C2-imagen-vertical-oscuro-S16b.yaml
+      - packs/C3-imagen-linkedin-oscuro-L3d.yaml
+      - packs/C4-imagen-slide-oscuro-S2b.yaml
+control:
+  - pack: packs/R1-replica-v2-01.yaml

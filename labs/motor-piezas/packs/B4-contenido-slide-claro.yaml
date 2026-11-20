@@ -1,0 +1,18 @@
+id: B4
+nombre: "Contenido primero · 16:9 claro · bloque de texto medido, isometría en lo libre"
+alternativa: B
+contenido: contenido/workshop-bim-ia.yaml
+corrige: "24°: el título crece hasta el ancho que el contenido permite"
+decision_david: null
+valores:
+  proceso: B_contenido
+  formato: slide
+  modo: claro
+  columnas: 8
+  texto_ancho_max_relativo: 0.55
+  titulo_altura_relativa: 0.12
+  ilustracion_zona: auto
+  texto_minimo_css: 14
+  filas_ubicacion: al_pie
+  escala_kicker: 1.4
+  escala_subtitulo: 1.6

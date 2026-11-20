@@ -1,0 +1,50 @@
+{
+ "galeria": "M01",
+ "seccion": null,
+ "rubrica": "imagenes-lectura-ciega",
+ "retro": false,
+ "criterios_hasta": null,
+ "sellado": "2026-11-11T01:55:10",
+ "hash_rubrica": "-",
+ "hash_criterios": "-",
+ "votos": [
+  {
+   "lente": "lectura_ciega",
+   "puntajes": {
+    "4": 7.2,
+    "2": 8.0,
+    "3": 7.0,
+    "1": 7.5
+   },
+   "hallazgos": [
+    {
+     "opcion": "1",
+     "donde": "lectura a ciegas de la imagen principal",
+     "problema": "eligió d (la real era d), confianza 0.5: Un volumen opaco pasa por un pórtico que parece un escáner y queda convertido en una retícula transparente que se puede revisar; al final salen tres piezas turquesa destacadas, que leo como lo que la revisión encontró. No veo nada que muestre a un equipo decidiendo qué hacer con ellas, y las piezas que salen en fila también podrían leerse como una cadena de producción (c).",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "lectura a ciegas de la imagen principal",
+     "problema": "eligió c (la real era c), confianza 0.6: Un mecanismo automático, la pista en zigzag, lleva solo la bola hasta una bifurcación, y ahí una palanca manual en turquesa decide hacia qué rama va: la máquina hace el recorrido y la decisión queda en manos de alguien. La horquilla de dos ramas también deja abierta una lectura de elección entre dos opciones (la a), pero sin señal de comparar costo y carbono.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "lectura a ciegas de la imagen principal",
+     "problema": "eligió b (la real era b), confianza 0.4: Una losa en isométrica con una retícula de baldosas a la que le falta el centro: en ese claro hay un sumidero turquesa que recoge lo que escurre por la superficie. Lo leo como un punto que atrapa lo que antes se escapaba del sistema. La parte de decidir qué hacer con lo capturado no aparece, y el claro sin baldosas también admite leerse como algo que se envía sin que nadie lo reciba, que sería la opción a.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "4",
+     "donde": "lectura a ciegas de la imagen principal",
+     "problema": "eligió a (la real era a), confianza 0.45: En una retícula uniforme, unas pocas celdas dispersas se levantan y se marcan en turquesa, como hallazgos que una revisión sistemática señala dentro del conjunto; no se ve quién decide qué hacer con ellos, y el relieve también podría leerse como un paso del plano al modelo (b).",
+     "gravedad": "baja"
+    }
+   ],
+   "veredicto": "",
+   "resumen": "1: acierta; 2: acierta; 3: acierta; 4: acierta",
+   "mejor": "2"
+  }
+ ]
+}

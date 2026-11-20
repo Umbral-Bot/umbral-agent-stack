@@ -1,0 +1,235 @@
+{
+ "galeria": "G13",
+ "seccion": null,
+ "rubrica": "v2",
+ "retro": true,
+ "criterios_hasta": "G13",
+ "sellado": "2026-11-11T00:33:17",
+ "hash_rubrica": "f69064585452",
+ "hash_criterios": "fd98b8707561",
+ "votos": [
+  {
+   "id": "G13-v2-posicion",
+   "galeria": "G13",
+   "version": "v2",
+   "lente": "posicion",
+   "no_aplica": true,
+   "puntajes": {},
+   "hallazgos": [
+    {
+     "opcion": "todas",
+     "donde": "zona de imagen (0–1320 px de alto)",
+     "problema": "Mi lente no ve diferencia entre las opciones: comparé los píxeles de la imagen en las cuatro piezas y son idénticos. La galería solo cambia la jerarquía del texto en la banda, así que no elijo por otra lente.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "imagen, mitad derecha",
+     "problema": "Defecto común a las cuatro: el brazo robot está entero y no lo corta la máscara (no hay veto), pero ocupa la mitad derecha y no está centrado. La pinza queda cerca del centro y la mitad izquierda está llena de bloques abstractos, no vacía, así que no llega a ser una composición de afiche. Si otra máscara recorta de otra forma, podría cortar el brazo.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "esquina superior derecha y base derecha de la imagen",
+     "problema": "Defecto común a las cuatro: la marca '+' de arriba a la derecha cae justo sobre el borde superior del bloque cian. Además, la losa del pedestal se pierde por el borde derecho del lienzo. Es el sangrado lateral buscado y la columna del brazo sigue entera.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "",
+   "veredicto": "sirve",
+   "resumen": "No aplica por falta de diferencia: la imagen y su posición son idénticas, píxel a píxel, en las cuatro opciones. Solo cambia la jerarquía del texto, así que mi lente no puede elegir. La imagen común sirve: el brazo está entero, no lo corta la máscara y los márgenes de arriba y abajo son parejos. Los defectos comunes son menores: el sujeto está algo cargado a la derecha y la marca de arriba a la derecha roza el borde de la imagen."
+  },
+  {
+   "id": "G13-v2-composicion",
+   "galeria": "G13",
+   "version": "v2",
+   "lente": "composicion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 8,
+    "2": 5,
+    "3": 6.5,
+    "4": 5.5
+   },
+   "hallazgos": [
+    {
+     "opcion": "2",
+     "donde": "banda oscura, entre el titular y el pie (y 2135→2465)",
+     "problema": "Sin bajada, el bloque de texto ocupa solo la parte alta de la banda y deja 330 px vacíos sobre el pie, un 26 % de la banda, sin ninguna función. La banda quedó dimensionada para titular y bajada. Además, es la variante más simple: el titular llena la medida (95 %), pero la pieza pierde un nivel de lectura.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4",
+     "donde": "banda oscura, bajo la bajada y en el lado derecho del titular",
+     "problema": "El aire que gana la banda no se reparte: queda un hueco de 237 px entre la bajada y el pie. El titular ocupa solo el 56 % de la medida (x 144→1194), así que el texto se amontona arriba a la izquierda y deja vacíos a la derecha y abajo.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "bajada frente al titular",
+     "problema": "La bajada es el elemento más ancho de la banda (98 % de la medida, frente al 70 % del titular) y forma un bloque gris casi tan alto como el titular. El peso visual se aplana y, a tamaño de feed, la bajada compite con el titular. El ritmo vertical sí es parejo (60/75/77 px).",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "titular y bajada",
+     "problema": "La bajada (91 % de la medida) se extiende un poco más que la línea más larga del titular (80 %). Es un detalle: el titular sigue mandando por tamaño.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "arriba de la banda, del borde de la imagen al kicker «ARTÍCULO»",
+     "problema": "Defecto común a todas, no desempata: el kicker queda a 29 px del borde de la banda, con un margen lateral de 131 px. Parece pegado a la ilustración y el margen superior de la banda no sigue a los demás márgenes.",
+     "gravedad": "media"
+    }
+   ],
+   "mejor": "1",
+   "veredicto": "sirve",
+   "resumen": "La 1 resuelve mejor el reparto. Los cuatro niveles llenan la banda con un ritmo casi constante (65/69/76 px y 82 px hasta el pie), sin vacíos, y el titular domina con claridad. La 3 también llena la banda, pero la bajada es lo más ancho y aplana la jerarquía. La 4 y la 2 dejan vacíos grandes sin función sobre el pie (237 y 330 px); la 2 además es la más simple. Defecto común a todas, que no desempata: el kicker queda a 29 px del borde de la imagen, mientras el margen lateral es de 131 px."
+  },
+  {
+   "id": "G13-v2-costuras",
+   "galeria": "G13",
+   "version": "v2",
+   "lente": "costuras",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 8,
+    "2": 8,
+    "3": 8,
+    "4": 8
+   },
+   "hallazgos": [
+    {
+     "opcion": "todas",
+     "donde": "zona de imagen (filas 0–1499 de 2700)",
+     "problema": "Mi lente no ve diferencia entre las opciones: la imagen es idéntica píxel a píxel en las cuatro; solo cambian las filas 1500–2388, que son el texto de la banda. No elijo por otra lente.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "esquina superior derecha, cruz de registro en x≈2090, y≈63 (px del original)",
+     "problema": "Defecto común a las cuatro: la cruz queda justo en el borde entre la franja crema y el bloque turquesa del dibujo (borde en y≈58). El brazo vertical cruza ese borde y el horizontal cae entero sobre turquesa claro (cruz 45,212,191 sobre fondo 103,199,193), así que casi desaparece. Bajarla unos 20 px o moverla al margen crema lo resuelve. A tamaño de feed no se nota.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "campo turquesa superior, recta vertical en x≈1085, y 60–505",
+     "problema": "Defecto común a las cuatro: hay un escalón de tono (ΔG≈13, ΔB≈10) en un turquesa plano. Lo revisé y no es costura: sigue hacia abajo como el borde derecho del bloque crema, que va de y 505 a 850. Se lee como un rectángulo del dibujo y no como parche. No es veto.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "",
+   "veredicto": "sirve",
+   "resumen": "Desde la lente de costuras no hay diferencia entre las opciones. La imagen extendida con sangrado lateral es idéntica píxel a píxel en las cuatro y solo cambia el texto de la banda, así que no elijo ninguna. Lo común a todas: no hay parche rectangular ni escalón de extensión (el cambio de tono en x≈1085 es un borde del propio dibujo), los acentos turquesa de la banda quedan dentro de los márgenes y la franja crema de arriba y abajo es pareja. Hay un solo detalle menor: la cruz de registro superior derecha cae justo sobre el borde crema/turquesa del dibujo y se pierde en el turquesa. Conviene bajarla o moverla unos 20 px."
+  },
+  {
+   "id": "G13-v2-jerarquia",
+   "galeria": "G13",
+   "version": "v2",
+   "lente": "jerarquia",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 8,
+    "2": 6.5,
+    "3": 6,
+    "4": 5
+   },
+   "hallazgos": [
+    {
+     "opcion": "2",
+     "donde": "banda oscura, entre el titular y el pie",
+     "problema": "Al quitar la bajada queda un hueco vacío de unos 310 px en el lienzo de 2160, cerca del 11 % del alto. El pie (logo y llamado) queda suelto y la banda se ve sin terminar. El titular de 186 px manda sin discusión, pero la pieza pierde el segundo nivel: en el feed solo dice el titular.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "bloque de la bajada (tres líneas) y su distancia al pie",
+     "problema": "La bajada de 17,6 px CSS queda en un 36 % del titular (136 px, unos 49 px CSS). Cumple el tope del 45 % (G10), pero sus tres líneas casi igualan en masa al bloque del titular, que encogió un 13 %. La banda queda apretada: unos 80 px (lienzo 2160) entre la bajada y el pie, y la segunda línea llega casi al margen derecho.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4",
+     "donde": "titular y kicker; mitad derecha de la banda",
+     "problema": "El titular de 110 px (unos 40 px CSS) ocupa cerca del 56 % del ancho. El kicker ARTÍCULO (unos 43 px en el lienzo de 1080, medido en la imagen) llega a cerca del 39 % del titular, rozando el tope del 45 % del criterio G10. El titular deja de mandar con claridad y el círculo negro de la imagen le compite en peso. El aire no se reparte: se junta como hueco de unos 225 px (lienzo 2160) bajo la bajada y en la mitad derecha.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "titular y espacio entre la bajada y el pie",
+     "problema": "El titular cubre cerca del 76 % del ancho y no llega al borde derecho. La bajada termina a unos 95 px (lienzo 2160) del pie, un espacio justo pero suficiente. Es un detalle que no cambia el orden de lectura.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "borde entre la imagen y la banda, justo encima del kicker",
+     "problema": "Defecto común a las cuatro, por lo que no decide la elección: la franja crema de la ilustración (unos 65 px en el lienzo de 2160) forma una línea clara justo encima de ARTÍCULO y atrae un poco la mirada en el corte. Logo, EJEMPLO y llamado se leen con holgura sobre el fondo liso (11 px CSS como mínimo).",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "1",
+   "veredicto": "sirve",
+   "resumen": "La 1 tiene la jerarquía más clara. El orden de lectura es kicker, titular, bajada y pie. El titular de 156 px manda: kicker y bajada quedan cerca del 25-28 % de su tamaño. La bajada de 14 px CSS se lee bien en el celular y la banda queda llena, sin huecos. La 2 tiene el titular más fuerte, pero deja un vacío sobre el pie y pierde el segundo nivel. La 3 cumple el 45 %, pero la bajada le gana masa al titular y aprieta la banda. La 4 debilita el titular: el kicker roza el 39 % y la imagen le compite. Aviso: buscando el tamaño del kicker leí packs/O1-noticia-jerarquia-base.yaml y vi su campo decision_david. Mi orden y mis puntajes ya estaban fijados antes de leerlo y no los cambié."
+  },
+  {
+   "id": "G13-v2-lectura",
+   "galeria": "G13",
+   "version": "v2",
+   "lente": "lectura",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 8,
+    "2": 7,
+    "3": 8.5,
+    "4": 6.5
+   },
+   "hallazgos": [
+    {
+     "opcion": "2",
+     "donde": "banda oscura, entre el titular y el pie (logo + llamado)",
+     "problema": "Sin bajada, queda un hueco de 329 px (≈59 px CSS en vista de 390) entre el titular y el pie. Entre los demás textos hay 65–66 px. Las separaciones quedan disparejas y el pie parece desprendido del bloque de texto. Todo se lee, pero el ritmo de lectura se corta.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4",
+     "donde": "banda oscura, entre la bajada y el pie",
+     "problema": "El aire que gana la banda no se reparte. Queda como un hueco de 236 px sobre el pie, mientras que entre el kicker y el titular hay 65 px y entre el titular y la bajada, 77 px. La separación queda dispareja. El titular (≈40 px CSS) y la bajada (14 px CSS) se leen bien.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "bajada, tres líneas bajo el titular",
+     "problema": "La bajada gris a 14 px CSS mide 7,2:1 sobre la banda lisa. Se lee en el feed, pero es el texto más débil del bloque. Las separaciones están parejas (65, 76 y 81 px).",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "bajada, tres líneas bajo el titular",
+     "problema": "Tiene el mismo gris de 7,2:1 que la opción 1, pero a 17,6 px CSS se lee con holgura en el celular. El titular baja a ≈49 px CSS y sigue mandando. Las separaciones están parejas (65, 75 y 76 px). No hay defecto propio, solo el gris común.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "esquina inferior izquierda, wordmark «Umbral BIM» del logo",
+     "problema": "Las mayúsculas del wordmark miden ≈31 px de alto en 2160, ≈8 px CSS en una vista de 390. Queda bajo la referencia de 11 px y la medida del código no lo incluye. El contraste es alto (blanco sobre la banda lisa), pero en el feed el nombre apenas se lee. Es igual en todas las opciones, así que no desempata.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "todas",
+     "donde": "llamado «LEE EL ARTÍCULO · umbralbim.io», abajo a la derecha",
+     "problema": "El llamado mide ≈11 px CSS, justo en el piso de lectura en celular. Es turquesa sobre la banda oscura lisa, así que el contraste no es problema. Es un aviso, no un veto. Igual en todas las opciones.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "sello «EJEMPLO», arriba a la derecha de la banda",
+     "problema": "Mide ≈10 px CSS, algo bajo el piso. Es una marca de laboratorio que no debería llegar a la pieza publicada.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "3",
+   "veredicto": "sirve",
+   "resumen": "Todo el texto va sobre la banda oscura lisa, no sobre la imagen con textura, y ninguna opción tiene un veto de lectura. La diferencia está en cómo se lee la bajada y en cómo quedan repartidas las separaciones. La opción 3 es la mejor para leer: su bajada de 17,6 px CSS es la más cómoda en el celular, el titular de ≈49 px CSS sigue mandando y las separaciones quedan parejas (65, 75 y 76 px). La opción 1 también reparte parejo, pero su bajada de 14 px es más débil. Las opciones 2 y 4 dejan un hueco grande sobre el pie (329 y 236 px) y la lectura se corta. Hay dos defectos comunes que no desempatan: el wordmark «Umbral BIM» mide ≈8 px CSS y el llamado queda justo en el piso de 11 px CSS."
+  }
+ ]
+}

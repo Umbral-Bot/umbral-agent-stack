@@ -1,0 +1,72 @@
+{
+ "id": "fixture-openbim",
+ "contenido": {
+  "kicker": "Artículo",
+  "fixture_repo": "tests/fixtures/editorial/visual_brief_v2_openbim.yaml",
+  "id": "fixture-openbim"
+ },
+ "lexico": 1,
+ "kicker": "Artículo",
+ "titular": "Automatizar una comprobación antes de acordar qué información se exige, sobre qué elementos y bajo qué condición no crea un criterio común.",
+ "bajada": "El proceso hace que el objeto parezca cada vez más terminado mientras conserva y oculta la fragilidad de origen.",
+ "override": null,
+ "puntajes": {
+  "hallazgo": 4.0,
+  "interfaz": 5.0,
+  "transformacion": 1.0
+ },
+ "senales": [
+  {
+   "categoria": "hallazgo",
+   "peso": 2.0,
+   "cita": "comprobación"
+  },
+  {
+   "categoria": "hallazgo",
+   "peso": 2.0,
+   "cita": "Automatizar una comprobación"
+  },
+  {
+   "categoria": "interfaz",
+   "peso": 3.0,
+   "cita": "acordar qué información"
+  },
+  {
+   "categoria": "interfaz",
+   "peso": 2.0,
+   "cita": "criterio común"
+  },
+  {
+   "categoria": "transformacion",
+   "peso": 1.0,
+   "cita": "proceso"
+  }
+ ],
+ "ruta": "imagen",
+ "metodo": "llm",
+ "motivo": "clasificador, confianza 0.86",
+ "candidatas": [
+  "interfaz",
+  "hallazgo",
+  "fondo"
+ ],
+ "clasificador": {
+  "categoria": "interfaz",
+  "confianza": 0.86,
+  "compara": "",
+  "evidencia": [
+   "antes de acordar qué información se exige",
+   "no crea un criterio común"
+  ],
+  "alternativa": "hallazgo",
+  "sujeto_candidato": "muro"
+ },
+ "categoria": "interfaz",
+ "confianza": 0.86,
+ "evidencia": [
+  "antes de acordar qué información se exige",
+  "no crea un criterio común"
+ ],
+ "alternativa": "hallazgo",
+ "compara_clasificador": ""
+}

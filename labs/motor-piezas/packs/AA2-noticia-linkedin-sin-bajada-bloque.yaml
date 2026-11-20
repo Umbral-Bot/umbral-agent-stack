@@ -1,0 +1,11 @@
+id: AA2
+nombre: "LinkedIn sin bajada · «Artículo», titular y botón en un bloque, a 32 px entre sí, al medio bajo el logo"
+alternativa: sin-bajada-linkedin-separacion
+paso: separación del texto
+hereda: packs/AA1-noticia-linkedin-sin-bajada-32.yaml
+decision_david: null
+# G21, 2026-11-10: «2= 1». Para que los tres textos queden a la misma distancia, el botón deja el
+# pie de la columna y cierra el bloque de texto (motor 0.3j).
+valores:
+  cta_al_pie_columna: false
+  espacio_cta: 8              # titular → botón: 32 px

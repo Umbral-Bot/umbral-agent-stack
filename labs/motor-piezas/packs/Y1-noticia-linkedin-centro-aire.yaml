@@ -1,0 +1,15 @@
+id: Y1
+nombre: "LinkedIn con bajada · G19 5° ajustado: botón más chico, más aire antes del botón y el chip abajo, junto al logo"
+alternativa: p02-linkedin-ajuste
+paso: distribución del texto
+hereda: packs/W1-noticia-linkedin-centro.yaml
+decision_david: null
+# la bajada ya viene al 80 % desde el P02 (G19 3°)
+roles_texto:
+  cta: {tracking: cta_tracking_em}
+valores:
+  escala_cta: 0.85          # el botón un 15 % más chico: 9,4 px CSS, bajo el mínimo de 11 (pedido de David)
+  cta_tracking_em: 0.08     # letras del botón menos separadas (antes 0,12)
+  espacio_cta: 8            # 32 px entre la bajada y el botón (antes 20)
+  chip_ancla: pie           # EJEMPLO en la línea del logo: es una marca de laboratorio y no le quita alto al texto
+  cta_junto_logo: false     # el botón cierra el bloque de texto, como en G19 5°

@@ -1,0 +1,29 @@
+id: G03
+fecha: 2026-11-06
+titulo: "Galería 03 · paso 2: jerarquía"
+descripcion: >
+  Paso 2 de 5. La división quedó fija en el tercio (G02 2°, elegido por David). Cuatro
+  formas de repartir el peso entre título, subtítulo, datos y pie; la imagen, los colores y
+  el pie no cambian. La 1° es el tercio con más contraste abajo a la izquierda, como pidió
+  David: el texto chico y el logo sobre la imagen ahora llegan a 10:1 (antes 7:1).
+  Laboratorio: no publicar.
+como_elegir: >
+  Elige un número (1° a 4°) y dime qué te gusta o qué cambiarías, con tus palabras. Ese
+  preset queda fijo y pasamos al paso 3 (imagen o ilustración).
+contenido: contenido/workshop-bim-ia.yaml
+secciones:
+  - alternativa: paso2
+    titulo: "Paso 2 · Jerarquía"
+    descripcion: >
+      Cada pieza hereda de la 1° (E1) y cambia solo tamaños o reparto vertical. El título
+      queda igual en las cuatro: en un tercio lo limita el ancho de «WORKSHOP».
+    pasos:
+      - "Base: el tercio elegido, datos al pie y un vacío entre subtítulo y datos"
+      - "Datos fuertes: los datos crecen un 34 % y el subtítulo baja al tamaño del kicker"
+      - "Compacta: mismos tamaños, todo el texto junto y apoyado abajo; arriba queda aire"
+      - "Escala mayor: todo el texto chico crece un 29 % y el llamado pasa bajo los datos"
+    piezas:
+      - packs/E1-jerarquia-base.yaml
+      - packs/E2-jerarquia-datos.yaml
+      - packs/E3-jerarquia-compacta.yaml
+      - packs/E4-jerarquia-escala.yaml

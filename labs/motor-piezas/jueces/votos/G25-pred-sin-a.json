@@ -1,0 +1,65 @@
+{
+ "galeria": "G25",
+ "seccion": null,
+ "rubrica": "pred-sin-a",
+ "retro": true,
+ "criterios_hasta": null,
+ "sellado": "2026-11-11T00:45:39",
+ "hash_rubrica": "2afef7084991",
+ "hash_criterios": "fd98b8707561",
+ "votos": [
+  {
+   "id": "G25-qa-prediccion",
+   "galeria": "G25",
+   "version": "pred-sin-a",
+   "lente": "prediccion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 6.2,
+    "2": 7.3,
+    "3": 7.7
+   },
+   "hallazgos": [
+    {
+     "opcion": "1",
+     "donde": "4° slide 16:9 (G25-T6-o75) y 2° cuadrado 5/8 (G25-T1-o75)",
+     "problema": "Al 75 % el edificio queda chico dentro de una máscara ancha y baja: en el slide ocupa unos 350 px de 3840 de ancho y sobra mucho fondo. En el celular se lee como un ícono, no como imagen. Es lo contrario de 'usar el lienzo disponible' que pedía David.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "1° vertical 4:5 (G25-P02-o75) y 3° historia (G25-T3-o75)",
+     "problema": "La imagen no cubre la máscara y el fondo extendido se nota: la retícula se desvanece antes del borde (abajo y a los lados) y se ve un marco difuso. Además el objeto pierde presencia frente a la banda.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "serie completa (10° historia, 12° y 14° LinkedIn al 75 %; el resto al 85 %)",
+     "problema": "Mezcla escalas: la historia y los LinkedIn quedan visiblemente más chicos que el 4:5 y los cuadrados de la misma serie. Funciona pieza por pieza, pero la familia se ve menos pareja y la regla cuesta más de explicar.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "19° LinkedIn con bajada (G25-U2-o85)",
+     "problema": "En la columna de unos 1000 px el edificio queda a unos 120 px de cada borde y cerca de la cruz de registro superior derecha. Va justo pero sin cortes; a tamaño de feed se ve con fuerza.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "18° slide 16:9 (G25-T6-o85)",
+     "problema": "Incluso al 85 % el objeto sigue chico en la franja ancha del 16:9, porque el encuadre lo limita la altura de la máscara. Sobra fondo a izquierda y derecha.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "7°, 14° y 21° LinkedIn sin bajada (AB2), en las 3 opciones",
+     "problema": "El texto más chico medido es de 7,1 px CSS (vista de 390 px) y en U2 es de 9,3 px: queda bajo un mínimo cómodo de lectura en el celular. Afecta a las tres opciones por igual, así que no cambia la elección.",
+     "gravedad": "media"
+    }
+   ],
+   "mejor": "3",
+   "veredicto": "sirve",
+   "resumen": "Las tres opciones corrigen el reclamo de G24: el edificio ya va entero y centrado en todos los formatos. Predigo que David elige la 3 (85 % en todo). En el celular el objeto tiene presencia y se acerca a lo que le gustó de G24 (imagen grande), pero sin cortes. La mayoría de las piezas no muestran la costura del fondo extendido y la regla es una sola y fácil de explicar. La 2 queda muy cerca: solo cambian la historia y los LinkedIn al 75 %, que dan más aire pero hacen que la serie se vea menos pareja. Las columnas al 85 % no se ven apretadas al punto de justificar ese cambio. La 1 se queda corta: en el 16:9 y el 1:1 de banda 5/8 el edificio se lee chico y sobra fondo. Pendientes comunes a las tres: el 16:9 sigue con poco objeto por la franja ancha, y el texto mínimo de 7,1 px en el LinkedIn sin bajada (AB2)."
+  }
+ ]
+}

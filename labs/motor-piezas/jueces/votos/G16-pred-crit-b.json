@@ -1,0 +1,60 @@
+{
+ "galeria": "G16",
+ "seccion": null,
+ "rubrica": "pred-crit-b",
+ "retro": true,
+ "criterios_hasta": "G16",
+ "sellado": "2026-11-11T00:43:05",
+ "hash_rubrica": "2afef7084991",
+ "hash_criterios": "fd98b8707561",
+ "votos": [
+  {
+   "id": "G16-pcb-prediccion",
+   "galeria": "G16",
+   "version": "pred-crit-b",
+   "lente": "prediccion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 7.5,
+    "2": 7,
+    "3": 6,
+    "4": 7
+   },
+   "hallazgos": [
+    {
+     "opcion": "3",
+     "donde": "pie, llamado como botón (abajo a la derecha)",
+     "problema": "El bloque turquesa saturado ocupa cerca del 60 % del ancho de la banda. Pasa a ser la segunda masa más fuerte del panel, por encima de la bajada, y lleva el #2DD4BF de acento a relleno. Choca con el criterio de usar la marca con sobriedad en el panel oscuro (G05). Además, la imagen de arriba ya es mayormente turquesa.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "borde izquierdo del botón",
+     "problema": "El botón se alinea a la derecha con la etiqueta EJEMPLO, pero su borde izquierdo (x≈610 en la vista) no coincide con ninguna línea del texto ni de la grilla.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1, 3, 4",
+     "donde": "cruces de las esquinas superiores, sobre la imagen",
+     "problema": "Las cruces de arriba quedan encima de la ilustración. La de arriba a la derecha cae sobre turquesa y casi no se ve: parece un resto más que un detalle intencional. Las cruces de abajo, sobre el panel oscuro, sí se leen como marca de sistema.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1, 2, 4",
+     "donde": "pieza completa vista a 390 px",
+     "problema": "Las cruces y la trama de puntos casi no se ven a tamaño de feed. En el celular, 1, 2 y 4 son prácticamente iguales y solo se distinguen de cerca. La única diferencia visible en el feed es el botón de la 3.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas (común)",
+     "donde": "logotipo abajo a la izquierda",
+     "problema": "La palabra «Umbral BIM» junto al isotipo está en el mínimo de 11 px CSS y es el texto más chico de la pieza. Su contraste sobre el panel liso es bueno, pero en el celular queda justa. Se anota aparte porque no diferencia las opciones.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "1",
+   "veredicto": "sirve",
+   "resumen": "Predigo que David elige la 1° (base). Es el último paso y las variantes son sutiles: en G05 y G13 se quedó con la base. Además, la 1° conserva la coherencia con el Preset 01 (cruces y trama), que en el celular apenas se ven y no estorban. La 2° y la 4° son casi idénticas a la 1° en el feed: quitan detalles invisibles sin ganar nada. La 3° es la única con una diferencia visible: el llamado se lee más fuerte, pero el bloque turquesa rompe la sobriedad del panel oscuro, compite con la bajada y suma más turquesa a una imagen que ya lo tiene. La pongo última. Todas tienen el texto a ≥9,9:1 sobre el panel liso y el titular manda. El único detalle común es el logotipo, que está en el mínimo de 11 px."
+  }
+ ]
+}

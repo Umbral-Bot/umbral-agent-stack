@@ -1,0 +1,45 @@
+id: G26
+fecha: 2026-11-10
+titulo: "Galería 26 · la campaña con dos imágenes: la principal y la apaisada"
+descripcion: >
+  David sobre G25: «para el 1:1 queda la imagen muy apaizada [...] seria necesario otra imagen pensada
+  en eso, lo mismo pasa con la 16:9», y aprobó 180 créditos para la imagen apaisada («Sí, 180
+  créditos»). Las máscaras desde 2:1 (el 1:1 de los dos presets y el 16:9) usan la imagen apaisada
+  (21:9, un pórtico largo y bajo con los mismos dos hallazgos en turquesa); el 4:5, el 9:16 y los
+  LinkedIn siguen con la principal. El encuadre es el elegido en G25 (85 % en bandas, 75 % en
+  columnas). Laboratorio: no publicar.
+resumen: >
+  Los siete formatos de los presets 02 y 03: las tres bandas anchas con la imagen apaisada (1° a 3°)
+  y el resto de la campaña con la principal (4° a 7°).
+como_elegir: >
+  Dime si la imagen apaisada sirve en el 1:1 y el 16:9, y si la campaña se lee como una sola.
+contenido: contenido/articulo-magnific-dos-imagenes.yaml
+secciones:
+  - alternativa: bandas-anchas
+    titulo: "Bandas anchas · imagen apaisada"
+    descripcion: >
+      El 1:1 de los dos presets (2,66:1 y 2,05:1) y el 16:9 (3,64:1).
+    contenido: contenido/articulo-magnific-dos-imagenes.yaml
+    pasos:
+      - "Preset 02 · 1:1"
+      - "Preset 03 · 1:1"
+      - "Preset 02 · 16:9"
+    piezas:
+      - packs/T1-noticia-1x1-banda.yaml
+      - packs/T2-noticia-1x1-sin-bajada.yaml
+      - packs/T6-noticia-slide.yaml
+  - alternativa: resto-campana
+    titulo: "El resto de la campaña · imagen principal"
+    descripcion: >
+      El 4:5, el 9:16 y los dos LinkedIn, como quedaron en G25.
+    contenido: contenido/articulo-magnific-dos-imagenes.yaml
+    pasos:
+      - "Preset 02 · 4:5"
+      - "Preset 02 · 9:16"
+      - "Preset 02 · LinkedIn"
+      - "Preset 03 · LinkedIn"
+    piezas:
+      - packs/P02-noticia-4x5.yaml
+      - packs/T3-noticia-historia.yaml
+      - packs/U2-noticia-linkedin-separacion-36.yaml
+      - packs/AB2-noticia-linkedin-sin-bajada-boton-65.yaml

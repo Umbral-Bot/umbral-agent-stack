@@ -1,0 +1,59 @@
+{
+ "galeria": "G23",
+ "seccion": null,
+ "rubrica": "pred-ej-b",
+ "retro": true,
+ "criterios_hasta": "G23",
+ "sellado": "2026-11-11T01:09:48",
+ "hash_rubrica": "b71ce177d875",
+ "hash_criterios": "c375ba4695d4",
+ "votos": [
+  {
+   "id": "G23-ejb-prediccion",
+   "galeria": "G23",
+   "version": "pred-ej-b",
+   "lente": "prediccion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 6.5,
+    "2": 8.5,
+    "3": 6
+   },
+   "hallazgos": [
+    {
+     "opcion": "1",
+     "donde": "botón «LEE EL ARTÍCULO / umbralbim.io», al pie de la columna",
+     "problema": "Un 12 % menos apenas se distingue de la 1° de G22 a tamaño de feed. David ya pidió dos veces el botón más chico (G19 y G22), así que es probable que lo vuelva a pedir. El botón sigue pesando casi lo mismo que en la base.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "relleno interior del botón",
+     "problema": "Con un módulo menos de relleno, «LEE EL ARTÍCULO» queda casi pegado a los bordes izquierdo, derecho y superior del bloque turquesa. Se ve apretado, más como etiqueta que como botón, y pierde el oficio que tiene la 2 con el mismo tamaño de texto.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "botón",
+     "problema": "La reducción del 24 % se nota sin romper nada: el relleno se mantiene holgado, el botón sigue cerrando la columna al pie y el titular gana dominio. No veo defectos propios.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "texto del botón (vista 390 px)",
+     "problema": "El texto del botón mide entre 7,1 y 8,2 px CSS, por debajo de la referencia de 11 px. Según los criterios es un aviso, no un veto: el botón y el LinkedIn pensado para computador son las dos excepciones aceptadas.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "cruces de registro de la derecha, sobre la imagen",
+     "problema": "Las cruces de arriba y abajo a la derecha caen sobre el dibujo y casi no se ven (la de abajo queda junto a los bloques negros). Lo comparten las tres opciones: conviene correrlas o darles contraste, no quitarlas.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "2",
+   "veredicto": "sirve",
+   "resumen": "Elegiría la 2. El botón queda claramente más chico, como pidió David por segunda vez, y conserva el relleno, así que sigue viéndose como un botón bien resuelto que cierra la columna, y el titular gana dominio. La 1 apenas cambia frente a la base de G22 y la 3 deja el texto casi pegado al borde del bloque. Las tres comparten el texto del botón bajo 11 px CSS, que en LinkedIn pensado para computador es aviso y no veto, y unas cruces poco visibles sobre la imagen."
+  }
+ ]
+}

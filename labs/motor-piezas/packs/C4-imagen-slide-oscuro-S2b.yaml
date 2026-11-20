@@ -1,0 +1,23 @@
+id: C4
+nombre: "Imagen primero · 16:9 oscuro · S2b a sangre, título grande y zona protegida"
+alternativa: C
+contenido: contenido/workshop-bim-ia.yaml
+corrige: "v2 24°: título más grande y una franja de lectura plana alineada a la grilla"
+decision_david: null
+valores:
+  proceso: C_imagen
+  formato: slide
+  modo: oscuro
+  columnas: 8
+  imagen_fuente: mj3_V-S2b_0
+  imagen_encaje: fondo_completo_con_velo
+  zona_libre: auto
+  velo_opacidad: 0.5
+  titulo_altura_relativa: 0.12
+  logo_composicion: "02"
+  logo_altura_relativa: 0.05
+  trama_visible: false
+  texto_minimo_css: 14
+  filas_ubicacion: al_pie
+  escala_kicker: 1.4
+  escala_subtitulo: 1.6

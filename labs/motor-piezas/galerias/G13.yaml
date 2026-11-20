@@ -1,0 +1,29 @@
+id: G13
+fecha: 2026-11-09
+titulo: "Galería 13 · Preset 02 (post de noticia), paso 2: jerarquía"
+descripcion: >
+  Paso 2 del Preset 02. La división quedó en la banda abajo (G12 1°, elegida por David).
+  Cuatro maneras de repartir el peso entre el titular, la bajada, el kicker y el llamado;
+  la imagen, los colores y el pie no cambian. Laboratorio: no publicar.
+resumen: >
+  Preset 02, paso 2: cuánto pesa el titular frente a la bajada dentro de la banda. La
+  división quedó en la banda abajo, como elegiste.
+como_elegir: >
+  Elige un número (1° a 4°) y dime qué cambiarías. Ese preset queda fijo y pasamos al paso 3
+  (imagen).
+contenido: contenido/articulo-ejemplo.yaml
+secciones:
+  - alternativa: p02-paso2
+    titulo: "Paso 2 · Jerarquía (4:5, 1080×1350)"
+    descripcion: >
+      Cada pieza hereda de la 1° (O1, que es la G12 1° sin cambios) y cambia una sola cosa.
+    pasos:
+      - "Base: titular de 156 px que llena la banda, bajada de 14 px CSS en tres líneas"
+      - "Solo titular: sin bajada (queda para el texto del post); el titular crece a 186 px"
+      - "Bajada protagonista: la bajada sube a 17,6 px CSS y el titular baja a 136 px para caber"
+      - "Titular mediano: el titular baja a 110 px y la banda gana aire"
+    piezas:
+      - packs/O1-noticia-jerarquia-base.yaml
+      - packs/O2-noticia-solo-titular.yaml
+      - packs/O3-noticia-bajada-grande.yaml
+      - packs/O4-noticia-titular-mediano.yaml

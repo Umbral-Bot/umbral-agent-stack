@@ -1,0 +1,96 @@
+{
+ "galeria": "G12",
+ "seccion": null,
+ "rubrica": "pred-sin-b",
+ "retro": true,
+ "criterios_hasta": null,
+ "sellado": "2026-11-11T00:45:36",
+ "hash_rubrica": "2afef7084991",
+ "hash_criterios": "fd98b8707561",
+ "votos": [
+  {
+   "id": "G12-qb-prediccion",
+   "galeria": "G12",
+   "version": "pred-sin-b",
+   "lente": "prediccion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 8,
+    "2": 6.5,
+    "3": 4.5,
+    "4": 4
+   },
+   "hallazgos": [
+    {
+     "opcion": "1",
+     "donde": "Bordes crema propios de la imagen: arriba (y≈0-60 px) y entre la imagen y la banda oscura (y≈1255-1320 px)",
+     "problema": "La imagen no queda a sangre limpia. Se lee como un grabado con marco que se apoya sobre la banda, y la cruz de esquina superior cae sobre crema.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1",
+     "donde": "Bajada en gris medio (y≈2090-2370 px)",
+     "problema": "Se lee bien (7.24:1), pero a tamaño de feed pierde presencia frente al titular de 156 px. Queda correcta, aunque algo apagada.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "Llamado y logo a mitad de la pieza (y≈1250-1300 px), imagen debajo",
+     "problema": "El orden de lectura se invierte: el llamado queda en el medio y la vista termina en la imagen. En el feed lo primero que aparece es un bloque de texto, no el brazo robótico que hace detenerse.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "Franja crema bajo la imagen (y≈2620-2700 px)",
+     "problema": "Queda un remate crema con las cruces de esquina encima. Se ve como un sobrante de la imagen.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "Franja de imagen a la derecha (x≈1265-2160 px)",
+     "problema": "El recorte pierde el brazo robótico: solo asoma la pinza cortada en el borde (y≈1190-1570 px). La imagen favorita se reduce a bloques crema y turquesa sin sujeto.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "3",
+     "donde": "Columna de texto entre el llamado (y≈1490 px) y el logo (y≈2460 px)",
+     "problema": "Hay un vacío oscuro de casi el 40 % de la altura. Sin fecha ni datos de evento, la columna del Preset 01 se queda sin nada que la llene.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "Titular",
+     "problema": "El titular baja a 107 px, frente a 156 px en las bandas, y pierde fuerza a tamaño de feed. La columna de 545 px obliga a partir la bajada en 5 líneas.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "Etiqueta EJEMPLO (arriba a la derecha de la columna)",
+     "problema": "Queda encima del kicker y pegada al corte con la imagen, en vez de alinearse en la misma línea que el kicker como en las otras opciones.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "4",
+     "donde": "Velo de lectura (y≈1320-2555 px)",
+     "problema": "El velo es gris neutro con opacidad 0.86 y no el fondo oscuro de marca. Deja ver bloques de la imagen detrás del texto y se ve sucio, así que rompe la identidad de serie que el Preset 02 debe mantener.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "4",
+     "donde": "Pinza del robot detrás del kicker y del titular (x≈1200-1600 px, y≈1330-1600 px)",
+     "problema": "La pinza entra bajo el velo detrás de 'entra' y queda como una mancha oscura a medias, compitiendo con el titular.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4",
+     "donde": "Franja inferior bajo el velo (y≈2555-2700 px)",
+     "problema": "Aparece una franja de otro gris, distinta del velo, que parece un error de capa.",
+     "gravedad": "media"
+    }
+   ],
+   "mejor": "1",
+   "veredicto": "sirve",
+   "resumen": "David elegiría la 1. Muestra el brazo robótico completo arriba, que es lo que detiene el scroll. Debajo, la banda oscura con trama mantiene la identidad del Preset 01 y la lectura sigue un orden natural: imagen, kicker, titular grande, bajada y llamado al pie. La 2 usa la misma división invertida, pero deja el llamado a mitad de la pieza y abre con texto. La 3 respeta la familia del Preset 01, pero el recorte pierde al robot, el titular se achica y queda un vacío grande. La 4 se lee bien, pero el velo gris ensucia la pieza y rompe la serie."
+  }
+ ]
+}

@@ -1,0 +1,54 @@
+{
+ "galeria": "G13",
+ "seccion": null,
+ "rubrica": "pred-sin-b",
+ "retro": true,
+ "criterios_hasta": null,
+ "sellado": "2026-11-11T00:45:36",
+ "hash_rubrica": "2afef7084991",
+ "hash_criterios": "fd98b8707561",
+ "votos": [
+  {
+   "id": "G13-qb-prediccion",
+   "galeria": "G13",
+   "version": "pred-sin-b",
+   "lente": "prediccion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 8,
+    "2": 5,
+    "3": 7.5,
+    "4": 4.5
+   },
+   "hallazgos": [
+    {
+     "opcion": "1",
+     "donde": "bajada gris bajo el titular",
+     "problema": "La bajada de 14 px CSS se lee bien a pantalla completa, pero en la hoja y a tamaño de feed queda chica frente a un titular de 156 px. Es el único punto débil de una banda que, por lo demás, está llena y bien repartida.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "tercio inferior de la banda oscura, entre «a la obra» y el pie",
+     "problema": "Sin bajada queda un vacío oscuro grande bajo el titular. La banda se ve a medio terminar y el post de noticia pierde el contexto que explica de qué trata.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "titular frente a bajada",
+     "problema": "La bajada a 17,6 px CSS se lee muy bien en el celular, pero su bloque gris de tres líneas largas le quita golpe a un titular que bajó a 136 px. La jerarquía se aplana un poco respecto de la base.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "4",
+     "donde": "titular y franja bajo la bajada",
+     "problema": "Con 110 px el titular pierde impacto a tamaño de feed. El «aire» que gana la banda queda como hueco muerto encima del pie, en vez de repartirse.",
+     "gravedad": "media"
+    }
+   ],
+   "mejor": "1",
+   "veredicto": "sirve",
+   "resumen": "Predigo que David elige la 1: el titular grande llena la banda, la bajada da el contexto de la noticia y no queda espacio muerto. La 3 queda muy cerca (bajada más legible en el celular, titular algo más débil) y podría ganarle si él pone la lectura de la bajada por delante del golpe del titular. La 2 y la 4 dejan un vacío oscuro en la banda: la 2 porque le falta la bajada y la 4 porque achica el titular."
+  }
+ ]
+}

@@ -1,0 +1,12 @@
+# Contenido de prueba del Preset 01: otro evento, con textos de largo distinto. No publicar.
+id: webinar-coordinacion
+ejemplo: true              # muestra el chip EJEMPLO
+chip: EJEMPLO
+kicker: Webinar gratuito
+titulo: [COORDINACIÓN, BIM CON IA]
+subtitulo: Sesión en vivo · Umbral BIM
+filas:
+  - {numero: "01", etiqueta: Fecha, valor: "Martes 15 dic 2026", densidad: minima}
+  - {numero: "02", etiqueta: Hora,  valor: "12:00 – 13:00 CLT", densidad: media}
+  - {numero: "03", etiqueta: Lugar, valor: "Online · Microsoft Teams", densidad: media}
+cta: "INSCRÍBETE · umbralbim.io"

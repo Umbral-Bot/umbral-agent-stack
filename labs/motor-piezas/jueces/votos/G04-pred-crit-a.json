@@ -1,0 +1,78 @@
+{
+ "galeria": "G04",
+ "seccion": null,
+ "rubrica": "pred-crit-a",
+ "retro": true,
+ "criterios_hasta": "G04",
+ "sellado": "2026-11-11T00:43:02",
+ "hash_rubrica": "2afef7084991",
+ "hash_criterios": "fd98b8707561",
+ "votos": [
+  {
+   "id": "G04-pca-prediccion",
+   "galeria": "G04",
+   "version": "pred-crit-a",
+   "lente": "prediccion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 6.5,
+    "2": 8,
+    "3": 7,
+    "4": 4.5
+   },
+   "hallazgos": [
+    {
+     "opcion": "1",
+     "donde": "tercio izquierdo, borde del velo en x≈1338 px",
+     "problema": "Para llegar a 10,13:1 el velo sube a 0,84. Con esa opacidad la imagen casi no se ve detrás del texto y queda un corte vertical duro donde termina el velo. En el celular se ve como la opción 2, pero con el panel más sucio: no muestra la ventaja de ir a sangre.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "filas de datos (etiquetas FECHA/HORA/LUGAR)",
+     "problema": "Las etiquetas pasan de gris a tinta y los números a acento claro para mantener el contraste. La etiqueta pesa casi lo mismo que el dato y se pierde la jerarquía de los datos fuertes elegidos en el paso 2.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "separación entre la columna de texto y la caja",
+     "problema": "Entre la columna de texto y la caja quedan unos 45 px, contra unos 130 px del margen exterior. La caja casi toca la etiqueta EJEMPLO y las marcas de las filas, y la columna de texto se ve apretada.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "caja de imagen",
+     "problema": "Con margen y radio, la imagen se achica y la pieza se lee como una diapositiva con una foto pegada: pierde fuerza en el feed. La franja blanca de abajo de la imagen forma una barra clara pegada al borde inferior de la caja.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "4",
+     "donde": "ilustración isométrica, dos tercios derechos",
+     "problema": "El trazo es muy fino (unos 2 px a 3840). A tamaño de feed en el celular casi desaparece y los dos tercios derechos quedan casi vacíos. Además es un dibujo de diagrama de líneas, no la línea isométrica plana de Magnific One aprobada como referencia.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "4",
+     "donde": "posición de la ilustración",
+     "problema": "La ilustración flota centrada en coordenadas sueltas: no se alinea con la grilla, con las líneas del texto ni con el borde. Deja franjas vacías a los lados, y la base romboidal con la escala queda suelta debajo de las torres (hipótesis del laboratorio).",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1, 2 y 3 (común)",
+     "donde": "imagen de fondo",
+     "problema": "La columna turquesa luminosa se lee como resplandor, y el contraste entre la masa negra y el blanco se acerca a la luz dramática: ambos están vetados por marca. La imagen tampoco sigue la línea isométrica plana aprobada. Es un defecto común a las tres, así que no decide entre ellas.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "unión del tercio con la imagen",
+     "problema": "El borde de la imagen queda a unos 45 px de la etiqueta EJEMPLO y de las marcas de las filas. No molesta, pero un poco más de aire ordenaría la unión.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "2",
+   "veredicto": "sirve",
+   "resumen": "Predigo que David elige la 2. Atiende de raíz su queja principal (G01): el texto chico queda sobre fondo liso, con holgura y gris de marca. Al mismo tiempo mantiene la imagen con textura a sangre y con toda su fuerza en los dos tercios, que es la complejidad que él valoró. La 1 casi no se distingue de la 2 en el celular, porque con el velo a 0,84 la imagen apenas se ve detrás, y suma suciedad y un corte duro. La 3 está ordenada, pero achica la imagen y aprieta la separación con el texto. La 4 cumple la marca, pero su trazo fino desaparece en el feed y la ilustración flota sin relación con la grilla. Defecto común a 1, 2 y 3: el resplandor turquesa de la imagen."
+  }
+ ]
+}

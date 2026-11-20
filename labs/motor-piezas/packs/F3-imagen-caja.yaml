@@ -1,0 +1,9 @@
+id: F3
+nombre: "En caja · la imagen en un bloque alineado a la grilla, con margen"
+alternativa: paso3
+paso: imagen
+hereda: packs/F1-imagen-sangre.yaml
+decision_david: null
+valores:
+  imagen_encaje: caja_alineada_grilla
+  imagen_radio: 8           # radio de bloque del manual

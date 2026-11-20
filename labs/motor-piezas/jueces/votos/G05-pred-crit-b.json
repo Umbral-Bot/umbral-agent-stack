@@ -1,0 +1,90 @@
+{
+ "galeria": "G05",
+ "seccion": null,
+ "rubrica": "pred-crit-b",
+ "retro": true,
+ "criterios_hasta": "G05",
+ "sellado": "2026-11-11T00:43:03",
+ "hash_rubrica": "2afef7084991",
+ "hash_criterios": "fd98b8707561",
+ "votos": [
+  {
+   "id": "G05-pcb-prediccion",
+   "galeria": "G05",
+   "version": "pred-crit-b",
+   "lente": "prediccion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 6.5,
+    "2": 8,
+    "3": 6,
+    "4": 4.5
+   },
+   "hallazgos": [
+    {
+     "opcion": "1",
+     "donde": "etiquetas FECHA / HORA / LUGAR del bloque de datos",
+     "problema": "Las etiquetas en gris (#9BA3AD, 7,24:1) son el texto más débil de la pieza y miden 14 px CSS. Superan la franja de 4,6 a 6,3:1 que David vio floja, pero quedan lejos del objetivo de 10:1. En el celular se leen apagadas al lado de los valores blancos.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "etiquetas FECHA / HORA / LUGAR",
+     "problema": "Las etiquetas pasan al mismo blanco que los valores (15,8:1). La jerarquía queda sostenida solo por el tamaño y el espaciado de las versalitas. Se lee bien, pero el bloque se vuelve un poco más denso. Es un detalle, no un defecto de lectura.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "logotipo «Umbral BIM» junto al llamado INSCRÍBETE",
+     "problema": "El llamado, el kicker y los números pasan a #99F6E4, pero el «BIM» del logo sigue en #2DD4BF (medido en píxel). Quedan dos turquesas distintos a pocos píxeles: el logo se ve más apagado que el llamado de al lado y el panel pierde unidad de color.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "etiquetas grises del bloque de datos",
+     "problema": "El cambio sube a 14,7:1 lo que ya pasaba (llamado y kicker estaban en 9,9:1 sobre panel liso), pero deja igual el texto más débil: el mínimo sigue en 7,24:1 en las etiquetas grises. La mejora cae donde no hacía falta.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "kicker SAVE THE DATE y subtítulo",
+     "problema": "El turquesa claro se acerca al blanco del título y se ve pastel o menta. Pierde algo de la separación cromática entre el título y el acento, y algo del turquesa reconocible de la marca.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "4",
+     "donde": "etiquetas grises y llamado sobre el panel #1A1A2E",
+     "problema": "El panel azul baja el contraste mínimo a 6,69:1 en las etiquetas y deja el llamado en 9,16:1. Es la única opción que empeora la medida que David pidió reforzar, y queda pegada a la franja que él vio floja.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "4",
+     "donde": "unión del panel con la imagen",
+     "problema": "El azul violáceo del panel choca en temperatura con los negros neutros y el turquesa de la imagen. La costura entre el panel y la imagen se nota más que con el panel casi negro.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "comun",
+     "donde": "imagen de la mitad derecha",
+     "problema": "Común a las cuatro y ya elegida en pasos previos. Tiene un cian luminoso que se lee como resplandor y contrastes de tinta dramáticos, y no es la línea isométrica plana de referencia. No desempata.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "comun",
+     "donde": "texto más chico: etiquetas, palabra del logo y llamado",
+     "problema": "Común a las cuatro: a 14 px CSS en una slide 16:9 vista en el feed del celular, el llamado y la palabra del logo quedan muy chicos aunque el contraste sea bueno.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "comun",
+     "donde": "panel entre el subtítulo y los datos",
+     "problema": "Común a las cuatro: queda un vacío alto sin función entre el subtítulo y el bloque de datos. El título se redujo de 176 a 98 px para caber.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "2",
+   "veredicto": "sirve",
+   "resumen": "Lo único que cambia de verdad entre las opciones es el texto más débil del panel, las etiquetas grises de los datos (7,24:1). David pidió holgura de contraste en el texto chico y que los datos tengan peso propio. La opción 2 es la única que ataca ese punto: las etiquetas pasan a blanco y el mínimo sube a 9,92:1, casi el objetivo de 10:1, sin tocar la marca. Por eso la elijo. La 1 sirve con ajustes, porque es la base y tiene las etiquetas apagadas. La 3 refuerza lo que ya estaba bien, deja el mínimo igual y crea dos turquesas al lado del logo. La 4 es la única que empeora el contraste (6,69:1) y su panel azul choca con la imagen. Los defectos comunes a las cuatro (resplandor cian de la imagen, texto chico en formato slide, vacío sobre los datos) no desempatan."
+  }
+ ]
+}

@@ -1,0 +1,53 @@
+{
+ "galeria": "G23",
+ "seccion": null,
+ "rubrica": "pred-sin-a",
+ "retro": true,
+ "criterios_hasta": null,
+ "sellado": "2026-11-11T00:45:38",
+ "hash_rubrica": "2afef7084991",
+ "hash_criterios": "fd98b8707561",
+ "votos": [
+  {
+   "id": "G23-qa-prediccion",
+   "galeria": "G23",
+   "version": "pred-sin-a",
+   "lente": "prediccion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 6.5,
+    "2": 8,
+    "3": 5
+   },
+   "hallazgos": [
+    {
+     "opcion": "1",
+     "donde": "botón «LEE EL ARTÍCULO / umbralbim.io»",
+     "problema": "Solo un 12 % más chico: en el celular el botón casi no cambia respecto a la 1° de G22 y todavía compite con el titular. Es probable que David vuelva a pedirlo más chico.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "texto del botón (umbralbim.io)",
+     "problema": "El texto más chico baja a 7.1 px CSS en la vista de 390 px. Se lee, pero queda en el límite de lo legible en el feed.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "relleno del botón",
+     "problema": "Al quitar un módulo de relleno, «LEE EL ARTÍCULO» queda pegado a los bordes de arriba y de los lados. El botón se ve apretado, como una etiqueta mal cortada, y desentona con el aire del resto de la columna.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "texto del botón",
+     "problema": "También queda en 7.1 px CSS, y como tiene menos aire alrededor se lee peor que en la 2°.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "2",
+   "veredicto": "sirve",
+   "resumen": "David pidió el botón más chico. La 2° lo achica de forma visible (24 %) y conserva el relleno, así que el botón sigue respirando y el titular gana jerarquía. La 1° cambia poco y no termina de responder a lo que pidió. La 3° se ve apretada, con el texto pegado a los bordes. Predigo que elige la 2°."
+  }
+ ]
+}

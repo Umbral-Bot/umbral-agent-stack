@@ -1,0 +1,8 @@
+id: D3
+nombre: "Banda · imagen arriba, texto en la mitad de abajo (datos a la derecha)"
+alternativa: paso1
+paso: division
+hereda: packs/D1-division-mitad.yaml
+decision_david: null
+valores:
+  division: banda          # lo único que cambia respecto de D1

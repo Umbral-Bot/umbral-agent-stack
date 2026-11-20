@@ -1,0 +1,1313 @@
+# Imágenes de Magnific One con el kit «Umbral BIM». Las escribe pedido_magnific.py registrar.
+# El archivo vive en 07_Motor de piezas/02_magnific; la procedencia, aquí.
+imagenes:
+  mg-g-sitio-01:
+    archivo: mg-g-sitio-01.png
+    herramienta: Magnific
+    modelo: magnific-one
+    creacion: MBgIAIRDCm
+    enlace: https://www.magnific.com/app/creation/MBgIAIRDCm
+    kit: null
+    plantilla: null
+    semilla: 141354
+    creditos: 180
+    prompt: 'Quiet technical editorial illustration in 16:9 that adapts the subject relationship of @img1:
+      a professional on the right calmly examines construction drawings beside a physical sectional building
+      model. Here a woman in her forties in a plain shirt stands at a calm studio worktable, face visible
+      in three-quarter view, holding one drawing sheet up beside the model and checking it against the
+      cut section. The model is cut open to reveal floors, stairs, slabs and columns. The entire left
+      half of the frame is a completely clean, empty field of #FAFAF9 reserved for later text. Use flat
+      vector shapes with fine, even linework in #074E43 and #1F2328, white #FFFFFF paper and model surfaces,
+      and soft neutral greys. Small flat fill accents in #0FA994 appear only on two model slabs and one
+      drawing edge. Lighting is even, flat daylight with minimal shading. Drawings carry only abstract
+      lines and hatching. Keep it entirely text-free, with no letters, numerals, labels, logos, screens,
+      gradients, glow, holograms or dramatic shadows.'
+    proporcion_pedida: '16:9'
+    tamano_px:
+    - 2688
+    - 1520
+    reproducible: true
+    pedido: null
+    fecha: '2026-11-04'
+    sha256: 87e439cdf9a0ec00
+    nota: prueba de la cadena con una imagen existente (G-SITIO-01, 2026-11-04, antes de corregir el kit);
+      no es del piloto
+    objeto:
+    - 0.3356
+    - 0.0
+    - 1.0
+    - 1.0
+    fondo_imagen: '#F8F8F6'
+  mg-articulo-ia-obra-01:
+    archivo: mg-articulo-ia-obra-01.png
+    herramienta: Magnific
+    modelo: magnific-one
+    creacion: lJo6GJSgv9
+    enlace: https://www.magnific.com/app/creation/lJo6GJSgv9
+    kit: hu2CvqLJlt
+    plantilla: null
+    semilla: 927631
+    creditos: 180
+    prompt: 'Flat vector isometric technical illustration of the two-storey building frame in @img1, faithful
+      to its structure: two floor slabs, a grid of square columns, connecting beams and one pipe. Draw
+      every element in thin, uniform #074E43 and #1F2328 lines with white #FFFFFF faces and dashed hidden
+      edges. Fill exactly two parts with solid flat #0FA994, the two an automated check flagged: one floor
+      slab, and the short section of the pipe where it passes through a beam; everything else stays unfilled.
+      True isometric projection with no vanishing point. Compose for 16:9: the whole building sits compact
+      in the centre at about 40 percent of the width, surrounded by wide calm solid #FAFAF9 off-white
+      space. Faint construction grid lines and small crosshair nodes run from the frame to every edge.
+      Flat even daylight, no cast or drop shadows, no glow, no gradients, no highlights. The image contains
+      no text, letters, numbers, labels, logo or watermark.'
+    prompt_enviado: 'Isometric illustration of the two-storey building frame in @img1: slabs, columns,
+      beams and one pipe. Two parts are flat teal, the ones an automated check found: one floor slab and
+      the pipe where it passes through a beam. The whole building stays in the centre with wide empty
+      space around it. No text, no logo.'
+    proporcion_pedida: '16:9'
+    tamano_px:
+    - 2688
+    - 1520
+    reproducible: true
+    pedido: magnific/pedidos/articulo-ia-obra.json
+    fecha: '2026-11-10'
+    sha256: 5c204b3bff37acad
+    nota: 'piloto G24 (2026-11-10): imagen final con el kit, sin plantilla; referencia de encuadre: la
+      composición 1 de la grilla de borradores WDL8IkhcXe, subida como ksMJNHs16B. Foco = centro del turquesa
+      medido.'
+    foco:
+    - 0.45
+    - 0.71
+    objeto:
+    - 0.3564
+    - 0.1237
+    - 0.6693
+    - 0.8987
+    fondo_imagen: '#F9F7F5'
+  mg-articulo-ia-obra-ancha-01:
+    archivo: mg-articulo-ia-obra-ancha-01.png
+    herramienta: Magnific
+    modelo: magnific-one
+    creacion: w4m2pvH7EI
+    enlace: https://www.magnific.com/app/creation/w4m2pvH7EI
+    kit: hu2CvqLJlt
+    plantilla: null
+    semilla: 263034
+    creditos: 180
+    prompt: 'Flat vector isometric technical illustration in a wide 21:9 frame: a long, low, single-storey
+      cut-away building frame of four equal structural bays, its long side running left to right across
+      the centre. Five rows of square columns carry cross beams spanning front to back, with floor slabs
+      in each bay and the roof and front wall cut away so the interior reads clearly. A round pipe and
+      a rectangular duct run the full length just beneath the beams, the pipe threading through each cross
+      beam. All parts are thin, uniform #074E43 and #1F2328 lines with white #FFFFFF faces and dashed
+      hidden edges. Exactly two parts are solid flat #0FA994: the floor slab of the second bay, and the
+      short pipe segment passing through the third cross beam; everything else stays unfilled. Strict
+      isometric projection with no vanishing point, flat even daylight, no shadows, glow or gradients.
+      The frame fills about 60 percent of the width, centred, on a solid #FAFAF9 field with faint grid
+      lines running to the edges. No text, letters, numbers, markers, callouts, symbols or logo.'
+    prompt_enviado: 'Isometric illustration of a long, low, single-storey cut-away building frame of four
+      bays, its long side running left to right, with a pipe and a duct along its length. Only two parts
+      are flat teal, the two parts an automated check found: one floor slab and the pipe where it passes
+      through a beam. No text, no markers, no logo.'
+    proporcion_pedida: '21:9'
+    tamano_px:
+    - 2688
+    - 1152
+    reproducible: true
+    pedido: magnific/pedidos/articulo-ia-obra-ancha.md
+    fecha: '2026-11-10'
+    sha256: ad69e61ee7bb5cb1
+    nota: imagen apaisada para las máscaras desde 2:1 (1:1 de los presets 02 y 03, 16:9); pedido del panel
+      sin créditos; 180 créditos aprobados por David («Sí, 180 créditos»)
+    objeto:
+    - 0.1112
+    - 0.2292
+    - 0.8564
+    - 0.7326
+    fondo_imagen: '#FCFBFA'
+    acento:
+    - 0.3214
+    - 0.3663
+    - 0.6019
+    - 0.6667
+  mg-articulo-ia-obra-fondo-p1:
+    archivo: mg-articulo-ia-obra-fondo-p1.png
+    herramienta: Magnific
+    modelo: magnific-one
+    creacion: s7B6F39l8e
+    enlace: https://www.magnific.com/app/creation/s7B6F39l8e
+    kit: hu2CvqLJlt
+    plantilla: null
+    semilla: 500935
+    creditos: 180
+    prompt: 'Flat vector all-over background pattern in strict isometric projection, 16:9, no vanishing
+      point. Small building components — square floor slabs, short square columns, hollow rectangular
+      beams and short straight pipe segments — are scattered evenly across the entire frame with uniform
+      spacing and no focal point or cluster. Each element is drawn in thin uniform line work in #074E43
+      dark teal and #1F2328 charcoal, with plain white #FFFFFF faces, oriented along the three isometric
+      axes in varied directions. Five or six elements spread evenly across the frame carry one small flat
+      #0FA994 teal plane each, such as a slab top or a beam face; teal never fills large areas. The background
+      is a solid flat #FAFAF9 off-white field. A faint isometric construction grid runs to all four edges
+      behind the elements. Even, flat daylight: no shadows, no glow, no gradients, no highlights. The
+      image contains no text, letters, numbers, labels, logos or frames.'
+    prompt_enviado: 'Abstract isometric background pattern of building elements: slabs, short columns,
+      beams and pipe segments in thin lines, scattered evenly across the whole frame with no main subject,
+      and a few small flat teal planes as accents. Calm and airy. No text, no logo.'
+    proporcion_pedida: '16:9'
+    tamano_px:
+    - 2688
+    - 1520
+    reproducible: true
+    pedido: null
+    fecha: '2026-11-11'
+    sha256: ca3bedb11d598c52
+    nota: 'G27 versión A (fondo abstracto): patrón sin sujeto, llena la máscara; ronda aprobada por David
+      («haz 2 versiones de cada una»)'
+    tipo: fondo
+    fondo_imagen: '#FAFAF9'
+  mg-articulo-ia-obra-fondo-p2:
+    archivo: mg-articulo-ia-obra-fondo-p2.png
+    herramienta: Magnific
+    modelo: magnific-one
+    creacion: UPtZ5A0wny
+    enlace: https://www.magnific.com/app/creation/UPtZ5A0wny
+    kit: hu2CvqLJlt
+    plantilla: null
+    semilla: 795649
+    creditos: 180
+    prompt: 'Sparse, airy flat vector isometric background pattern, 16:9, strict isometric projection
+      with no vanishing point. Fewer and smaller building elements float on a solid flat #FAFAF9 off-white
+      field with wide breathing space between them: mostly thin square slabs and short pipe segments,
+      with an occasional short square column or hollow beam. Elements sit on a loose staggered isometric
+      grid so the spacing feels even across the whole frame, with no main subject and no grouping. Line
+      work is thin and uniform in #074E43 and #1F2328, faces left white #FFFFFF. Only three or four tiny
+      slab tops are filled with flat #0FA994 teal, spread far apart across left, centre and right as quiet
+      accents. Tiny crosshair nodes mark some faint grid intersections running to the edges. Lighting
+      is flat, even daylight with no shadows, glow, highlights or gradients. No text, letters, numbers,
+      labels or logo anywhere in the image.'
+    prompt_enviado: 'Abstract isometric background pattern of building elements: slabs, short columns,
+      beams and pipe segments in thin lines, scattered evenly across the whole frame with no main subject,
+      and a few small flat teal planes as accents. Calm and airy. No text, no logo.'
+    proporcion_pedida: '16:9'
+    tamano_px:
+    - 2688
+    - 1520
+    reproducible: true
+    pedido: null
+    fecha: '2026-11-11'
+    sha256: b2fcfc405ad84cdf
+    nota: 'G27 versión A (fondo abstracto): patrón sin sujeto, llena la máscara; ronda aprobada por David
+      («haz 2 versiones de cada una»)'
+    tipo: fondo
+    fondo_imagen: '#F9F9F7'
+  mg-articulo-ia-obra-fondo-a1:
+    archivo: mg-articulo-ia-obra-fondo-a1.png
+    herramienta: Magnific
+    modelo: magnific-one
+    creacion: yifnxcpPW9
+    enlace: https://www.magnific.com/app/creation/yifnxcpPW9
+    kit: hu2CvqLJlt
+    plantilla: null
+    semilla: 588539
+    creditos: 180
+    prompt: 'Flat vector isometric background pattern filling a wide 21:9 frame, with no main subject.
+      Small building elements in equal measure, square floor slabs, short square columns, hollow rectangular
+      beams and short straight pipe segments, are scattered evenly in a long horizontal rhythm across
+      the full width, all similar in size, with generous calm off-white space between pieces. Every element
+      is drawn in thin uniform #074E43 and #1F2328 lines in strict isometric projection with no vanishing
+      point, faces left white #FFFFFF. About one element in eight, spread across the width, has a single
+      small flat #0FA994 plane such as a slab top, the only accent colour. The background is a solid flat
+      #FAFAF9 field crossed by faint isometric grid lines, tiny crosshair nodes and dimension ticks running
+      to every edge. Flat even daylight, no shadows, glow, gradients or highlights. No text, letters,
+      numbers, labels or logo anywhere.'
+    prompt_enviado: 'Abstract isometric background pattern of building elements: slabs, short columns,
+      beams and pipe segments in thin lines, scattered evenly in a long horizontal rhythm across the whole
+      frame with no main subject, and a few small flat teal planes as accents. Calm and airy. No text,
+      no logo.'
+    proporcion_pedida: '21:9'
+    tamano_px:
+    - 2688
+    - 1152
+    reproducible: true
+    pedido: null
+    fecha: '2026-11-11'
+    sha256: e53d8c188d7ea992
+    nota: 'G27 versión A (fondo abstracto): patrón sin sujeto, llena la máscara; ronda aprobada por David
+      («haz 2 versiones de cada una»)'
+    tipo: fondo
+    fondo_imagen: '#FBFAF9'
+  mg-articulo-ia-obra-fondo-a2:
+    archivo: mg-articulo-ia-obra-fondo-a2.png
+    herramienta: Magnific
+    modelo: magnific-one
+    creacion: lJoiHZdgv9
+    enlace: https://www.magnific.com/app/creation/lJoiHZdgv9
+    kit: hu2CvqLJlt
+    plantilla: null
+    semilla: 252456
+    creditos: 180
+    prompt: 'Wide 21:9 flat vector isometric pattern reading as a quiet drafting grid of a structural
+      system, no focal subject. Short square columns and hollow rectangular beams dominate, with a few
+      square slabs, arranged in staggered horizontal rows that sit exactly on the nodes of a visible isometric
+      grid, sparse density and wide even gutters between elements. Lines are thin and uniform in #074E43
+      and #1F2328, strict isometric projection without vanishing point, faces white #FFFFFF, with occasional
+      dashed hidden edges. A handful of beam side faces, spread evenly across the width, are filled flat
+      #0FA994 as the sole accent; no other saturated colour. Background is solid flat #FAFAF9 with fine
+      construction lines, small crosshair nodes and dimension ticks extending to every edge. Flat even
+      daylight, no cast shadows, glow, bloom, gradients or shiny highlights. Contains no text, letters,
+      numbers, labels, signage or logo.'
+    prompt_enviado: 'Abstract isometric background pattern of building elements: slabs, short columns,
+      beams and pipe segments in thin lines, scattered evenly in a long horizontal rhythm across the whole
+      frame with no main subject, and a few small flat teal planes as accents. Calm and airy. No text,
+      no logo.'
+    proporcion_pedida: '21:9'
+    tamano_px:
+    - 2688
+    - 1152
+    reproducible: true
+    pedido: null
+    fecha: '2026-11-11'
+    sha256: 64c43c904d477c8d
+    nota: 'G27 versión A (fondo abstracto): patrón sin sujeto, llena la máscara; ronda aprobada por David
+      («haz 2 versiones de cada una»)'
+    tipo: fondo
+    fondo_imagen: '#F8F8F7'
+  mg-articulo-ia-obra-formula-p1:
+    archivo: mg-articulo-ia-obra-formula-p1.png
+    herramienta: Magnific
+    modelo: magnific-one
+    creacion: s7B6qkYl8e
+    enlace: https://www.magnific.com/app/creation/s7B6qkYl8e
+    kit: hu2CvqLJlt
+    plantilla: null
+    semilla: 85538
+    creditos: 180
+    prompt: 'Flat vector isometric technical illustration in a 16:9 frame of a compact two-storey building
+      frame, whole and centred, occupying about 45 percent of the width and half the height, with wide
+      calm off-white space on every side. Four corner columns, perimeter beams and two floor slabs are
+      drawn in thin uniform #074E43 and #1F2328 line work with plain white #FFFFFF faces. A straight horizontal
+      pipe runs through the first-floor zone; only one segment of it and the short beam section it pierces
+      are filled flat #0FA994, the single point of colour in the calm model. Two faint thin dashed unfilled
+      lines of equal weight trace alternative pipe routes, one dipping under the beam and one rising over
+      it, neither emphasised. Solid #FAFAF9 background with faint pale construction grid lines running
+      to the edges. Strict isometric projection, no vanishing point. Even flat daylight: no shadows, glow,
+      gradients or highlights. Contains no text, letters, numbers, labels, markers, symbols, logo or watermark.'
+    prompt_enviado: 'Isometric line illustration of a compact two-storey building frame, whole and centred
+      with wide empty space around it. Only two parts are flat teal, the clash an automated review found:
+      a pipe segment and the beam section it passes through. Two faint dashed, unfilled alternative pipe
+      routes bypass it, neither chosen. No text, no markers, no logo.'
+    proporcion_pedida: '16:9'
+    tamano_px:
+    - 2560
+    - 1440
+    reproducible: true
+    pedido: null
+    fecha: '2026-11-11'
+    sha256: 8ab17b0350b78c4f
+    nota: 'G27 versión B (fórmula de gráfico relacionado, del visual brief v2 del repo): el choque marcado
+      y dos recorridos abiertos; referencia de estilo = la imagen principal (lJo6GJSgv9)'
+    tipo: objeto
+    objeto:
+    - 0.3434
+    - 0.1382
+    - 0.6617
+    - 0.8688
+    fondo_imagen: '#F8F9F8'
+    acento:
+    - 0.418
+    - 0.4903
+    - 0.4891
+    - 0.5701
+  mg-articulo-ia-obra-formula-p2:
+    archivo: mg-articulo-ia-obra-formula-p2.png
+    herramienta: Magnific
+    modelo: magnific-one
+    creacion: jUd9F58LD0
+    enlace: https://www.magnific.com/app/creation/jUd9F58LD0
+    kit: hu2CvqLJlt
+    plantilla: null
+    semilla: 619246
+    creditos: 180
+    prompt: 'Flat vector isometric illustration in a 16:9 frame of a compact two-storey building frame
+      seen from the opposite isometric corner, so the long side faces left. The frame sits centred and
+      slightly smaller, about 40 percent of the width, surrounded by even, empty #FAFAF9 space. Columns,
+      beams and slab edges are thin uniform #074E43 and #1F2328 lines with plain white #FFFFFF faces.
+      One straight pipe segment and the beam section it passes through are the only flat #0FA994 fills.
+      Two faint dashed unfilled routes carry equal visual weight, presenting an open decision: one arcs
+      over the beam along the ceiling plane, the other jogs sideways around the nearest column. Faint
+      pale grid lines extend past the frame to the image edges. Strict isometric projection with no vanishing
+      point. Flat even daylight, no cast shadows, no glow, no gradients, no shiny highlights. The image
+      contains no text, numbers, labels, markers, arrows, logo or watermark.'
+    prompt_enviado: 'Isometric line illustration of a compact two-storey building frame, whole and centred
+      with wide empty space around it. Only two parts are flat teal, the clash an automated review found:
+      a pipe segment and the beam section it passes through. Two faint dashed, unfilled alternative pipe
+      routes bypass it, neither chosen. No text, no markers, no logo.'
+    proporcion_pedida: '16:9'
+    tamano_px:
+    - 2560
+    - 1440
+    reproducible: true
+    pedido: null
+    fecha: '2026-11-11'
+    sha256: 7b697803b1795e8d
+    nota: 'G27 versión B (fórmula de gráfico relacionado, del visual brief v2 del repo): el choque marcado
+      y dos recorridos abiertos; referencia de estilo = la imagen principal (lJo6GJSgv9)'
+    tipo: objeto
+    objeto:
+    - 0.3078
+    - 0.134
+    - 0.6902
+    - 0.8882
+    fondo_imagen: '#FAFAF9'
+    acento:
+    - 0.4816
+    - 0.4292
+    - 0.5738
+    - 0.5257
+  mg-articulo-ia-obra-formula-a1:
+    archivo: mg-articulo-ia-obra-formula-a1.png
+    herramienta: Magnific
+    modelo: magnific-one
+    creacion: rgpPuk5xtc
+    enlace: https://www.magnific.com/app/creation/rgpPuk5xtc
+    kit: hu2CvqLJlt
+    plantilla: null
+    semilla: 726777
+    creditos: 180
+    prompt: 'Flat vector isometric line illustration in a wide 21:9 frame: a long, low four-bay structural
+      building frame centred horizontally, with generous empty #FAFAF9 margins at both the left and right
+      ends. Five columns, the beams and the slab edges are drawn in thin, uniform #074E43 and #1F2328
+      lines with unfilled white #FFFFFF faces. A single thin outlined pipe runs the full length of the
+      frame just under the beam line. Exactly two elements are filled flat #0FA994: one short pipe segment
+      and the beam section it passes through in the second bay, the single clash. Two faint, thin dashed,
+      unfilled alternative pipe routes bypass it, one arching above the beam and one dipping below it,
+      equally light, neither chosen. Very faint isometric construction grid lines run to the edges. Strict
+      isometric projection, no vanishing point. Flat even daylight, no shadows, glow, highlights or gradients.
+      No text, letters, numbers, markers, labels or logo.'
+    prompt_enviado: 'Isometric line illustration: a long, low four-bay building frame, centred, empty
+      margins at both ends, a pipe running its length. Only two parts are flat teal, the single clash
+      an automated review found: a pipe segment and the beam section it crosses. Two faint dashed, unfilled
+      alternative routes bypass it, neither chosen. No text, no markers, no logo.'
+    proporcion_pedida: '21:9'
+    tamano_px:
+    - 3024
+    - 1296
+    reproducible: true
+    pedido: null
+    fecha: '2026-11-11'
+    sha256: 92f54531f42b6026
+    nota: 'G27 versión B (fórmula de gráfico relacionado, del visual brief v2 del repo): el choque marcado
+      y dos recorridos abiertos; referencia de estilo = la imagen principal (lJo6GJSgv9)'
+    tipo: objeto
+    objeto:
+    - 0.2206
+    - 0.2176
+    - 0.7725
+    - 0.8009
+    fondo_imagen: '#F9F8F7'
+    objeto_medido: percentiles 1.0–99.0 del trazo
+    acento:
+    - 0.4054
+    - 0.4753
+    - 0.4573
+    - 0.5316
+  mg-articulo-ia-obra-formula-a2:
+    archivo: mg-articulo-ia-obra-formula-a2.png
+    herramienta: Magnific
+    modelo: magnific-one
+    creacion: xSe4QrgjfW
+    enlace: https://www.magnific.com/app/creation/xSe4QrgjfW
+    kit: hu2CvqLJlt
+    plantilla: null
+    semilla: 633171
+    creditos: 180
+    prompt: 'Flat vector isometric line illustration, wide 21:9, viewed from the opposite isometric side
+      so the long four-bay frame recedes from lower left to upper right. The frame sits centred and slightly
+      low, leaving larger calm #FAFAF9 space above and empty margins at both ends. Columns, beams and
+      slab edges are thin uniform #074E43 and #1F2328 lines with white #FFFFFF unfilled faces. One thin
+      outlined pipe runs the entire length, clearly continuous from first bay to fourth. Only two parts
+      are flat #0FA994: a short pipe segment and the beam section it crosses near the third bay. Two faint
+      dashed, unfilled bypass routes swing sideways around the column line, one on each side, equally
+      faint and undecided. Faint isometric grid lines extend to the frame edges. Strict isometric projection
+      with no vanishing point. Flat even daylight, no shadows, glow, highlights or gradients. No text,
+      letters, numbers, markers, labels, icons or logo anywhere.'
+    prompt_enviado: 'Isometric line illustration: a long, low four-bay building frame, centred, empty
+      margins at both ends, a pipe running its length. Only two parts are flat teal, the single clash
+      an automated review found: a pipe segment and the beam section it crosses. Two faint dashed, unfilled
+      alternative routes bypass it, neither chosen. No text, no markers, no logo.'
+    proporcion_pedida: '21:9'
+    tamano_px:
+    - 3024
+    - 1296
+    reproducible: true
+    pedido: null
+    fecha: '2026-11-11'
+    sha256: 263dec3624862668
+    nota: 'G27 versión B (fórmula de gráfico relacionado, del visual brief v2 del repo): el choque marcado
+      y dos recorridos abiertos; referencia de estilo = la imagen principal (lJo6GJSgv9)'
+    tipo: objeto
+    objeto:
+    - 0.3072
+    - 0.1566
+    - 0.703
+    - 0.8534
+    fondo_imagen: '#F9FBF9'
+    acento:
+    - 0.4914
+    - 0.4136
+    - 0.581
+    - 0.5664
+  mg-articulo-ia-obra-nb-p1:
+    archivo: mg-articulo-ia-obra-nb-p1.png
+    herramienta: Magnific
+    modelo: imagen-nano-banana-2-1
+    creacion: 79hGRAqJAL
+    enlace: https://www.magnific.com/app/creation/79hGRAqJAL
+    kit: null
+    plantilla: null
+    semilla: 997982
+    creditos: 65
+    prompt: 'Flat vector isometric technical illustration in a 16:9 frame of a compact two-storey building
+      frame, whole and centred, occupying about 45 percent of the width and half the height, with wide
+      calm off-white space on every side. Four corner columns, perimeter beams and two floor slabs are
+      drawn in thin uniform #074E43 and #1F2328 line work with plain white #FFFFFF faces. A straight horizontal
+      pipe runs through the first-floor zone; only one segment of it and the short beam section it pierces
+      are filled flat #0FA994, the single point of colour in the calm model. Two faint thin dashed unfilled
+      lines of equal weight trace alternative pipe routes, one dipping under the beam and one rising over
+      it, neither emphasised. Solid #FAFAF9 background with faint pale construction grid lines running
+      to the edges. Strict isometric projection, no vanishing point. Even flat daylight: no shadows, glow,
+      gradients or highlights. Contains no text, letters, numbers, labels, markers, symbols, logo or watermark.'
+    prompt_enviado: 'Flat vector isometric technical illustration in a 16:9 frame of a compact two-storey
+      building frame, whole and centred, occupying about 45 percent of the width and half the height,
+      with wide calm off-white space on every side. Four corner columns, perimeter beams and two floor
+      slabs are drawn in thin uniform #074E43 and #1F2328 line work with plain white #FFFFFF faces. A
+      straight horizontal pipe runs through the first-floor zone; only one segment of it and the short
+      beam section it pierces are filled flat #0FA994, the single point of colour in the calm model. Two
+      faint thin dashed unfilled lines of equal weight trace alternative pipe routes, one dipping under
+      the beam and one rising over it, neither emphasised. Solid #FAFAF9 background with faint pale construction
+      grid lines running to the edges. Strict isometric projection, no vanishing point. Even flat daylight:
+      no shadows, glow, gradients or highlights. Contains no text, letters, numbers, labels, markers,
+      symbols, logo or watermark.'
+    proporcion_pedida: '16:9'
+    tamano_px:
+    - 2752
+    - 1536
+    reproducible: true
+    pedido: null
+    fecha: '2026-11-11'
+    sha256: f64e601530ca9aad
+    nota: 'Comparación de modelo pedida por David («prueba b1 tamiben en nano banana 2.1»): el mismo texto
+      que Magnific One compuso para B1, sin kit, con la imagen principal aprobada como referencia de estilo'
+    tipo: objeto
+    objeto:
+    - 0.3169
+    - 0.0944
+    - 0.6835
+    - 0.8659
+    fondo_imagen: '#F8F8F6'
+    acento:
+    - 0.4469
+    - 0.5365
+    - 0.4909
+    - 0.6576
+  mg-articulo-ia-obra-nb-p2:
+    archivo: mg-articulo-ia-obra-nb-p2.png
+    herramienta: Magnific
+    modelo: imagen-nano-banana-2-1
+    creacion: CqAL1jtEEy
+    enlace: https://www.magnific.com/app/creation/CqAL1jtEEy
+    kit: null
+    plantilla: null
+    semilla: 129947
+    creditos: 65
+    prompt: 'Flat vector isometric technical illustration in a 16:9 frame of a compact two-storey building
+      frame, whole and centred, occupying about 45 percent of the width and half the height, with wide
+      calm off-white space on every side. Four corner columns, perimeter beams and two floor slabs are
+      drawn in thin uniform #074E43 and #1F2328 line work with plain white #FFFFFF faces. A straight horizontal
+      pipe runs through the first-floor zone; only one segment of it and the short beam section it pierces
+      are filled flat #0FA994, the single point of colour in the calm model. Two faint thin dashed unfilled
+      lines of equal weight trace alternative pipe routes, one dipping under the beam and one rising over
+      it, neither emphasised. Solid #FAFAF9 background with faint pale construction grid lines running
+      to the edges. Strict isometric projection, no vanishing point. Even flat daylight: no shadows, glow,
+      gradients or highlights. Contains no text, letters, numbers, labels, markers, symbols, logo or watermark.'
+    prompt_enviado: 'Flat vector isometric technical illustration in a 16:9 frame of a compact two-storey
+      building frame, whole and centred, occupying about 45 percent of the width and half the height,
+      with wide calm off-white space on every side. Four corner columns, perimeter beams and two floor
+      slabs are drawn in thin uniform #074E43 and #1F2328 line work with plain white #FFFFFF faces. A
+      straight horizontal pipe runs through the first-floor zone; only one segment of it and the short
+      beam section it pierces are filled flat #0FA994, the single point of colour in the calm model. Two
+      faint thin dashed unfilled lines of equal weight trace alternative pipe routes, one dipping under
+      the beam and one rising over it, neither emphasised. Solid #FAFAF9 background with faint pale construction
+      grid lines running to the edges. Strict isometric projection, no vanishing point. Even flat daylight:
+      no shadows, glow, gradients or highlights. Contains no text, letters, numbers, labels, markers,
+      symbols, logo or watermark.'
+    proporcion_pedida: '16:9'
+    tamano_px:
+    - 2752
+    - 1536
+    reproducible: true
+    pedido: null
+    fecha: '2026-11-11'
+    sha256: 37c4784ee7d02072
+    nota: 'Comparación de modelo pedida por David («prueba b1 tamiben en nano banana 2.1»): el mismo texto
+      que Magnific One compuso para B1, sin kit, con la imagen principal aprobada como referencia de estilo'
+    tipo: objeto
+    objeto:
+    - 0.2885
+    - 0.0788
+    - 0.7504
+    - 0.9036
+    fondo_imagen: '#F7F7F3'
+    acento:
+    - 0.5109
+    - 0.4909
+    - 0.6915
+    - 0.6862
+  mg-articulo-ia-obra-nb-a1:
+    archivo: mg-articulo-ia-obra-nb-a1.png
+    herramienta: Magnific
+    modelo: imagen-nano-banana-2-1
+    creacion: XmyFCHgBfo
+    enlace: https://www.magnific.com/app/creation/XmyFCHgBfo
+    kit: null
+    plantilla: null
+    semilla: 129008
+    creditos: 65
+    prompt: 'Flat vector isometric line illustration in a wide 21:9 frame: a long, low four-bay structural
+      building frame centred horizontally, with generous empty #FAFAF9 margins at both the left and right
+      ends. Five columns, the beams and the slab edges are drawn in thin, uniform #074E43 and #1F2328
+      lines with unfilled white #FFFFFF faces. A single thin outlined pipe runs the full length of the
+      frame just under the beam line. Exactly two elements are filled flat #0FA994: one short pipe segment
+      and the beam section it passes through in the second bay, the single clash. Two faint, thin dashed,
+      unfilled alternative pipe routes bypass it, one arching above the beam and one dipping below it,
+      equally light, neither chosen. Very faint isometric construction grid lines run to the edges. Strict
+      isometric projection, no vanishing point. Flat even daylight, no shadows, glow, highlights or gradients.
+      No text, letters, numbers, markers, labels or logo.'
+    prompt_enviado: 'Flat vector isometric line illustration in a wide 21:9 frame: a long, low four-bay
+      structural building frame centred horizontally, with generous empty #FAFAF9 margins at both the
+      left and right ends. Five columns, the beams and the slab edges are drawn in thin, uniform #074E43
+      and #1F2328 lines with unfilled white #FFFFFF faces. A single thin outlined pipe runs the full length
+      of the frame just under the beam line. Exactly two elements are filled flat #0FA994: one short pipe
+      segment and the beam section it passes through in the second bay, the single clash. Two faint, thin
+      dashed, unfilled alternative pipe routes bypass it, one arching above the beam and one dipping below
+      it, equally light, neither chosen. Very faint isometric construction grid lines run to the edges.
+      Strict isometric projection, no vanishing point. Flat even daylight, no shadows, glow, highlights
+      or gradients. No text, letters, numbers, markers, labels or logo.'
+    proporcion_pedida: '21:9'
+    tamano_px:
+    - 3168
+    - 1344
+    reproducible: true
+    pedido: null
+    fecha: '2026-11-11'
+    sha256: 6db07758eab20805
+    nota: 'Comparación de modelo pedida por David («prueba b1 tamiben en nano banana 2.1»): el mismo texto
+      que Magnific One compuso para B1, sin kit, con la imagen principal aprobada como referencia de estilo'
+    tipo: objeto
+    objeto:
+    - 0.1496
+    - 0.3326
+    - 0.8504
+    - 0.7202
+    fondo_imagen: '#FAFAF9'
+    acento:
+    - 0.3741
+    - 0.375
+    - 0.4653
+    - 0.4494
+  mg-articulo-ia-obra-nb-a2:
+    archivo: mg-articulo-ia-obra-nb-a2.png
+    herramienta: Magnific
+    modelo: imagen-nano-banana-2-1
+    creacion: rgp4J9pxtc
+    enlace: https://www.magnific.com/app/creation/rgp4J9pxtc
+    kit: null
+    plantilla: null
+    semilla: 596022
+    creditos: 65
+    prompt: 'Flat vector isometric line illustration in a wide 21:9 frame: a long, low four-bay structural
+      building frame centred horizontally, with generous empty #FAFAF9 margins at both the left and right
+      ends. Five columns, the beams and the slab edges are drawn in thin, uniform #074E43 and #1F2328
+      lines with unfilled white #FFFFFF faces. A single thin outlined pipe runs the full length of the
+      frame just under the beam line. Exactly two elements are filled flat #0FA994: one short pipe segment
+      and the beam section it passes through in the second bay, the single clash. Two faint, thin dashed,
+      unfilled alternative pipe routes bypass it, one arching above the beam and one dipping below it,
+      equally light, neither chosen. Very faint isometric construction grid lines run to the edges. Strict
+      isometric projection, no vanishing point. Flat even daylight, no shadows, glow, highlights or gradients.
+      No text, letters, numbers, markers, labels or logo.'
+    prompt_enviado: 'Flat vector isometric line illustration in a wide 21:9 frame: a long, low four-bay
+      structural building frame centred horizontally, with generous empty #FAFAF9 margins at both the
+      left and right ends. Five columns, the beams and the slab edges are drawn in thin, uniform #074E43
+      and #1F2328 lines with unfilled white #FFFFFF faces. A single thin outlined pipe runs the full length
+      of the frame just under the beam line. Exactly two elements are filled flat #0FA994: one short pipe
+      segment and the beam section it passes through in the second bay, the single clash. Two faint, thin
+      dashed, unfilled alternative pipe routes bypass it, one arching above the beam and one dipping below
+      it, equally light, neither chosen. Very faint isometric construction grid lines run to the edges.
+      Strict isometric projection, no vanishing point. Flat even daylight, no shadows, glow, highlights
+      or gradients. No text, letters, numbers, markers, labels or logo.'
+    proporcion_pedida: '21:9'
+    tamano_px:
+    - 3168
+    - 1344
+    reproducible: true
+    pedido: null
+    fecha: '2026-11-11'
+    sha256: c67859bbf465b349
+    nota: 'Comparación de modelo pedida por David («prueba b1 tamiben en nano banana 2.1»): el mismo texto
+      que Magnific One compuso para B1, sin kit, con la imagen principal aprobada como referencia de estilo'
+    tipo: objeto
+    objeto:
+    - 0.06
+    - 0.2158
+    - 0.8971
+    - 0.7619
+    fondo_imagen: '#FAFAF9'
+    acento:
+    - 0.3188
+    - 0.3891
+    - 0.4018
+    - 0.4903
+  mg-rescate-h021:
+    archivo: mg-rescate-h021.png
+    herramienta: Magnific
+    modelo: magnific-one
+    creacion: Eb2JteFuuO
+    enlace: https://www.magnific.com/app/creation/Eb2JteFuuO
+    kit: null
+    plantilla: null
+    semilla: 953607
+    creditos: 180
+    prompt: 'LinkedIn personal profile banner for an architect who teaches BIM and applied AI: panoramic
+      isometric city blocks turning into data and connected nodes, right side calm for overlay. No text,
+      no logos, no people.'
+    prompt_enviado: 'LinkedIn personal profile banner for an architect who teaches BIM and applied AI:
+      panoramic isometric city blocks turning into data and connected nodes, right side calm for overlay.
+      No text, no logos, no people.'
+    proporcion_pedida: '21:9'
+    tamano_px:
+    - 2688
+    - 1152
+    reproducible: true
+    pedido: null
+    fecha: '2026-11-05'
+    sha256: bd4dde9136cd1f5e
+    nota: 'Rescate G28 de la biblioteca (H021): único fondo directo de 363 revisadas; ciudad isométrica
+      que se disuelve en red de nodos'
+    tipo: fondo
+    fondo_imagen: '#F9F9F8'
+  mg-rescate-h063:
+    archivo: mg-rescate-h063.png
+    herramienta: Magnific
+    modelo: magnific-one
+    creacion: xSD2kTljfW
+    enlace: https://www.magnific.com/app/creation/xSD2kTljfW
+    kit: null
+    plantilla: null
+    semilla: 212225
+    creditos: 180
+    prompt: 'Isometric illustration: from plan to model, tiny figures on a huge 2D floor plan whose lines
+      rise into a teal translucent BIM building. No text, no logos.'
+    prompt_enviado: 'Isometric illustration: from plan to model, tiny figures on a huge 2D floor plan
+      whose lines rise into a teal translucent BIM building. No text, no logos.'
+    proporcion_pedida: '1:1'
+    tamano_px:
+    - 2048
+    - 2048
+    reproducible: true
+    pedido: null
+    fecha: '2026-11-05'
+    sha256: 04b2d9bab34931b6
+    nota: 'Rescate G28 de la biblioteca (H063): solo la planta isométrica del cuadrante inferior izquierdo
+      (2,84:1); arriba hay personas'
+    region:
+    - 0.0
+    - 0.719
+    - 0.8
+    - 1.0
+    tipo: fondo
+    fondo_imagen: '#FAF9F8'
+  mg-rescate-h023:
+    archivo: mg-rescate-h023.png
+    herramienta: Magnific
+    modelo: magnific-one
+    creacion: SyoWrH2Ub8
+    enlace: https://www.magnific.com/app/creation/SyoWrH2Ub8
+    kit: null
+    plantilla: null
+    semilla: 936818
+    creditos: 180
+    prompt: 'LinkedIn personal profile banner for an architect who teaches BIM and applied AI: panoramic
+      isometric city blocks turning into data and connected nodes, right side calm for overlay. No text,
+      no logos, no people.'
+    prompt_enviado: 'LinkedIn personal profile banner for an architect who teaches BIM and applied AI:
+      panoramic isometric city blocks turning into data and connected nodes, right side calm for overlay.
+      No text, no logos, no people.'
+    proporcion_pedida: '21:9'
+    tamano_px:
+    - 2688
+    - 1152
+    reproducible: true
+    pedido: null
+    fecha: '2026-11-05'
+    sha256: c8d02c03c5b69f44
+    nota: 'Rescate G28 de la biblioteca (H023): la retícula de vigas y pilares con malla de puntos, sin
+      el grupo de edificios'
+    region:
+    - 0.0
+    - 0.42
+    - 0.62
+    - 0.96
+    tipo: fondo
+    fondo_imagen: '#FBFAFA'
+  mg-rescate-gafi04:
+    archivo: mg-rescate-gafi04.png
+    herramienta: Magnific
+    modelo: magnific-one
+    creacion: O6hR57tynm
+    enlace: https://www.magnific.com/app/creation/O6hR57tynm
+    kit: null
+    plantilla: null
+    semilla: 51259
+    creditos: 180
+    prompt: Create a reusable blank poster background for a BIM webinar, inspired by the reference's technical
+      isometric geometry and generous editorial space. Leave the left two thirds completely blank for
+      a large headline and three information rows to be added later. Restrict the geometric motif to the
+      right third. Text-free artwork only; no letters, numbers, logos, emblems, watermarks, labels, UI
+      icons or fake text. Leave the lower left blank for an official logo to be inserted later.
+    prompt_enviado: Create a reusable blank poster background for a BIM webinar, inspired by the reference's
+      technical isometric geometry and generous editorial space. Leave the left two thirds completely
+      blank for a large headline and three information rows to be added later. Restrict the geometric
+      motif to the right third. Text-free artwork only; no letters, numbers, logos, emblems, watermarks,
+      labels, UI icons or fake text. Leave the lower left blank for an official logo to be inserted later.
+    proporcion_pedida: '1:1'
+    tamano_px:
+    - 2048
+    - 2048
+    reproducible: true
+    pedido: null
+    fecha: '2026-11-04'
+    sha256: a7db42808828edae
+    nota: 'Rescate G28 de la biblioteca (G-AFI-04, dirección aprobada por David): solo el tercio derecho
+      a toda la altura (retícula estructural con losas turquesa)'
+    region:
+    - 0.42
+    - 0.0
+    - 1.0
+    - 1.0
+    tipo: fondo
+    fondo_imagen: '#F9F9F8'
+  mg-ia-obra-m01-1p:
+    archivo: mg-ia-obra-m01-1p.png
+    herramienta: Magnific
+    modelo: magnific-one
+    creacion: rgpNOorxtc
+    enlace: https://www.magnific.com/app/creation/rgpNOorxtc
+    kit: hu2CvqLJlt
+    plantilla: post-linkedin
+    semilla: 21273
+    creditos: 180
+    prompt: 'Flat vector isometric line illustration, 16:9, read left to right on a solid off-white #FAFAF9
+      field. One long horizontal building runs across the centre, spanning about 70 percent of the width,
+      and passes through a slender upright rectangular frame placed slightly left of centre. Left of the
+      frame the building is a closed solid mass with plain white #FFFFFF faces and thin outlines; right
+      of the frame it opens into a clear skeleton of floor slabs, square columns and beams in thin uniform
+      #074E43 and #1F2328 lines. At the right end three empty rectangular slots remain, and three misfit
+      blocks rest on the ground beside them, filled flat turquoise #0FA994, the only solid colour in the
+      image. Strict isometric projection, no vanishing point. Flat even daylight: no shadows, glow, highlights
+      or gradients. Faint grid lines run to the edges with calm off-white margins. No text, letters, numbers,
+      markers, labels or logo anywhere.'
+    prompt_enviado: 'Isometric fine-line scene read left to right: one long building passes through a
+      slender upright rectangular frame. Left of the frame it is a closed, solid mass; right of the frame
+      it opens into a clear structure of slabs, columns and beams. At its right end three empty slots
+      remain, and the three misfit pieces rest beside them in turquoise, waiting. No text, no markers,
+      no logo.'
+    proporcion_pedida: '16:9'
+    tamano_px:
+    - 2688
+    - 1520
+    reproducible: true
+    pedido: formula/demo/M01-metaforas.json
+    fecha: '2026-11-11'
+    sha256: 367f2c0de4d3134a
+    nota: M01, metáfora 1 para «La IA entra a la obra» (camino B v2); principal
+    tipo: objeto
+    objeto:
+    - 0.0718
+    - 0.1842
+    - 0.9509
+    - 0.9625
+    acento:
+    - 0.7489
+    - 0.7224
+    - 0.9464
+    - 0.9434
+    fondo_imagen: '#FAF9F7'
+  mg-ia-obra-m01-2p:
+    archivo: mg-ia-obra-m01-2p.png
+    herramienta: Magnific
+    modelo: magnific-one
+    creacion: w4mzRu97EI
+    enlace: https://www.magnific.com/app/creation/w4mzRu97EI
+    kit: hu2CvqLJlt
+    plantilla: post-linkedin
+    semilla: 957102
+    creditos: 180
+    prompt: 'Flat vector isometric line illustration, 16:9, in strict isometric projection with no vanishing
+      point: a wooden marble run stands on a plain tabletop, centred as one compact subject within the
+      middle 45 percent of the width and half the height. Thin uniform #074E43 and #1F2328 lines outline
+      white #FFFFFF faces, with a few sparse grain strokes suggesting wood. Open channel ramps zigzag
+      down from the upper left on slim upright posts toward the lower right. There a single white-outlined
+      marble sits stopped just before a Y-shaped fork, touching a small upright gate whose lever points
+      straight up between the two branches. The gate is the only element filled with flat turquoise #0FA994;
+      everything else stays unfilled white. Both branches continue downward, empty and open. Solid #FAFAF9
+      field with faint grey construction grid lines and crosshair nodes running to the edges. Flat even
+      daylight, no shadows, glow, gradients or highlights. No text, letters, numbers, markers, labels
+      or logo.'
+    prompt_enviado: 'Isometric line illustration: a wooden marble run stands on a plain tabletop, its
+      ramps descending in a zigzag from the upper left. At the lower right, a single marble rests stopped
+      just before a Y-shaped fork, touching a small upright gate whose lever points straight up between
+      the two branches. The gate is the only turquoise element. Both branches continue down, empty and
+      open. No text, no markers, no logo.'
+    proporcion_pedida: '16:9'
+    tamano_px:
+    - 2688
+    - 1520
+    reproducible: true
+    pedido: formula/demo/M01-metaforas.json
+    fecha: '2026-11-11'
+    sha256: 5edb147fb3493146
+    nota: M01, metáfora 2 para «La IA entra a la obra» (camino B v2); principal
+    tipo: objeto
+    objeto:
+    - 0.2902
+    - 0.0868
+    - 0.7024
+    - 0.9046
+    acento:
+    - 0.5636
+    - 0.5888
+    - 0.5822
+    - 0.6901
+    fondo_imagen: '#FAF9F7'
+  mg-ia-obra-m01-3p:
+    archivo: mg-ia-obra-m01-3p.png
+    herramienta: Magnific
+    modelo: magnific-one
+    creacion: LwX34hrswO
+    enlace: https://www.magnific.com/app/creation/LwX34hrswO
+    kit: hu2CvqLJlt
+    plantilla: post-linkedin
+    semilla: 659053
+    creditos: 180
+    prompt: 'Flat vector isometric line illustration in true isometric projection with no vanishing point:
+      one rectangular floor slab, whole and centred in a 16:9 frame, about 45 percent of the frame width,
+      with wide calm empty space on every side. The slab top is laid with square tiles in an exact, perfectly
+      regular grid, outlined in thin uniform #074E43 lines with white #FFFFFF tile faces; the slab edge
+      shows a thin white thickness band outlined in #1F2328. Near the middle, a bare concrete square exactly
+      three tiles wide stays open as a plain unfilled face; whole tiles stop cleanly at its edge, with
+      no cut pieces. Inside it sits a round floor drain set off-centre, so it does not line up with any
+      tile joint; only its circular grate is flat #0FA994, the single coloured plane. Solid #FAFAF9 background,
+      flat even daylight, with no shadows, glow, gradients or highlights. The image contains no text,
+      numbers, markers, crosshairs, labels or logo.'
+    prompt_enviado: 'Isometric line illustration: a rectangular floor slab almost fully laid with square
+      tiles in an exact grid, whole and centred with wide empty space around it. Near the middle, a bare
+      concrete square three tiles wide stays open; whole tiles stop at its edge. Inside it sits a round
+      floor drain, offset from the tile joints. Only one part is flat teal: the drain grate. No text,
+      no markers, no logo.'
+    proporcion_pedida: '16:9'
+    tamano_px:
+    - 2688
+    - 1520
+    reproducible: true
+    pedido: formula/demo/M01-metaforas.json
+    fecha: '2026-11-11'
+    sha256: 26b69eca4575f7b2
+    nota: M01, metáfora 3 para «La IA entra a la obra» (camino B v2); principal
+    tipo: objeto
+    objeto:
+    - 0.2548
+    - 0.2408
+    - 0.7626
+    - 0.7849
+    acento:
+    - 0.5197
+    - 0.5026
+    - 0.5569
+    - 0.5421
+    fondo_imagen: '#F9F9F7'
+  mg-ia-obra-m01-4p:
+    archivo: mg-ia-obra-m01-4p.png
+    herramienta: Magnific
+    modelo: magnific-one
+    creacion: 79hnZHzJAL
+    enlace: https://www.magnific.com/app/creation/79hnZHzJAL
+    kit: hu2CvqLJlt
+    plantilla: post-linkedin
+    semilla: 180805
+    creditos: 180
+    prompt: 'Flat vector isometric line illustration, 16:9, true axonometric projection with no vanishing
+      point, seen from a high isometric angle. A wide field of identical rectangular floor panels laid
+      edge to edge in a tight grid fills the full frame width and runs off the left and right edges, on
+      a solid #FAFAF9 off-white field. Every panel is drawn with thin uniform #1F2328 lines, filled flat
+      pale grey, lying flat and perfectly aligned. Five panels scattered evenly across the field hover
+      just above their own slots, each slightly rotated out of alignment, filled flat #0FA994 turquoise
+      with thin #074E43 outlines and a thin white edge band showing their thickness. Beneath each raised
+      panel its empty slot is a pale outlined rectangle with no fill. Turquoise appears only on those
+      five panels. Flat, even daylight: no cast shadows, drop shadows, glow, highlights or gradients.
+      No text, letters, numbers, markers, labels or logo anywhere.'
+    prompt_enviado: 'Isometric line illustration: a wide field of identical rectangular floor panels laid
+      edge to edge in a tight grid, like a building floor seen from a high isometric angle. Five scattered
+      panels hover just above their own empty slots, each slightly rotated out of alignment, drawn in
+      turquoise. Each empty slot beneath a raised panel is a pale outlined rectangle. Every other panel
+      lies flat, pale grey, perfectly aligned. No text, no markers, no logo.'
+    proporcion_pedida: '16:9'
+    tamano_px:
+    - 2688
+    - 1520
+    reproducible: true
+    pedido: formula/demo/M01-metaforas.json
+    fecha: '2026-11-11'
+    sha256: 7e05644c2779e242
+    nota: M01, metáfora 4 para «La IA entra a la obra» (camino B v2); principal
+    tipo: fondo
+    fondo_imagen: '#E9E9E9'
+  mg-ia-obra-m01-1a:
+    archivo: mg-ia-obra-m01-1a.png
+    herramienta: Magnific
+    modelo: magnific-one
+    creacion: nVxtoXhYQD
+    enlace: https://www.magnific.com/app/creation/nVxtoXhYQD
+    kit: hu2CvqLJlt
+    plantilla: post-linkedin
+    semilla: 689366
+    creditos: 180
+    prompt: 'Flat vector isometric technical illustration in a wide 21:9 panorama, read left to right,
+      on a solid off-white #FAFAF9 field. One long, low building runs horizontally across the frame, centred
+      vertically, and passes through a slender upright rectangular frame drawn in thin #074E43 line, placed
+      slightly left of centre. Left of the frame the building is a closed solid mass with plain white
+      #FFFFFF faces and thin uniform outlines. Right of the frame it opens into a legible structure of
+      stacked floor slabs, square columns and beams in thin #074E43 and #1F2328 line work with white faces.
+      At the far right end three empty rectangular slots remain; beside them, resting on the ground with
+      open space around, sit three misfit blocks in flat turquoise #0FA994, the only solid colour. Strict
+      isometric projection, no vanishing point. Flat, even daylight: no shadows, glow, gradients or highlights.
+      Generous off-white above and below; faint grid lines run to the edges. No text, letters, numbers,
+      markers, labels or logo.'
+    prompt_enviado: 'Isometric fine-line panorama read left to right: one long building passes through
+      a slender upright rectangular frame. Left of the frame it is a closed, solid mass; right of it,
+      a clear structure of slabs, columns and beams. At its far right end three empty slots remain, and
+      the three misfit pieces rest beside them in turquoise, waiting, with open space around. No text,
+      no markers, no logo.'
+    proporcion_pedida: '21:9'
+    tamano_px:
+    - 3024
+    - 1296
+    reproducible: true
+    pedido: formula/demo/M01-metaforas.json
+    fecha: '2026-11-11'
+    sha256: 6e6a3a3513d854e0
+    nota: M01, metáfora 1 para «La IA entra a la obra» (camino B v2); apaisada, con la principal como
+      referencia de estilo
+    tipo: objeto
+    objeto:
+    - 0.0658
+    - 0.189
+    - 0.959
+    - 0.8835
+    acento:
+    - 0.8776
+    - 0.5548
+    - 0.9537
+    - 0.7137
+    fondo_imagen: '#FBF9F8'
+  mg-ia-obra-m01-2a:
+    archivo: mg-ia-obra-m01-2a.png
+    herramienta: Magnific
+    modelo: magnific-one
+    creacion: vQRj1kDa47
+    enlace: https://www.magnific.com/app/creation/vQRj1kDa47
+    kit: hu2CvqLJlt
+    plantilla: post-linkedin
+    semilla: 486788
+    creditos: 180
+    prompt: 'Flat vector isometric line illustration, wide 21:9 panorama: a long wooden marble run stretches
+      across a plain tabletop, its ramps descending in a gentle zigzag from left to right. Draw everything
+      in thin uniform #074E43 and #1F2328 line work with white #FFFFFF faces; suggest wood only with sparse
+      fine grain lines. At the right third, a single white marble rests stopped just before a Y-shaped
+      fork, touching a small upright gate whose lever points straight up between the two branches. The
+      gate is the only flat #0FA994 turquoise fill in the image, as in the attached doorway illustration''s
+      single teal panel; both branches continue onward, empty and open. Strict isometric projection, no
+      vanishing point. Solid flat #FAFAF9 background with faint pale-grey construction grid lines running
+      to the edges, calm space above and below, subject clear of the margins. Flat even daylight, no cast
+      shadows, glow, gradients or photorealism. No text, letters, numbers, markers, labels or logo.'
+    prompt_enviado: 'Isometric line illustration: a long wooden marble run stretches across a plain tabletop,
+      its ramps descending in a gentle zigzag from left to right. At the right third, a single marble
+      rests stopped just before a Y-shaped fork, touching a small upright gate whose lever points straight
+      up between the two branches. The gate is the only turquoise element. Both branches continue onward,
+      empty and open. No text, no markers, no logo.'
+    proporcion_pedida: '21:9'
+    tamano_px:
+    - 3024
+    - 1296
+    reproducible: true
+    pedido: formula/demo/M01-metaforas.json
+    fecha: '2026-11-11'
+    sha256: 89946e5a2d2080cb
+    nota: M01, metáfora 2 para «La IA entra a la obra» (camino B v2); apaisada, con la principal como
+      referencia de estilo
+    tipo: objeto
+    objeto:
+    - 0.0479
+    - 0.0486
+    - 0.9501
+    - 0.9221
+    acento:
+    - 0.6425
+    - 0.4452
+    - 0.6892
+    - 0.6049
+    fondo_imagen: '#FAFBFA'
+  mg-ia-obra-m01-3a:
+    archivo: mg-ia-obra-m01-3a.png
+    herramienta: Magnific
+    modelo: magnific-one
+    creacion: ov45Hq3829
+    enlace: https://www.magnific.com/app/creation/ov45Hq3829
+    kit: hu2CvqLJlt
+    plantilla: post-linkedin
+    semilla: 872831
+    creditos: 180
+    prompt: 'Flat vector isometric line illustration in a wide 21:9 frame, true isometric projection with
+      no vanishing point. A long, narrow corridor floor runs horizontally across the centre, about 80
+      percent of the frame width, laid with identical square tiles in an exact unbroken grid along its
+      full length, with calm empty margins at both ends and above and below. In the left third, a bare
+      concrete square exactly three tiles wide and three tiles deep stays open; whole tiles stop cleanly
+      at its edge, no cut tiles. Inside it sits one round floor drain, set deliberately off the tile joint
+      lines. Thin uniform #074E43 and #1F2328 line work, tile faces white #FFFFFF, concrete unfilled with
+      sparse fine stipple. The drain grate is the only solid fill, flat #0FA994, borrowing the single-teal-panel
+      restraint of the doorway reference. Solid #FAFAF9 background with faint construction grid lines
+      to the edges. Flat even daylight: no shadows, glow or gradients. No text, numbers, markers, labels
+      or logo.'
+    prompt_enviado: 'Isometric line illustration: a long, narrow corridor floor laid with square tiles
+      in an exact grid along its full length, centred, empty margins at both ends. In the left third,
+      a bare concrete square three tiles wide stays open; whole tiles stop at its edge. Inside it sits
+      a round floor drain, offset from the tile joints. Only one part is flat teal: the drain grate. No
+      text, no markers, no logo.'
+    proporcion_pedida: '21:9'
+    tamano_px:
+    - 3024
+    - 1296
+    reproducible: true
+    pedido: formula/demo/M01-metaforas.json
+    fecha: '2026-11-11'
+    sha256: 7ed8834d2f1b6e68
+    nota: M01, metáfora 3 para «La IA entra a la obra» (camino B v2); apaisada, con la principal como
+      referencia de estilo
+    tipo: objeto
+    objeto:
+    - 0.0
+    - 0.1644
+    - 1.0
+    - 0.8387
+    acento:
+    - 0.3294
+    - 0.4769
+    - 0.3671
+    - 0.5424
+    fondo_imagen: '#F9F8F6'
+  mg-ia-obra-m01-4a:
+    archivo: mg-ia-obra-m01-4a.png
+    herramienta: Magnific
+    modelo: magnific-one
+    creacion: 6AFDTDMiJO
+    enlace: https://www.magnific.com/app/creation/6AFDTDMiJO
+    kit: hu2CvqLJlt
+    plantilla: post-linkedin
+    semilla: 926266
+    creditos: 180
+    prompt: 'Flat vector isometric line illustration in a wide 21:9 panoramic frame, strict isometric
+      projection with no vanishing point. A long horizontal band of identical rectangular floor panels,
+      laid edge to edge in a tight grid, runs across the full width, centred vertically like one building
+      floor plate. Every panel lies flat and perfectly aligned, with pale grey faces and thin uniform
+      #1F2328 outlines. Five panels, evenly spaced along the band, hover just above their own slots, each
+      rotated a few degrees out of alignment, filled flat #0FA994 with a thin white edge and thin #074E43
+      outlines. Beneath each, the empty slot is a pale outlined rectangle. Solid #FAFAF9 background with
+      calm, even space above and below; faint thin construction grid lines extend to the edges. Flat even
+      daylight, no cast or drop shadows, no glow or sheen, no gradients, turquoise as the only accent.
+      No text, letters, numbers, markers, labels or logo.'
+    prompt_enviado: 'Isometric line illustration: a long panoramic field of identical rectangular floor
+      panels laid edge to edge in a tight grid, stretching across the frame like a building floor. Five
+      panels, spread along its length, hover just above their own empty slots, each slightly rotated out
+      of alignment, drawn in turquoise. Each empty slot beneath a raised panel is a pale outlined rectangle.
+      Every other panel lies flat, pale grey, perfectly aligned. No text, no markers, no logo.'
+    proporcion_pedida: '21:9'
+    tamano_px:
+    - 3024
+    - 1296
+    reproducible: true
+    pedido: formula/demo/M01-metaforas.json
+    fecha: '2026-11-11'
+    sha256: 7b8bdec57c74a5e2
+    nota: M01, metáfora 4 para «La IA entra a la obra» (camino B v2); apaisada, con la principal como
+      referencia de estilo
+    tipo: fondo
+    fondo_imagen: '#FBFBFB'
+  mg-ia-obra-m02-1p:
+    archivo: mg-ia-obra-m02-1p.png
+    herramienta: Magnific
+    modelo: magnific-one
+    creacion: jUdzTTaLD0
+    enlace: https://www.magnific.com/app/creation/jUdzTTaLD0
+    kit: hu2CvqLJlt
+    plantilla: post-linkedin
+    semilla: 47581
+    creditos: 180
+    prompt: 'Flat vector line illustration, 16:9, high-angle isometric axonometric projection with no
+      vanishing point. An unfinished concrete building frame fills the right two thirds of the frame:
+      a deep orthogonal grid of square columns, beams and open floor slabs, six floors high and several
+      bays deep, drawn in thin uniform #074E43 and #1F2328 lines with plain white #FFFFFF faces and dashed
+      hidden edges. From the upper left, a murmuration of thousands of tiny flat turquoise #0FA994 starling
+      silhouettes flows in as one loose soft cloud, narrowing into an orderly stream that spreads over
+      the structure, one small bird perched with folded wings on every beam-column joint so the flock
+      traces the whole frame. The birds are the only turquoise; no slab or panel is filled. Solid flat
+      #FAFAF9 background with faint grid lines running to the edges, no crosshairs or ticks. Flat even
+      daylight: no shadows, glow, gradients or highlights. No text, letters, numbers, markers, labels
+      or logo anywhere.'
+    prompt_enviado: 'An unfinished concrete structure seen from a high angle fills the right two thirds
+      of the frame: a deep grid of columns, beams and open slabs, floor after floor. From the upper left,
+      a murmuration of thousands of tiny turquoise starlings flows in as one soft cloud and settles into
+      exact order, one bird perched with folded wings on every beam-column joint, the flock tracing the
+      entire structure. Only the birds are turquoise. No text, no markers, no logo.'
+    proporcion_pedida: '16:9'
+    tamano_px:
+    - 2688
+    - 1520
+    reproducible: true
+    pedido: formula/demo/M02-ideas.json
+    fecha: '2026-11-11'
+    sha256: 1a7620fe22a43ea9
+    nota: M02, idea 1 para «La IA entra a la obra» (buscan enganchar tras M01)
+    tipo: objeto
+    objeto:
+    - 0.474
+    - 0.0533
+    - 1.0
+    - 1.0
+    acento:
+    - 0.0108
+    - 0.0493
+    - 0.9978
+    - 0.9441
+    fondo_imagen: '#FBFBFA'
+  mg-ia-obra-m02-2p:
+    archivo: mg-ia-obra-m02-2p.png
+    herramienta: Magnific
+    modelo: magnific-one
+    creacion: aFZ793EfSh
+    enlace: https://www.magnific.com/app/creation/aFZ793EfSh
+    kit: hu2CvqLJlt
+    plantilla: post-linkedin
+    semilla: 284626
+    creditos: 180
+    prompt: 'Flat vector isometric technical illustration, 16:9, of a seven-storey building under construction
+      filling the frame edge to edge on a solid #FAFAF9 field. Strict isometric projection with parallel
+      lines and no vanishing point. Structure drawn in thin uniform #1F2328 and #074E43 lines with white
+      #FFFFFF faces: open concrete slabs, square columns, beams, and on every floor rectangular ducts,
+      round pipes and ladder cable trays, with dashed hidden edges like the attached wireframe reference.
+      A lattice tower crane rises at the left edge, its jib reaching over the upper floors. Blank #0FA994
+      dimension lines with short oblique tick ends multiply from left to right: three or four near the
+      crane, dozens across the centre, hundreds in the right third, forming a tight web measuring every
+      gap between beam, duct, pipe and wall. Only the dimension lines are turquoise; nothing else is filled.
+      Flat even daylight, no shadows, glow or gradients. No text, numbers, labels, markers or logo anywhere.'
+    prompt_enviado: 'A mid-rise building under construction fills the frame edge to edge: open slabs,
+      columns, ducts, pipes and cable trays on every floor, a tower crane at left. Blank turquoise dimension
+      lines with oblique ticks multiply from left to right: a few near the crane, dozens at the center,
+      hundreds across the right third, a tight web measuring every gap between beam, duct, pipe and wall.
+      Only the dimension lines are turquoise. No text, no markers, no logo.'
+    proporcion_pedida: '16:9'
+    tamano_px:
+    - 2688
+    - 1520
+    reproducible: true
+    pedido: formula/demo/M02-ideas.json
+    fecha: '2026-11-11'
+    sha256: a5d0d6f9e14ce15c
+    nota: M02, idea 2 para «La IA entra a la obra» (buscan enganchar tras M01)
+    tipo: fondo
+    fondo_imagen: '#FCFCFA'
+  mg-ia-obra-m02-3p:
+    archivo: mg-ia-obra-m02-3p.png
+    herramienta: Magnific
+    modelo: magnific-one
+    creacion: eIJ1lJNdqL
+    enlace: https://www.magnific.com/app/creation/eIJ1lJNdqL
+    kit: hu2CvqLJlt
+    plantilla: post-linkedin
+    semilla: 48963
+    creditos: 180
+    prompt: 'Flat vector isometric technical illustration, 16:9, true axonometric projection with no vanishing
+      point: one long office building under construction spans the frame edge to edge in a horizontal
+      band through the middle. At the far left it is a compact dense block where columns, beams, slabs,
+      ductwork, piping and façade panels pack tightly together. Moving right, the same building lifts
+      into five perfectly level strata with gaps widening steadily: structural frame, floor slabs, rectangular
+      ducts, pipe runs, façade panels. Hundreds of thin, taut, perfectly straight vertical threads in
+      flat #0FA994 run between the strata, each linking a point where two systems once touched; they are
+      the only turquoise in the image. All building line work is thin uniform charcoal #1F2328 with white
+      #FFFFFF faces and no coloured fills. Solid flat #FAFAF9 background with a barely visible construction
+      grid, no nodes or ticks. Flat even daylight, no shadows, glow or gradients. No text, numbers, markers,
+      labels or logo.'
+    prompt_enviado: 'One long building under construction spans the whole frame. At the left end it stands
+      compact, every system packed into one dense block. Toward the right, the same building lifts apart
+      into calm, level strata, the gaps widening steadily: structure, slabs, ducts, pipes and façade each
+      on its own level. Hundreds of thin, taut turquoise threads run straight up between the strata, linking
+      every point where two systems touched. Only the threads are turquoise. No text, no markers, no logo.'
+    proporcion_pedida: '16:9'
+    tamano_px:
+    - 2688
+    - 1520
+    reproducible: true
+    pedido: formula/demo/M02-ideas.json
+    fecha: '2026-11-11'
+    sha256: e0d84fdbf35e677f
+    nota: M02, idea 3 para «La IA entra a la obra» (buscan enganchar tras M01)
+    tipo: objeto
+    objeto:
+    - 0.0424
+    - 0.0493
+    - 0.9658
+    - 0.948
+    fondo_imagen: '#FAF9F7'
+  mg-ia-obra-m02-4p:
+    archivo: mg-ia-obra-m02-4p.png
+    herramienta: Magnific
+    modelo: magnific-one
+    creacion: SyI0eaoUb8
+    enlace: https://www.magnific.com/app/creation/SyI0eaoUb8
+    kit: hu2CvqLJlt
+    plantilla: post-linkedin
+    semilla: 456165
+    creditos: 180
+    prompt: 'Flat vector technical line illustration, 16:9, strict isometric axonometric projection from
+      a high angle with no vanishing point. A vast structural grid fills the frame edge to edge: hundreds
+      of square columns and beams repeating in even bays, drawn in thin uniform #1F2328 and #074E43 lines
+      with unfilled white #FFFFFF faces on a solid flat #FAFAF9 background, matching the fine wireframe
+      line work of the attached modular grid drawing. Entering at the lower-left corner, a few thin #0FA994
+      lines cross the bays diagonally, each linking two distant column heads. They multiply toward the
+      upper right into a dense triangulated mesh that gathers into three or four tight knots where many
+      lines converge on single column heads. The turquoise lines share the grid''s thin weight; only the
+      mesh is turquoise, and the column grid runs whole and unbroken beneath it. Even flat daylight with
+      no shadows, glow, bloom, gradients or highlights. No text, letters, numbers, crosshairs, dimension
+      ticks, markers, labels or logo anywhere.'
+    prompt_enviado: A vast structural grid seen from a high angle fills the frame, hundreds of columns
+      and beams repeating in even bays. Entering at the lower left corner, thin turquoise lines cross
+      the bays diagonally, each linking two distant column heads; they multiply toward the upper right,
+      where they weave a dense triangulated mesh gathered into a few tight knots. Only the mesh is turquoise;
+      the column grid runs whole beneath it. No text, no markers, no logo.
+    proporcion_pedida: '16:9'
+    tamano_px:
+    - 2688
+    - 1520
+    reproducible: true
+    pedido: formula/demo/M02-ideas.json
+    fecha: '2026-11-11'
+    sha256: 4bf64df0c514a478
+    nota: M02, idea 4 para «La IA entra a la obra» (buscan enganchar tras M01)
+    tipo: fondo
+    fondo_imagen: '#FEFEFE'

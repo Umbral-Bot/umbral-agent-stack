@@ -1,0 +1,11 @@
+# Prueba de la cadena Magnific → motor: el artículo de ejemplo con una imagen de Magnific One
+# ya existente (G-SITIO-01). No publicar.
+id: articulo-ia-obra-prueba-magnific
+ejemplo: true              # muestra el chip EJEMPLO
+chip: EJEMPLO
+kicker: Artículo
+titulo: [La IA entra, a la obra]
+cuerpo: "Qué cambia en la coordinación BIM cuando los modelos se revisan con IA, y qué sigue dependiendo del equipo."
+cta: "LEE EL ARTÍCULO · umbralbim.io"
+imagen: mg-g-sitio-01
+imagen_idea: null   # el pedido real lo escribe pedido_magnific.py desde el titular

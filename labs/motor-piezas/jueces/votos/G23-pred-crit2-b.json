@@ -1,0 +1,59 @@
+{
+ "galeria": "G23",
+ "seccion": null,
+ "rubrica": "pred-crit2-b",
+ "retro": true,
+ "criterios_hasta": "G23",
+ "sellado": "2026-11-11T00:51:32",
+ "hash_rubrica": "b71ce177d875",
+ "hash_criterios": "11070cf84d18",
+ "votos": [
+  {
+   "id": "G23-rab-prediccion",
+   "galeria": "G23",
+   "version": "pred-crit2-b",
+   "lente": "prediccion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 6.5,
+    "2": 8,
+    "3": 5.5
+   },
+   "hallazgos": [
+    {
+     "opcion": "1",
+     "donde": "botón «LEE EL ARTÍCULO / umbralbim.io», al pie de la columna",
+     "problema": "Con solo un 12 % menos, el botón casi no cambia: mide 537×135 px en el lienzo de 2400 px y sigue siendo el bloque más pesado bajo el titular. David pidió achicarlo dos veces (G19 y G22), y esta reducción no basta para que se note en el feed.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "relleno interno del botón",
+     "problema": "Con un módulo menos de relleno, el texto queda pegado al borde: unos 8 px arriba y abajo y 17 a 20 px a los lados, medidos en 2400 px. La tilde de la «Í» casi toca el canto superior. El botón se ve como una etiqueta apretada y pierde el oficio que tienen la 1° y la 2°.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "texto del botón",
+     "problema": "El texto del botón mide 7,1 px CSS en la vista de 390 px. Es solo un aviso, no un veto, porque se trata del texto del botón en un LinkedIn pensado para computador. Pasa lo mismo en la 3°.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "espacio entre el titular y el botón",
+     "problema": "Es un defecto común a las tres opciones. Entre el titular y el botón quedan unos 150 a 165 px, medidos en 2400 px, frente a los 32 px entre el kicker y el titular. Lo cubre la excepción del botón que cierra la columna al pie. Aun así, crece un poco a medida que el botón se achica (151, 157 y 165 px): conviene vigilarlo para que no se lea como un vacío.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "chip EJEMPLO, arriba a la derecha del panel",
+     "problema": "Es una marca de laboratorio. No choca con el logo ni le quita espacio al texto, así que no tiene efecto en el diseño.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "2",
+   "veredicto": "sirve",
+   "resumen": "Solo cambia el tamaño del botón, y David ya pidió dos veces que fuera más chico. Predigo que elige la 2°: el texto del botón baja un 24 % y conserva el relleno, así que se nota más pequeño y sigue viéndose como un botón bien proporcionado y sobrio, sin competir con el kicker ni con el titular. La 1° achica demasiado poco y repetiría el pedido. La 3° llega al mismo tamaño de letra, pero el relleno recortado deja el texto pegado al borde y el botón se ve apretado. El contraste mide 9,92:1 en las tres y no las distingue. Los 7,1 px CSS del texto del botón quedan como aviso, porque es un LinkedIn pensado para computador."
+  }
+ ]
+}

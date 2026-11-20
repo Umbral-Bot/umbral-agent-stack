@@ -1,0 +1,65 @@
+id: G10
+fecha: 2026-11-08
+titulo: "Galería 10 · el Preset 01 completo y una prueba con otro contenido"
+descripcion: >
+  El Preset 01 en sus cuatro formatos (presets/P01.yaml), tal como David lo eligió, y la misma
+  familia con otro contenido de prueba (un webinar con un título más largo). Con «COORDINACIÓN»
+  el título se achica a unos 70 px y, en 1:1 y 4:5, el kicker y el subtítulo le compiten; la
+  última sección prueba una regla para evitarlo: el kicker y el subtítulo no pasan del 45 % del
+  título. Laboratorio: no publicar.
+resumen: >
+  Arriba, el Preset 01 completo con el contenido del workshop. Abajo, la misma familia con otro
+  contenido (un webinar), sin y con la regla que protege la jerarquía cuando el título es largo.
+como_elegir: >
+  Mira si el preset aguanta el otro contenido y dime si adoptamos la regla de la jerarquía
+  protegida (comparando la segunda y la tercera sección).
+contenido: contenido/workshop-bim-ia.yaml
+secciones:
+  - alternativa: preset
+    titulo: "Preset 01 completo · workshop BIM + IA"
+    descripcion: >
+      Las cuatro versiones elegidas: 16:9 (G07), 1:1 y 4:5 (G08 «1 y 3») y LinkedIn (G09 «2»).
+    pasos:
+      - "16:9: tercio, datos fuertes, imagen lateral, color de marca y trama"
+      - "1:1: columna ancha con todos los datos"
+      - "4:5: columna ancha con todos los datos"
+      - "LinkedIn: pensada para computador, solo la fecha"
+    piezas:
+      - packs/P01-save-the-date-slide.yaml
+      - packs/K1-formato-1x1-columna.yaml
+      - packs/K3-formato-4x5-columna.yaml
+      - packs/L2-linkedin-computador.yaml
+  - alternativa: prueba-sin
+    titulo: "Prueba · webinar con el preset tal cual"
+    descripcion: >
+      El mismo preset con contenido/webinar-ejemplo.yaml: título más largo, otro kicker y un lugar
+      más largo («Online · Microsoft Teams»).
+    contenido: contenido/webinar-ejemplo.yaml
+    sufijo: web
+    pasos:
+      - "16:9: el título baja de 98 a 74 px; el resto se mantiene"
+      - "1:1: el título baja a 70 px; el kicker (43 px) y el subtítulo en dos líneas le compiten"
+      - "4:5: lo mismo que en 1:1"
+      - "LinkedIn: el título baja a 71 px; la fecha sigue clara"
+    piezas:
+      - packs/P01-save-the-date-slide.yaml
+      - packs/K1-formato-1x1-columna.yaml
+      - packs/K3-formato-4x5-columna.yaml
+      - packs/L2-linkedin-computador.yaml
+  - alternativa: prueba-con
+    titulo: "Prueba · webinar con la jerarquía protegida"
+    descripcion: >
+      Igual que la sección anterior, con jerarquia_tope_secundario: 0.45 (kicker y subtítulo hasta
+      el 45 % del título, nunca bajo el texto mínimo).
+    contenido: contenido/webinar-ejemplo.yaml
+    sufijo: web
+    pasos:
+      - "16:9: sin cambios (el kicker ya era el 40 % del título)"
+      - "1:1: el kicker y el subtítulo bajan de 43 a 31 px y el título vuelve a mandar"
+      - "4:5: lo mismo que en 1:1"
+      - "LinkedIn: cambio leve (de 33 a 32 px)"
+    piezas:
+      - packs/M1-jerarquia-protegida-p01.yaml
+      - packs/M2-jerarquia-protegida-k1.yaml
+      - packs/M3-jerarquia-protegida-k3.yaml
+      - packs/M4-jerarquia-protegida-l2.yaml

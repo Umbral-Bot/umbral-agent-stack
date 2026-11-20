@@ -1,0 +1,207 @@
+{
+ "galeria": "G02",
+ "seccion": null,
+ "rubrica": "v1",
+ "retro": true,
+ "criterios_hasta": null,
+ "sellado": "2026-11-11T00:00:23",
+ "hash_rubrica": "de3f9cdef0fe",
+ "hash_criterios": "-",
+ "votos": [
+  {
+   "id": "G02-v1-jerarquia",
+   "galeria": "G02",
+   "version": "v1",
+   "lente": "jerarquia",
+   "puntajes": {
+    "1": 7.5,
+    "2": 4.5,
+    "3": 6.5,
+    "4": 8
+   },
+   "hallazgos": [
+    {
+     "opcion": "2",
+     "donde": "pieza 2°, mitad central (resplandor cian) frente a la columna de texto",
+     "problema": "La imagen manda por diseño: el resplandor cian de 2/3 del lienzo es lo primero que se lee. El título baja de 176 a 98 px (66% del de la 1°) y el subtítulo se parte en 2 líneas, así que a tamaño de feed el titular deja de ser lo primero que se ve.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "2",
+     "donde": "pieza 2°, pie de la columna de 4 columnas",
+     "problema": "El logo y 'INSCRÍBETE · umbralbim.io' quedan pegados en una columna angosta: el botón se lee como continuación del logo y pierde peso propio, aunque sigue legible (7.12:1).",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "pieza 3°, mitad superior (imagen sin velo)",
+     "problema": "La imagen ocupa la entrada de lectura: arriba a la izquierda y al centro hay blancos y cian brillantes. El ojo cae primero en ella, y el titular (143 px) recién empieza a media altura. El titular gana por tamaño, pero llega segundo.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "pieza 3°, columna derecha de la banda",
+     "problema": "Los datos flotan con un hueco vacío debajo, y el botón queda aislado en la esquina inferior derecha, sobre el velo más gris. Se lee (7.05:1), pero queda lejos del bloque que lo motiva.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1",
+     "donde": "pieza 1°, borde de la división (x≈1305 de 2576)",
+     "problema": "La franja cian brillante y la masa negra quedan pegadas al corte, justo donde termina 'WORKSHOP' (x≈1215). El borde vertical de alto contraste disputa atención al final del titular y lo comprime contra la división.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "pieza 1°, entre el subtítulo y el bloque de datos",
+     "problema": "Hay un vacío vertical grande que separa el titular de los datos: la jerarquía se lee en dos islas. Se afina en el paso 2.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "4",
+     "donde": "pieza 4°, ventana de imagen abajo a la derecha",
+     "problema": "El velo deja ver la misma mancha negra arriba y a la izquierda. El corte rectangular (x≈898, y≈740) se lee como una ventana encendida sobre una imagen fantasma, y el cian brillante queda pegado al borde derecho de los datos, con un margen muy corto.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "4",
+     "donde": "pieza 4°, pie a la izquierda y esquina inferior derecha",
+     "problema": "El botón va junto al logo, abajo a la izquierda, mientras la zona más brillante de la pieza (el blanco de abajo a la derecha) se lleva el final del recorrido de lectura sin nada accionable. El botón sigue legible (7.12:1), pero es el elemento de menos peso.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "4",
+   "veredicto": "sirve",
+   "resumen": "Elijo la 4 (Ele). Es la única que deja el título a tamaño completo y a todo el ancho, y lo lee primero. La imagen queda en su cuadrante, acompaña y no compite. El logo y el botón se leen, aunque el botón pesa poco junto al logo. La 1 también sirve: el título domina, pero el borde cian del corte disputa atención. La 3 sirve con ajustes, porque la imagen ocupa la entrada de lectura. La 2 no sirve para esta lente: la imagen manda y el título baja a 98 px."
+  },
+  {
+   "id": "G02-v1-posicion",
+   "galeria": "G02",
+   "version": "v1",
+   "lente": "posicion",
+   "puntajes": {
+    "1": 3,
+    "2": 6.5,
+    "3": 2,
+    "4": 4
+   },
+   "hallazgos": [
+    {
+     "opcion": "1",
+     "donde": "borde del velo en x 972 (lienzo 1920×1080)",
+     "problema": "El núcleo del acento cian (x 835–1005) queda casi entero bajo el velo: solo se ven unos 33 px, como una franja cian pegada al panel de texto. El acento queda cortado por la máscara, lo que activa el veto.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "1",
+     "donde": "zona libre x 972–1920",
+     "problema": "La masa oscura empieza justo en el borde del velo y deja unos 480 px de gris vacío a la derecha (x 1440–1920). Lo visible queda centrado hacia x 1206, unos 240 px a la izquierda del centro de la zona libre (1446).",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "banda de velo desde y 528",
+     "problema": "La banda tapa el cuerpo de la silueta (las filas más oscuras, y 630–900) y el tramo más intenso del cian (y 450–720). En la zona libre solo quedan las torres y la parte alta de la veta. El objeto queda cortado por la máscara, lo que activa el veto.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "4",
+     "donde": "velo-banda y 0–552 y esquina interior de la L (669, 552)",
+     "problema": "El velo corta la mitad alta del acento cian (y 183–552) y el remate de la silueta (torres desde y≈350, masa desde y 432). El acento queda encajado en la esquina interior de la L, sin aire arriba, y solo se lee su tramo bajo (y 552–787).",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "2",
+     "donde": "borde del velo en x 669, abajo a la izquierda (y≈700–970)",
+     "problema": "El acento cian queda entero en la zona libre, con 166 px de aire entre el velo y su núcleo. Las edificaciones bajas de la silueta sí cruzan el borde del velo: el objeto toca el panel de texto por la izquierda.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "zona libre x 669–1920",
+     "problema": "Los márgenes horizontales son desparejos: 0 px a la izquierda, donde toca el velo, y unos 480 px de gris vacío a la derecha (x 1440–1920). El contenido queda centrado hacia x 1055, unos 240 px a la izquierda del centro de la zona libre (1295).",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "todas",
+     "donde": "código: imagen_encaje fondo_completo_con_velo, imagen_foco [0.5, 0.5]",
+     "problema": "La fuente de 1456×816 cubre el lienzo de 1920×1080 con solo unos 7 px de holgura horizontal, y el foco es el mismo en las cuatro divisiones. Así el motor no puede llevar el objeto a la zona libre: la división solo decide qué parte se tapa, y de ahí salen los vetos de D1 y D3. Para el paso 2 hace falta desplazar con zoom o colocar la imagen dentro de la zona en vez de usarla de fondo.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "todas",
+     "donde": "borde inferior, x 1000–1500",
+     "problema": "Algunos trazos negros sueltos llegan al borde inferior, aunque la masa principal termina en y≈972, con 108 px de aire. Las cruces de registro no tocan el objeto.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "2",
+   "veredicto": "sirve con ajustes",
+   "resumen": "Elijo la 2 (Tercio): es la única que deja el acento cian entero en la zona libre y con aire respecto del velo. Para quedar bien le falta correr el objeto unos 150–240 px a la derecha, para que la silueta no toque el panel y no sobren 480 px vacíos a la derecha. La 1 y la 3 quedan vetadas: en la 1 el borde del velo corta el acento y en la 3 la banda tapa el cuerpo de la silueta. La 4 sí deja el acento en su destino, pero le corta la mitad alta y lo encaja en la esquina de la L. El origen es común a las cuatro: la imagen va de fondo con el foco fijo y casi sin holgura, así que el motor no reubica el objeto según la división."
+  },
+  {
+   "id": "G02-v1-costuras",
+   "galeria": "G02",
+   "version": "v1",
+   "lente": "costuras",
+   "puntajes": {
+    "1": 7,
+    "2": 7.5,
+    "3": 6.5,
+    "4": 5.5
+   },
+   "hallazgos": [
+    {
+     "opcion": "4",
+     "donde": "Esquina interior del velo en L (x 669, y 552) y ventana de imagen abajo a la derecha",
+     "problema": "La esquina del velo cae justo sobre el turquesa más brillante: debajo de la banda queda RGB 35,69,74 y dentro de la ventana 61,197,205. El acento queda recortado por dos lados y forma un bloque cian de bordes rectos. Además, el haz sigue visible y apagado bajo la banda, así que a tamaño de feed la ventana se lee como un rectángulo pegado y no como una zona propia. No llega a veto porque la división es intencional, pero es lo que más se le parece.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4",
+     "donde": "Borde horizontal de la banda superior (y 552), de x 700 a 1900",
+     "problema": "Escalón de luminancia fuerte en el borde: 55 encima y 148 debajo. El dibujo continúa debajo del velo, así que la banda se lee como un velo superpuesto y no como un corte limpio.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "Borde vertical del velo (x 972), de y 0 a 600",
+     "problema": "El borde del velo coincide con el canto izquierdo del haz turquesa. Junto al borde queda una franja de unos 9 px más saturada (RGB 99,183,191, frente a 104,155,160 un poco más a la derecha) que se lee como una línea cian pegada a la división; en la hoja numerada se ve a tamaño de feed.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "Borde superior de la banda de texto (y 528), de x 700 a 1000",
+     "problema": "La banda corta en seco la zona más brillante del haz turquesa: encima RGB 84,206,215, debajo 31,64,69. El haz parece aplastado contra la banda.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "Borde vertical del velo (x 669), de y 0 a 600",
+     "problema": "El velo tapa la parte izquierda del haz y el turquesa nace con corte recto en la división. No hay franja ni línea pegada al borde (el tono es parejo de 0 a 60 px), así que se lee como una partición limpia.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "Cruz de registro del extremo derecho de la fila 2 (x 1856, y 698)",
+     "problema": "Cae sobre una mancha de tinta del dibujo (desviación local de 11,9 y mínimo de 16 de luminancia): la cruz y el punto negro se tocan. Solo se nota de cerca.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1",
+     "donde": "Cruces de las filas en x 948 (y 730 y 822)",
+     "problema": "Quedan a 24 px del borde del velo, sobre textura del dibujo (desviación de 9 a 16). No chocan con trazos, pero acompañan la costura.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "Franja del pie bajo el velo (y de 965 a 1000 en adelante)",
+     "problema": "El suelo blanco de la pintura asoma por el velo: la luminancia sube de unos 30 a unos 55-70 con transición suave. Es contenido de la imagen y no costura, pero en la 3° se ve como una franja algo más clara a todo el ancho del pie.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "2",
+   "veredicto": "sirve",
+   "resumen": "Ninguna opción tiene fondo extendido. La imagen es un 16:9 nativo de Midjourney (1456×816) escalado a cubrir, así que no hay parches de extensión y ninguna cae en veto. Las costuras vienen de los bordes rectos de los velos sobre un dibujo continuo. La 2° tiene la división más limpia, sin línea pegada al borde. A la 1° le queda una franja cian fina justo en el corte. La 3° corta el haz turquesa en su punto más brillante. La 4° es la más débil: la esquina del velo en L recorta el cian por dos lados y la ventana se lee como un rectángulo pegado. Ninguna cruz de registro choca de verdad; solo la de la fila 2 de la 3° toca una mancha de tinta."
+  }
+ ]
+}

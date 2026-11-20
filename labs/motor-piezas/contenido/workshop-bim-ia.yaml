@@ -1,0 +1,15 @@
+# Contenido de ejemplo de la galería (mismo para todas las piezas). No publicar.
+# Fecha corregida: la v2 decía «Jueves 20 nov 2026», pero el 20-nov-2026 es viernes.
+id: workshop-bim-ia
+ejemplo: true              # muestra el chip EJEMPLO
+chip: EJEMPLO
+kicker: Save the date
+titulo: [WORKSHOP, BIM + IA]
+subtitulo: Taller práctico · Umbral BIM
+filas:
+  - {numero: "01", etiqueta: Fecha, valor: "Jueves 19 nov 2026", densidad: minima}
+  - {numero: "02", etiqueta: Hora,  valor: "18:00 – 19:30 CLT", densidad: media}
+  - {numero: "03", etiqueta: Lugar, valor: "Online · Zoom",      densidad: media}
+  - {numero: "04", etiqueta: Cupos, valor: "25 plazas",          densidad: alta}
+cuerpo: "De plano a modelo · Automatización · Agentes"
+cta: "INSCRÍBETE · umbralbim.io"

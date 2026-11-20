@@ -1,0 +1,33 @@
+id: G16
+fecha: 2026-11-09
+titulo: "Galería 16 · Preset 02 (post de noticia), paso 5: pie y detalles"
+descripcion: >
+  Paso 5 de 5 del Preset 02, el último. Quedan fijas la banda abajo, la jerarquía base, la
+  imagen a sangre y la bajada blanca (G15 2°). Cuatro variantes del pie y de los detalles; cada
+  una cambia una sola cosa respecto de la 1°. La hoja 01_detalle.jpg muestra la banda de texto
+  de las cuatro lado a lado. Laboratorio: no publicar.
+resumen: >
+  Preset 02, paso 5, el último: el pie y los detalles. Los cambios son chicos; la hoja de
+  detalle muestra la banda de texto de las cuatro lado a lado.
+como_elegir: >
+  Elige un número (1° a 4°) o una combinación (por ejemplo «2° con 3°»). Con eso el Preset 02
+  queda armado en 4:5.
+contenido: contenido/articulo-ejemplo.yaml
+detalle:
+  titulo: "DETALLE · BANDA DE TEXTO"
+  recorte: [0, 675, 1080, 1350]
+secciones:
+  - alternativa: p02-paso5
+    titulo: "Paso 5 · Pie y detalles (4:5, 1080×1350)"
+    descripcion: >
+      Cada pieza hereda de la 1° (S1, que es la G15 2° sin cambios).
+    pasos:
+      - "Base: logo y llamado en texto, cruces en las esquinas y trama de puntos en la banda, como el Preset 01"
+      - "Sin cruces: se quitan las cruces de las esquinas"
+      - "Llamado como botón: bloque turquesa con el texto oscuro (9,9:1), junto al logo"
+      - "Sin trama: la banda de texto lisa"
+    piezas:
+      - packs/S1-noticia-pie-base.yaml
+      - packs/S2-noticia-sin-cruces.yaml
+      - packs/S3-noticia-boton.yaml
+      - packs/S4-noticia-sin-trama.yaml

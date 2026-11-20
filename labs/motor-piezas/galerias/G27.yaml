@@ -1,0 +1,127 @@
+id: G27
+fecha: 2026-11-11
+titulo: "Galería 27 · dos caminos de imagen: fondo abstracto y fórmula de gráfico relacionado"
+descripcion: >
+  David sobre G26: «esa versión que hiciste quedó mucho meojr, ahora haz 2 versiones de cada una, una que
+  sea como tipo un fondo, no un objeto [...] seria mas bien un adorno grefico, con elementos relacionados
+  peroo no neceasriamente relacionado con el sentido del texto y otro camoino para tener una formula donde
+  podamos tener graficos relacionados (revisa lo que está en el proyecto de automatizacion editorial del
+  repo umbral-agent-stack [...])». Dos variantes por camino, cada una con su imagen principal (16:9) y su
+  apaisada (21:9): 8 imágenes de Magnific One con el kit, 1.440 créditos. Laboratorio: no publicar.
+resumen: >
+  Cuatro campañas de siete formatos: A1 y A2 con fondo abstracto (la imagen llena la máscara), B1 y B2 con
+  la fórmula de gráfico relacionado (el choque marcado y dos recorridos abiertos).
+como_elegir: >
+  Elige camino (A o B) y variante (1 o 2), o dime qué tomar de cada una.
+contenido: contenido/articulo-formula-v1.yaml
+secciones:
+  - alternativa: articulo-fondo-v1
+    titulo: "A1 · fondo abstracto, patrón denso"
+    descripcion: >
+      Elementos BIM esparcidos con acentos turquesa: la imagen llena la máscara y el texto no tiene que calzar con ella.
+    contenido: contenido/articulo-fondo-v1.yaml
+    sufijo: a1
+    pasos:
+      - "Preset 02 · 4:5"
+      - "Preset 02 · 1:1"
+      - "Preset 02 · 9:16"
+      - "Preset 02 · 16:9"
+      - "Preset 02 · LinkedIn"
+      - "Preset 03 · 1:1"
+      - "Preset 03 · LinkedIn"
+    piezas:
+      - packs/P02-noticia-4x5.yaml
+      - packs/T1-noticia-1x1-banda.yaml
+      - packs/T3-noticia-historia.yaml
+      - packs/T6-noticia-slide.yaml
+      - packs/U2-noticia-linkedin-separacion-36.yaml
+      - packs/T2-noticia-1x1-sin-bajada.yaml
+      - packs/AB2-noticia-linkedin-sin-bajada-boton-65.yaml
+  - alternativa: articulo-fondo-v2
+    titulo: "A2 · fondo abstracto, patrón ligero"
+    descripcion: >
+      El mismo camino con menos elementos y más aire.
+    contenido: contenido/articulo-fondo-v2.yaml
+    sufijo: a2
+    pasos:
+      - "Preset 02 · 4:5"
+      - "Preset 02 · 1:1"
+      - "Preset 02 · 9:16"
+      - "Preset 02 · 16:9"
+      - "Preset 02 · LinkedIn"
+      - "Preset 03 · 1:1"
+      - "Preset 03 · LinkedIn"
+    piezas:
+      - packs/P02-noticia-4x5.yaml
+      - packs/T1-noticia-1x1-banda.yaml
+      - packs/T3-noticia-historia.yaml
+      - packs/T6-noticia-slide.yaml
+      - packs/U2-noticia-linkedin-separacion-36.yaml
+      - packs/T2-noticia-1x1-sin-bajada.yaml
+      - packs/AB2-noticia-linkedin-sin-bajada-boton-65.yaml
+  - alternativa: articulo-formula-v1
+    titulo: "B1 · fórmula de gráfico relacionado"
+    descripcion: >
+      El choque que encontró la revisión, en turquesa, y dos recorridos posibles sin elegir: lo que sigue dependiendo del equipo.
+    contenido: contenido/articulo-formula-v1.yaml
+    sufijo: b1
+    pasos:
+      - "Preset 02 · 4:5"
+      - "Preset 02 · 1:1"
+      - "Preset 02 · 9:16"
+      - "Preset 02 · 16:9"
+      - "Preset 02 · LinkedIn"
+      - "Preset 03 · 1:1"
+      - "Preset 03 · LinkedIn"
+    piezas:
+      - packs/P02-noticia-4x5.yaml
+      - packs/T1-noticia-1x1-banda.yaml
+      - packs/T3-noticia-historia.yaml
+      - packs/T6-noticia-slide.yaml
+      - packs/U2-noticia-linkedin-separacion-36.yaml
+      - packs/T2-noticia-1x1-sin-bajada.yaml
+      - packs/AB2-noticia-linkedin-sin-bajada-boton-65.yaml
+  - alternativa: articulo-formula-v2
+    titulo: "B2 · fórmula de gráfico relacionado, otra vista"
+    descripcion: >
+      La misma fórmula desde la otra esquina.
+    contenido: contenido/articulo-formula-v2.yaml
+    sufijo: b2
+    pasos:
+      - "Preset 02 · 4:5"
+      - "Preset 02 · 1:1"
+      - "Preset 02 · 9:16"
+      - "Preset 02 · 16:9"
+      - "Preset 02 · LinkedIn"
+      - "Preset 03 · 1:1"
+      - "Preset 03 · LinkedIn"
+    piezas:
+      - packs/P02-noticia-4x5.yaml
+      - packs/T1-noticia-1x1-banda.yaml
+      - packs/T3-noticia-historia.yaml
+      - packs/T6-noticia-slide.yaml
+      - packs/U2-noticia-linkedin-separacion-36.yaml
+      - packs/T2-noticia-1x1-sin-bajada.yaml
+      - packs/AB2-noticia-linkedin-sin-bajada-boton-65.yaml
+  - alternativa: articulo-fondo-cruce
+    titulo: "A3 · fondo abstracto cruzado: la principal de A1 con la apaisada de A2"
+    descripcion: >
+      Propuesta de los jueces, sin créditos: las dos imágenes comparten vigas con cara turquesa y tuberías.
+    contenido: contenido/articulo-fondo-cruce.yaml
+    sufijo: a3
+    pasos:
+      - "Preset 02 · 4:5"
+      - "Preset 02 · 1:1"
+      - "Preset 02 · 9:16"
+      - "Preset 02 · 16:9"
+      - "Preset 02 · LinkedIn"
+      - "Preset 03 · 1:1"
+      - "Preset 03 · LinkedIn"
+    piezas:
+      - packs/P02-noticia-4x5.yaml
+      - packs/T1-noticia-1x1-banda.yaml
+      - packs/T3-noticia-historia.yaml
+      - packs/T6-noticia-slide.yaml
+      - packs/U2-noticia-linkedin-separacion-36.yaml
+      - packs/T2-noticia-1x1-sin-bajada.yaml
+      - packs/AB2-noticia-linkedin-sin-bajada-boton-65.yaml

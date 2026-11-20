@@ -1,0 +1,96 @@
+{
+ "galeria": "G12",
+ "seccion": null,
+ "rubrica": "pred-sin-a",
+ "retro": true,
+ "criterios_hasta": null,
+ "sellado": "2026-11-11T00:45:36",
+ "hash_rubrica": "2afef7084991",
+ "hash_criterios": "fd98b8707561",
+ "votos": [
+  {
+   "id": "G12-qa-prediccion",
+   "galeria": "G12",
+   "version": "pred-sin-a",
+   "lente": "prediccion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 8,
+    "2": 6.5,
+    "3": 4,
+    "4": 4.5
+   },
+   "hallazgos": [
+    {
+     "opcion": "1",
+     "donde": "borde superior y franja entre imagen y panel",
+     "problema": "La imagen trae su propio marco crema. Arriba deja una franja crema donde las cruces de corte turquesa casi no se ven, y abajo una línea crema separa la imagen del panel oscuro. Se lee como un marco, no como un sangrado limpio.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1",
+     "donde": "pie (logo Umbral BIM)",
+     "problema": "La firma del logo es el texto más chico (11 px CSS). Se lee, pero queda débil frente al llamado a la acción.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "mitad del lienzo (pie con logo y LEE EL ARTÍCULO)",
+     "problema": "El pie con logo y llamado queda a media pieza y la imagen entra después. El orden de lectura termina en la ilustración y el llamado pierde su lugar de cierre.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "borde inferior",
+     "problema": "Las cruces de corte quedan sobre la franja crema del marco de la imagen y casi no se ven. Además, la pieza no cierra con el fondo oscuro de la serie.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "3",
+     "donde": "franja de imagen a la derecha",
+     "problema": "El recorte deja fuera el brazo robótico: solo asoma la pinza, que sin contexto no se entiende. La franja se queda en bloques abstractos y se pierde el sujeto de la imagen fija.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "3",
+     "donde": "columna izquierda, entre el llamado y el logo",
+     "problema": "Queda un vacío oscuro de cerca del 40 % del alto. Sin fecha ni datos de evento, la columna del Preset 01 no tiene con qué llenarse y la pieza parece incompleta.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "3",
+     "donde": "titular",
+     "problema": "El título baja a 107 px (156 px en las otras opciones) y la bajada ocupa 5 líneas. En el feed tiene mucho menos impacto.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4",
+     "donde": "velo inferior",
+     "problema": "El velo es gris neutro, no el oscuro de marca. La imagen se transparenta como manchas sucias detrás del texto: la mitad baja se ve turbia y se pierde la identidad de fondo oscuro con trama de la serie.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4",
+     "donde": "pinza del robot bajo kicker y titular",
+     "problema": "La pinza entra por detrás de ARTÍCULO y de 'La IA entra'. El contraste medido cumple, pero el detalle de la imagen compite visualmente con el titular.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4",
+     "donde": "encuadre de la imagen",
+     "problema": "La imagen está muy ampliada: el círculo queda cortado en el borde izquierdo, el brazo cortado a la derecha y no se lee la escena completa.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4",
+     "donde": "franja inferior bajo el pie",
+     "problema": "Bajo el pie queda una franja gris plana sin imagen ni trama, que parece un resto del velo.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "1",
+   "veredicto": "sirve",
+   "resumen": "David elegiría la 1. Muestra la imagen completa, con el brazo robótico entero como gancho. Abajo va el panel oscuro con trama, que mantiene la serie, y el orden de lectura es natural: imagen, kicker, titular, bajada y llamado al cierre. Funciona como tarjeta de artículo en el celular. La 2 tiene la misma calidad, pero deja el pie y el llamado a media pieza y termina en la imagen. La 3 pierde el robot en el recorte y deja un vacío grande en la columna. La 4 enturbia la imagen con un velo gris que no es el de marca."
+  }
+ ]
+}

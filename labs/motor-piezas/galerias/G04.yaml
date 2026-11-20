@@ -1,0 +1,30 @@
+id: G04
+fecha: 2026-11-06
+titulo: "Galería 04 · paso 3: imagen o ilustración"
+descripcion: >
+  Paso 3 de 5. Quedan fijos el tercio (paso 1) y los datos fuertes (paso 2, G03 2°, elegido
+  por David). Cuatro formas de que la imagen ocupe los dos tercios libres. La imagen no se
+  mueve entre una pieza y otra: cambia solo la ventana por la que se ve. Donde el texto queda
+  sobre fondo liso, las etiquetas vuelven al gris de marca (7,2:1 sin textura detrás).
+  Laboratorio: no publicar.
+como_elegir: >
+  Elige un número (1° a 4°) y dime qué te gusta o qué cambiarías, con tus palabras. Ese
+  preset queda fijo y pasamos al paso 4 (protección del texto).
+contenido: contenido/workshop-bim-ia.yaml
+secciones:
+  - alternativa: paso3
+    titulo: "Paso 3 · Imagen o ilustración"
+    descripcion: >
+      Cada pieza hereda de la 1° (F1) y cambia solo imagen_encaje. Con imagen_registro: lienzo
+      la imagen se encuadra como si cubriera todo el lienzo, así el encuadre es el mismo en las
+      tres que la usan.
+    pasos:
+      - "A sangre bajo velo: la imagen cubre todo y se ve detrás del texto (la elegida en el paso 2)"
+      - "Sangrado lateral: la imagen solo en los dos tercios, hasta el borde; el texto sobre fondo liso"
+      - "En caja: la imagen en un bloque alineado a la grilla, con margen y radio de 8 px"
+      - "Ilustración: la isometría vectorial de marca en lugar de la foto"
+    piezas:
+      - packs/F1-imagen-sangre.yaml
+      - packs/F2-imagen-lateral.yaml
+      - packs/F3-imagen-caja.yaml
+      - packs/F4-ilustracion.yaml

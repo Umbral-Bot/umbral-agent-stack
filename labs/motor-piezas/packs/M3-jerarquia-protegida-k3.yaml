@@ -1,0 +1,8 @@
+id: M3
+nombre: "4:5 · Preset 01 con la jerarquía protegida (kicker y subtítulo hasta el 45 % del título)"
+alternativa: prueba
+paso: formatos
+hereda: packs/K3-formato-4x5-columna.yaml
+decision_david: null
+valores:
+  jerarquia_tope_secundario: 0.45

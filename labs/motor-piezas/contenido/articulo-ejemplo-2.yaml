@@ -1,0 +1,10 @@
+# Segundo contenido de prueba del Preset 02: otro artículo, con titular más largo y su propia
+# imagen (la imagen viaja con el contenido). No publicar.
+id: caso-plano-modelo
+ejemplo: true              # muestra el chip EJEMPLO
+chip: EJEMPLO
+kicker: Caso
+titulo: [Del plano al modelo, en tres semanas]
+cuerpo: "Cómo una constructora ordenó su coordinación con un flujo BIM sencillo, y qué aprendimos en el camino."
+cta: "LEE EL CASO · umbralbim.io"
+imagen: mj3_V-S19b_0       # patrón de íconos BIM sobre crema: se recorta bien en cualquier banda

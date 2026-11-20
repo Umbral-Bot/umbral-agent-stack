@@ -1,0 +1,12 @@
+id: K4
+nombre: "4:5 · Banda: imagen arriba, texto abajo solo con la fecha"
+alternativa: 4x5
+paso: formatos
+hereda: packs/P01-save-the-date-slide.yaml
+decision_david: null
+valores:
+  formato: vertical
+  texto_minimo_css: 11      # celular (vista 390 px CSS): el mínimo legible; en la diapositiva era 14
+  division: banda_apilada
+  datos_ajuste_ancho: true
+  densidad_texto: minima    # kicker, título, fecha y llamado: más lugar para la imagen

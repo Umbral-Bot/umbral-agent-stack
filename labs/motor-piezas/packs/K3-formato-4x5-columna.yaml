@@ -1,0 +1,11 @@
+id: K3
+nombre: "4:5 · Columna ancha: texto en 7 de 12 columnas con todos los datos, imagen en franja"
+alternativa: 4x5
+paso: formatos
+hereda: packs/P01-save-the-date-slide.yaml
+decision_david: "G08 3°, 2026-11-07: elegida para 4:5 («1 y 3»)"
+valores:
+  formato: vertical
+  texto_minimo_css: 11      # celular (vista 390 px CSS): el mínimo legible; en la diapositiva era 14
+  division: columna_ancha
+  datos_ajuste_ancho: true

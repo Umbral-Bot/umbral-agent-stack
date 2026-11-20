@@ -1,0 +1,9 @@
+id: Q2
+nombre: "En caja · la imagen en un bloque alineado a la grilla, con margen y radio de 8 px"
+alternativa: p02-paso3
+paso: imagen
+hereda: packs/Q1-noticia-imagen-sangre.yaml
+decision_david: null
+valores:
+  imagen_encaje: caja_alineada_grilla
+  imagen_radio: 8

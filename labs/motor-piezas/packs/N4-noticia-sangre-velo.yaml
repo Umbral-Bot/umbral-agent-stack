@@ -1,0 +1,8 @@
+id: N4
+nombre: "A sangre bajo velo · la imagen cubre todo y el texto va abajo sobre un velo plano"
+alternativa: p02-paso1
+paso: division
+hereda: packs/N1-noticia-banda-abajo.yaml
+decision_david: null
+valores:
+  imagen_encaje: fondo_completo_con_velo

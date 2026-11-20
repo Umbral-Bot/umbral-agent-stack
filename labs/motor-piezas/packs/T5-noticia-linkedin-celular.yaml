@@ -1,0 +1,12 @@
+id: T5
+nombre: "LinkedIn · celular: columna en la mitad, sin bajada"
+alternativa: p02-formatos
+paso: formatos
+hereda: packs/P02-noticia-4x5.yaml
+decision_david: null
+valores:
+  formato: linkedin
+  vista_css: 390
+  division: mitad
+  division_fraccion: null
+  densidad_texto: media     # a tamaño de celular la bajada no cabe

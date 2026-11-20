@@ -1,0 +1,59 @@
+{
+ "galeria": "G23",
+ "seccion": null,
+ "rubrica": "pred-crit-b",
+ "retro": true,
+ "criterios_hasta": "G23",
+ "sellado": "2026-11-11T00:43:06",
+ "hash_rubrica": "2afef7084991",
+ "hash_criterios": "fd98b8707561",
+ "votos": [
+  {
+   "id": "G23-pcb-prediccion",
+   "galeria": "G23",
+   "version": "pred-crit-b",
+   "lente": "prediccion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 6.5,
+    "2": 8,
+    "3": 5
+   },
+   "hallazgos": [
+    {
+     "opcion": "3",
+     "donde": "Botón «LEE EL ARTÍCULO / umbralbim.io», al pie de la columna",
+     "problema": "Con un módulo menos de relleno, el texto queda casi pegado al borde superior y a los laterales del botón, y las dos líneas quedan apretadas. Se ve sin terminar, justo lo contrario de las proporciones afinadas que David valora. El tamaño de texto es el mismo de la 2°; lo único que cambia es que el botón se ve peor.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "Botón al pie",
+     "problema": "La reducción del 12 % apenas se nota a tamaño de feed: el botón conserva casi el mismo peso que en G22. David ya pidió achicarlo dos veces (G19 y G22), así que es probable que este paso le parezca corto.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "Ancho del botón respecto del kicker",
+     "problema": "Al achicarse, el botón ya no termina casi a la par con «ARTÍCULO», como pasaba en la 1°. No es un defecto. Si se quiere afinar, se puede revisar si conviene alinear su borde derecho con otra línea de la columna.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "Texto del botón (7,1–8,2 px CSS en una vista de 390 px)",
+     "problema": "El texto del botón queda bajo la referencia de 11 px. Por ser el texto del botón y un LinkedIn pensado para computador, es solo un aviso, no un veto, y no cambia la elección.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "Separación entre el titular y el botón",
+     "problema": "El botón queda anclado abajo, así que al achicarlo crece el espacio entre el titular y el botón: la 3° es la que más se abre. Lo cubre la excepción del botón al pie en la pieza apaisada sin bajada. Solo hay que cuidar que no se lea como un hueco.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "2",
+   "veredicto": "sirve",
+   "resumen": "Predigo que David elige la 2°. Es la única en que el achique se nota claramente, como él pidió dos veces, y el botón conserva un relleno cómodo. La 1° cambia muy poco respecto de G22. La 3° logra el botón más chico, pero lo deja apretado, con el texto casi tocando los bordes. Contraste (9,92:1), marca y composición son iguales en las tres. El texto del botón bajo 11 px es solo un aviso."
+  }
+ ]
+}

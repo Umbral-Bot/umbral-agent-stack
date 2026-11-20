@@ -1,0 +1,156 @@
+{
+ "galeria": "G25",
+ "seccion": null,
+ "rubrica": "v1",
+ "retro": true,
+ "criterios_hasta": null,
+ "sellado": "2026-11-11T00:00:26",
+ "hash_rubrica": "de3f9cdef0fe",
+ "hash_criterios": "-",
+ "votos": [
+  {
+   "id": "G25-v1-jerarquia",
+   "galeria": "G25",
+   "version": "v1",
+   "lente": "jerarquia",
+   "puntajes": {
+    "1": 7.4,
+    "2": 8.3,
+    "3": 7.8
+   },
+   "hallazgos": [
+    {
+     "donde": "piezas 7, 14 y 21 (AB2, LinkedIn sin bajada)",
+     "problema": "El nombre «Umbral BIM» junto al logo es el texto más chico de la galería: 7.1 px CSS en vista de 390 px. A tamaño de feed el isotipo se reconoce, pero el nombre apenas se lee. Pasa igual en las tres opciones, así que no sirve para elegir entre ellas.",
+     "gravedad": "media",
+     "opcion": "todas"
+    },
+    {
+     "donde": "piezas 7, 14 y 21 (AB2)",
+     "problema": "La marca EJEMPLO va arriba con mayúsculas grandes y fondo, y pesa visualmente más que el logo que tiene al lado. Le quita protagonismo a la firma y al antetítulo ARTÍCULO.",
+     "gravedad": "baja",
+     "opcion": "todas"
+    },
+    {
+     "donde": "pieza 4 (G25-T6-o75, diapositiva 16:9)",
+     "problema": "Al 75 % el edificio queda chico en una franja ancha, con mucho fondo vacío a los lados. La imagen apenas acompaña y la parte de arriba se ve sin peso. Al 85 % (piezas 11 y 18) gana presencia sin competir con el título.",
+     "gravedad": "media",
+     "opcion": "1"
+    },
+    {
+     "donde": "pieza 2 (G25-T1-o75, cuadrado con banda 5/8)",
+     "problema": "La franja de imagen es baja y al 75 % el objeto se ve pequeño frente a un título de 148 px. La jerarquía se mantiene, pero la imagen parece un ícono más que una ilustración.",
+     "gravedad": "baja",
+     "opcion": "1"
+    },
+    {
+     "donde": "pieza 19 (G25-U2-o85, LinkedIn con bajada) y pieza 21 (AB2-o85)",
+     "problema": "Al 85 % en la columna, el edificio casi toca el borde superior e inferior y llena todo el alto. No le gana al título porque es de línea fina, pero queda apretado y le resta aire a la composición. Al 75 % (piezas 5 y 12) respira mejor.",
+     "gravedad": "baja",
+     "opcion": "3"
+    },
+    {
+     "donde": "pieza 17 (G25-T3-o85, historia 9:16)",
+     "problema": "El objeto ocupa casi el 60 % del alto total y la mancha turquesa del piso se vuelve el punto más llamativo de la mitad superior. El título sigue mandando por contraste, pero la imagen ya disputa la primera mirada. Al 75 % (pieza 10) la relación queda mejor.",
+     "gravedad": "baja",
+     "opcion": "3"
+    }
+   ],
+   "mejor": "2",
+   "veredicto": "sirve",
+   "resumen": "En las tres opciones el título en la banda oscura manda con claridad. La imagen es de línea fina sobre fondo claro y acompaña sin competir, y el botón turquesa se lee bien. La opción 2 es la más equilibrada. Al 85 % en las bandas, la imagen gana presencia donde la franja es baja y ancha (cuadrados y 16:9); en la opción 1 esa franja se ve vacía y el objeto parece un ícono. Al 75 % en las columnas y la historia, evita lo que pasa en la opción 3: el edificio llena todo el alto y la mancha turquesa disputa la primera mirada. Queda un pendiente común a las tres: el nombre «Umbral BIM» en el LinkedIn sin bajada mide 7.1 px CSS y conviene agrandarlo. La marca EJEMPLO, además, pesa más que el logo."
+  },
+  {
+   "id": "G25-v1-posicion",
+   "galeria": "G25",
+   "version": "v1",
+   "lente": "posicion",
+   "puntajes": {
+    "1": 7.5,
+    "2": 8.5,
+    "3": 8
+   },
+   "hallazgos": [
+    {
+     "donde": "Opción 1 · piezas 4° (T6, 16:9) y 2° (T1, banda 3/8)",
+     "problema": "Al 75 % en una banda ancha el edificio se ve chico. En 4° ocupa cerca de 350 de 2576 px de ancho (~14 %) y el resto de la banda queda vacío. Está entero y centrado, pero con poca presencia a tamaño de feed.",
+     "gravedad": "media",
+     "opcion": "1"
+    },
+    {
+     "donde": "Opción 1 · piezas 2°, 4° y 6°",
+     "problema": "La cuadrícula de la imagen termina antes que la máscara y se nota el rectángulo difuso donde se extiende el fondo #F9F7F5. En 4° la cuadrícula ocupa más o menos de x≈780 a x≈1780 de 2576 px. Al 85 % el parche cubre más y apenas se ve.",
+     "gravedad": "baja",
+     "opcion": "1"
+    },
+    {
+     "donde": "Opción 3 · pieza 16° (T1-o85)",
+     "problema": "El margen superior es de unos 55 px de 725 en la vista (~7,6 %) y la cima del edificio queda a la altura de las marcas de esquina. Los márgenes de arriba y abajo son iguales y no hay contacto, pero queda justo.",
+     "gravedad": "baja",
+     "opcion": "3"
+    },
+    {
+     "donde": "Opción 3 · piezas 19° (U2-o85) y 21° (AB2-o85)",
+     "problema": "En la columna el edificio ocupa ~76-78 % del ancho, con unos 120 px a cada lado de 1003 en U2, y el extremo del tubo se acerca al borde derecho del lienzo. Está centrado, pero apretado frente a la versión al 75 %.",
+     "gravedad": "baja",
+     "opcion": "3"
+    },
+    {
+     "donde": "Las tres opciones · piezas 16:9 (4°, 11°, 18°)",
+     "problema": "La banda de 3840×1056 limita al objeto por el alto. Queda centrado en el lienzo completo, lejos del titular alineado a la izquierda, y deja mucho vacío a los lados.",
+     "gravedad": "baja",
+     "opcion": "todas"
+    }
+   ],
+   "mejor": "2",
+   "veredicto": "sirve",
+   "resumen": "No hay vetos: en las 21 piezas el edificio va entero, sin cortes de la máscara. Está centrado, con márgenes parejos arriba y abajo y a los lados (P02 133/133, T1 92/91, T3 198/197, U2 168/165 px en la vista), y no toca las marcas ni el panel de texto. Las opciones se diferencian por la escala. Al 75 % las bandas anchas (1:1 de banda 3/8, 16:9) muestran un objeto chico con el parche de fondo extendido visible. Al 85 % las bandas ganan presencia, pero las columnas LinkedIn quedan algo apretadas. La opción 2 (85 % en bandas y 75 % en columnas) toma lo mejor de cada escala y no tiene hallazgos propios. Solo comparte el 16:9, que en las tres opciones queda pequeño en una banda muy ancha."
+  },
+  {
+   "id": "G25-v1-costuras",
+   "galeria": "G25",
+   "version": "v1",
+   "lente": "costuras",
+   "puntajes": {
+    "1": 9,
+    "2": 8.5,
+    "3": 7.5
+   },
+   "hallazgos": [
+    {
+     "donde": "pieza 21 (G25-AB2-o85), cruz de registro inferior derecha",
+     "problema": "La imagen llena la máscara sin relleno y una marca gris de construcción del dibujo queda a unos 11 px CSS del centro de la cruz turquesa. Además, una línea tenue la atraviesa (a 1 px). La cruz se pega al trazado de la imagen.",
+     "gravedad": "baja",
+     "opcion": "3"
+    },
+    {
+     "donde": "pieza 19 (G25-U2-o85), cruz de registro superior derecha",
+     "problema": "Un '+' gris del dibujo queda a unos 21 px CSS de la cruz turquesa y se lee como una cruz duplicada. La cruz inferior tiene una marca gris a 25 px.",
+     "gravedad": "baja",
+     "opcion": "3"
+    },
+    {
+     "donde": "piezas 8 y 15 (G25-P02-o85-75 = G25-P02-o85), cruces superiores",
+     "problema": "La imagen va a sangre sin relleno. Hay un '+' gris del dibujo a unos 23 px CSS de la cruz superior derecha y otro a 27 px de la izquierda, así que las cruces compiten con las marcas de la imagen.",
+     "gravedad": "baja",
+     "opcion": "2"
+    },
+    {
+     "donde": "pieza 15 (G25-P02-o85), borde izquierdo de la máscara",
+     "problema": "Las marcas '+' de construcción de la imagen quedan cortadas a la mitad contra el borde (aprox. y = 255, 575 y 888 de la vista). Es propio del sangrado y no se ve como un parche.",
+     "gravedad": "baja",
+     "opcion": "3"
+    },
+    {
+     "donde": "pieza 17 (G25-T3-o85), cruces superiores",
+     "problema": "Líneas tenues de la retícula de la imagen pasan a 11-17 px CSS de las dos cruces. No hay trazo oscuro cerca.",
+     "gravedad": "baja",
+     "opcion": "3"
+    }
+   ],
+   "mejor": "1",
+   "veredicto": "sirve",
+   "resumen": "No hay costura en ninguna opción. El relleno #F9F7F5 coincide con el fondo de la imagen: mediana (249,247,245) frente a (248.5,247.2,245.3) dentro de la caja, menos de 1 nivel. Los perfiles por fila no muestran saltos de más de 1.3 niveles. Los fundidos suben de 0 a 0.6–2.6 niveles en 24–80 px CSS, sin borde recto, así que no se ve ningún rectángulo y no hay veto. Ningún acento turquesa queda cortado: todos están a 74 px CSS o más del borde de la máscara.\n\nLo que cambia entre opciones son las cruces de registro. En la opción 1 todas caen sobre fondo plano o casi limpio. En la opción 2 solo P02 va a sangre, con un '+' del dibujo a 23 px de una cruz. En la opción 3 van a sangre P02, T3, U2 y AB2, y sus cruces quedan pegadas a ticks y líneas de la imagen (11–27 px), lo que se lee como cruces duplicadas.\n\nElijo la opción 1. Nota fuera de mi lente: la opción 2 repite píxel a píxel varias piezas de la 1 y la 3 (3=10, 5=12, 13=20)."
+  }
+ ]
+}

@@ -1,0 +1,8 @@
+id: O3
+nombre: "Bajada protagonista · la bajada crece un 26 % y el titular se ajusta"
+alternativa: p02-paso2
+paso: jerarquia
+hereda: packs/O1-noticia-jerarquia-base.yaml
+decision_david: null
+valores:
+  escala_cuerpo: 1.6        # de 14 a 17,6 px CSS

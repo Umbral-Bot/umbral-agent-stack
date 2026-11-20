@@ -1,0 +1,9 @@
+id: E3
+nombre: "Compacta · todo el texto junto, apoyado abajo"
+alternativa: paso2
+paso: jerarquia
+hereda: packs/E1-jerarquia-base.yaml
+decision_david: null
+valores:                    # mismos tamaños; cambia el reparto vertical
+  pila_anclaje: abajo
+  filas_ubicacion: bajo_titulo

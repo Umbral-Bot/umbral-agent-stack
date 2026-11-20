@@ -1,0 +1,79 @@
+{
+  "_respaldo": "Kit «Umbral BIM» (hu2CvqLJlt) leído con brand_kit_get view=full el 2026-11-10, antes de corregirlo. Sin section_presets, section_slots ni model_rule (son del sistema). Reglas: brand_kit_list_rules devolvió una lista vacía.",
+  "id": "hu2CvqLJlt",
+  "name": "Umbral BIM",
+  "description": "Identidad Umbral BIM UB-3. Primario de relleno en claro #0FA994, texto de marca #074E43, fondo claro #FAFAF9, fondo oscuro #111418, primario oscuro #2DD4BF. Tipografía Inter y JetBrains Mono. El lockup oficial no se reinterpreta.",
+  "status": "ready",
+  "design_md": "UB-3, leído de colors_and_type.css el 2026-11-03.\n\nClaro: fondo #FAFAF9, superficie #FFFFFF, texto #1F2328, primario de relleno #0FA994 (no es color de texto), texto de marca #074E43.\nOscuro: fondo #111418, primario #2DD4BF, texto de marca #99F6E4.\nTipografía: Inter para UI, JetBrains Mono para datos. Familias válidas: Inter, Inter Medium, Inter SemiBold, JetBrains Mono, JetBrains Mono SemiBold.\nEl lockup oficial se usa tal cual. No se redibuja el isotipo.",
+  "atoms": {
+    "motion": {
+      "v": 1,
+      "style": {"preset": "elegant", "loop": "none", "logo": "fade", "text": "fade_up", "camera": "locked", "end_card": "logo"},
+      "notes": "Movimiento sobrio y técnico. El lockup no se deforma, no hay glitch ni shake, y el cierre es el logo quieto.",
+      "source": "manual",
+      "updated_at": "2026-11-03T12:39:53+00:00",
+      "notes_updated_at": "2026-11-03T12:39:53+00:00"
+    },
+    "palette": [
+      {"id": "73de644d-919b-4987-820b-8031518e2b12", "hex": "#0FA994", "name": "Primario claro", "role": "primary"},
+      {"id": "dd5bb556-6ebf-4d1d-9f29-0c2fa43e2faa", "hex": "#074E43", "name": "Texto de marca", "role": "primary-text"},
+      {"id": "3af3e4c2-271f-4234-92cf-8455791ec035", "hex": "#FAFAF9", "name": "Fondo claro", "role": "background"},
+      {"id": "c05e7d30-c954-4a95-b803-3db9c1a0fd42", "hex": "#FFFFFF", "name": "Superficie", "role": "surface"},
+      {"id": "f48728c1-9927-4748-9bcb-e90e7c3f07f1", "hex": "#1F2328", "name": "Texto", "role": "text"},
+      {"id": "84705844-14c8-496d-90b0-1102e09241c6", "hex": "#111418", "name": "Fondo oscuro", "role": "background-dark"},
+      {"id": "f0aa73c9-8bc2-4433-87de-aa5961eb1127", "hex": "#2DD4BF", "name": "Primario oscuro", "role": "primary-dark"}
+    ],
+    "sections": [
+      {"id": "fc46ad10-3842-5341-adab-3d07714b2c74", "icon": "seal", "kind": "logo", "items": [], "rules": [], "title": "Logo", "preset": "logo", "primary": true, "subsections": []},
+      {"id": "67ab6725-c806-57de-832e-435960a50f22", "icon": "palette", "kind": "palette", "items": [], "rules": [], "title": "Colors", "preset": "colors", "subsections": []}
+    ],
+    "brand_assets": [
+      {
+        "id": "eca8f215-e44a-4f59-9ee3-e270edfd26ca",
+        "name": "Lockup 01 horizontal canónico claro",
+        "origin": "agent",
+        "asset_kind": "logo",
+        "created_at": "2026-11-03T12:39:51+00:00",
+        "description": "Horizontal logo lockup for the Umbral BIM brand, shown on a plain black field. On the left sits an isometric mark: a chunky U-shaped block built from teal planes, with the lighter top faces and darker side faces giving a crisp, faceted, architectural feel. To its right is the wordmark 'Umbral BIM' in a clean geometric sans-serif. 'Umbral' is set in dark charcoal and 'BIM' in the same teal as the mark, so the two-tone split ties the name to the mark. The style is flat vector, with minimal shading, sharp edges and no ornament, suited to construction, architecture and technical software. Keep the mark's proportions and the two-colour wordmark split intact in any reproduction.",
+        "image_creation_id": "xSMhFQcjfW",
+        "description_source": "ai"
+      }
+    ]
+  },
+  "documents_count": 0,
+  "created_at": "2026-11-03T12:38:45+00:00",
+  "updated_at": "2026-11-03T12:40:50+00:00",
+  "onboarding": {"tested_templates": [], "untested_template_slugs": ["portada-de-reel", "post-linkedin"], "skipped_template_slugs": []},
+  "documents": [],
+  "templates": [
+    {
+      "name": "Portada de reel",
+      "slug": "portada-de-reel",
+      "origin": "manual",
+      "status": "active",
+      "channel": "instagram_reel_cover",
+      "created_at": "2026-11-03T12:40:29+00:00",
+      "updated_at": "2026-11-03T12:40:29+00:00",
+      "description": "Background: Solid field of #111418. Logo: Official brand lockup placed small and static at the bottom center. Typography: Short headline in Inter SemiBold, colored #99F6E4. Graphic Element: A single solid band in #2DD4BF used as a structural accent. Content: Abstract graphic composition only; strictly no photography of people, no stock imagery, no glitch effects, and no motion blur.",
+      "source_creation_ids": [],
+      "aspect_ratio": "9:16",
+      "aspect_ratio_candidates": ["9:16"]
+    },
+    {
+      "name": "Post LinkedIn",
+      "slug": "post-linkedin",
+      "origin": "manual",
+      "status": "active",
+      "channel": "linkedin_post",
+      "created_at": "2026-11-03T12:40:25+00:00",
+      "updated_at": "2026-11-03T12:40:25+00:00",
+      "description": "A static, minimalist layout designed for LinkedIn, prioritizing negative space and technical clarity. Background is a solid #FAFAF9 field. The official brand lockup is placed in a consistent corner (top-left or bottom-left) at a modest, legible scale. The primary message is set in Inter typeface, using either #1F2328 or #074E43 for text color; the message should be concise, using title case or sentence case. The primary brand color #0FA994 is used exclusively as a graphic accent—either as a thin border, a geometric block, or a separator line—never for typography. The composition avoids stock photography, 3D mockups, and gradients, relying instead on clean typography and structured, sparse graphic elements to convey technical information.",
+      "source_creation_ids": [],
+      "aspect_ratio": "4:5",
+      "aspect_ratio_candidates": ["4:5", "3:4", "2:3"]
+    }
+  ],
+  "logo_marks": [],
+  "reference_assets": [{"sqid": "xSMhFQcjfW", "kind": "logo", "label": "Lockup 01 horizontal canónico claro", "is_logo_mark": true}],
+  "rules": []
+}

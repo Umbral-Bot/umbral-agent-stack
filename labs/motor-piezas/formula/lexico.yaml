@@ -1,0 +1,88 @@
+# Léxico del ruteo del camino B (pasos 1 a 4 de ruteo.md), en forma que el código puede aplicar.
+# Sale de las señales de categorias.yaml; si cambia una señal allá, se cambia aquí y se corre
+# `python formula/formula.py regresion`.
+#
+# Cómo se cuenta (formula.py):
+# - Los patrones se aplican al texto normalizado: minúsculas y sin tildes (dueño → dueno).
+# - Cada patrón suma una sola vez, aunque aparezca dos veces. Los sinónimos de una misma idea van en
+#   un patrón; las ideas distintas, en patrones separados.
+# - Dentro de una categoría, un patrón más débil que cae sobre palabras ya contadas por uno más fuerte
+#   no suma («depende del equipo» cuenta como media; «equipo» ya no suma además como débil).
+# - Los anti restan y no consumen palabras.
+# - `cerca`: dos patrones a `max` palabras o menos, en cualquier orden. Consume solo el primero
+#   (`a`), salvo que diga `consume: ambos`.
+# - `kicker`: el patrón se mira sobre el kicker, no sobre el titular.
+version: 1
+
+# Paso 1 · evento (código)
+evento:
+  kicker: '^(webinar|webinar gratuito|workshop|taller|curso|clase|masterclass|charla|save the date|sesion en vivo)$'
+  filas: [fecha, hora, lugar, cupos]
+  cta: '^(inscribete|reserva)\b'
+
+# Paso 2 · fondo institucional (código)
+institucional:
+  kicker: '^(noticia umbral|comunidad|agenda|equipo|aniversario|alianza|convocatoria|opinion|saludo|contratacion)$'
+
+# Sustantivos de objetos AEC: si alguno aparece, la pieza institucional no va directo a fondo y
+# una guía o un lanzamiento pueden ir a evento.
+objetos_aec: '\b(vigas?|pilar(es)?|columnas?|muros?|losas?|ductos?|tuberias?|canerias?|fachadas?|edificios?|estructuras?|instalaciones|cielos?|bandejas?|placas?|montantes?|escaleras?|cubiertas?|techumbres?|ventanas?|puertas?|muro cortina|fundaciones|cimientos?|shafts?|tableros?|puentes?|nudos?|anclajes?|paneles|panel|tabiques?|obras?|modelos?|planos?|hormigon|acero|madera)\b'
+
+# Paso 3 · gate ADR-006 (solo titular y bajada)
+gate:
+  numero: '(\d+(?:[.,]\d+)?|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez|once|doce|trece|catorce|quince|dieciseis|diecisiete|dieciocho|diecinueve|veinte|cien|mil|medio|doble|triple|la mitad)'
+  unidad: '(%|por ciento|veces|horas?|dias?|semanas?|meses|mes|anos?|m2|m²|m3|m³|uf|usd|clp|€|millones?|rfis?|planos?|errores?|choques?)(?!\w)'
+  verbo_cifra: '\b(reduc|ahorr|aument|duplic|baj|sub)\w*\b[^.;]{0,60}?\b\d+'
+  de_cada: '\b(\d+|uno|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez) de cada (\d+|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez|cien|mil)\b'
+  pasos: '\ben (\d+|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez) (pasos|fases|etapas)\b|\bpaso a paso\b'
+  enumeracion: '(^|\s)1[.)]\s.*\s2[.)]\s'
+  secuencia: '\bprimero\b.*\bluego\b.*\bfinalmente\b'
+  separadores: '[·→]'          # tres ítems o más (dos separadores o más)
+  # normas, versiones y años sueltos no son cifras
+  excluir: '\b(iso|ifc|lod|revit|aec|nivel|nch|archicad|navisworks|version|v)\s*\d+(?:[.,]\d+)*\b|\b(19|20)\d{2}\b(?!\s*(%|por ciento|veces|horas|dias|semanas|meses|anos))|\buna vez\b|\bun dia\b'
+
+# Paso 4 · «acordar», «definir» o «consensuar» se resuelven por su complemento (el primero que
+# aparezca a 6 palabras o menos)
+complemento:
+  verbo: '\b(acord|acuerd|defin|consensu)\w*\b'      # acordar, acuerda, acordado…
+  max: 6
+  peso: 3
+  destinos:
+    interfaz: '^(informacion|formatos?|requisitos?|criterios?|condicion(es)?|nomenclaturas?|clasificacion(es)?)$'
+    pendiente: '^(responsables?|duenos?|cierres?|aprobacion(es)?|destinatarios?|quien(es)?)$'
+
+# Paso 4 · señales por categoría. peso: 3 fuerte, 2 media, 1 débil, -3 anti.
+categorias:
+  hallazgo:
+  - {peso: 3, consume: ambos, cerca: {a: '\b(detect|encuentr|revel|marc|senal|identific)\w*\b', b: '\b(choques?|clash(es)?|interferencias?|colision(es)?|errore?s?|incidencias?|fallos?|omision(es)?|inconsistencias?|incompatibilidad(es)?)\b', max: 6}}
+  - {peso: 2, patron: '\b(revision(es)?|revisa\w*|se revisan|chequeos?|comprobacion(es)?|auditorias?|control de calidad|inspeccion(es)?|validacion(es)?|model checking)\b'}
+  - {peso: 2, cerca: {a: '\b(ia|inteligencia artificial|automatiz\w*)\b', b: '\b(revision(es)?|revis\w*|chequeo|comprobacion|auditoria|inspeccion|validacion|detect\w*|encuentr\w*|revel\w*|identific\w*)\b', max: 6}}
+  - {peso: 1, patron: '\b(navisworks|solibri|model checker|reglas)\b'}
+  - {peso: 1, kicker: '^(caso|noticia)$'}
+  - {peso: -3, patron: '\b(resuelve\w*|corrige\w*|soluciona\w*|repara\w*)\b'}
+  comparacion:
+  - {peso: 3, gana_directo: true, patron: '¿[^?]*\bo\b[^?]*\?'}
+  - {peso: 3, gana_directo: true, patron: '\b(vs\.?|versus|frente a)(?!\w)'}
+  - {peso: 3, gana_directo: true, cerca: {a: '\bentre \w+ (y|o) \w+', b: '\b(elegir|elige\w*|decidir|decide\w*)\b', max: 8}}
+  - {peso: 2, patron: '\b(elegir|opcion(es)?|alternativas?|comparar|comparativa|disyuntiva|cual conviene|que conviene|trade-off|a cambio de|compensa|mas barato pero)\b'}
+  - {peso: 1, patron: '\bdos (sistemas|materiales|fachadas|estructuras|plataformas|soluciones)\b'}
+  - {peso: -3, patron: '\b(gana|la mejor opcion|la respuesta es|elegimos|nos quedamos con|antes y despues)\b'}
+  interfaz:
+  - {peso: 3, patron: '\b(openbim|ifc|ids|bcf|iso 19650|bep|eir|air|loin|cobie|interoperabilidad|intercambio de (informacion|datos|modelos)|formato abierto|requisitos de informacion|modelo federado|entorno comun de datos|cde)\b'}
+  - {peso: 2, patron: '\b(criterio comun|integracion|integrar|conectar|entre disciplinas|entre plataformas|traspaso|handover|nomenclatura|clasificacion)\b'}
+  - {peso: 1, kicker: '^(openbim|interoperabilidad|integraciones)$'}
+  pendiente:
+  - {peso: 3, consume: ambos, cerca: {a: '\bsin (acord|defin|asign)\w*\b', b: '\b(responsables?|duenos?|destinatarios?|cierres?|aprobacion(es)?)\b', max: 6}}
+  - {peso: 3, patron: '\b(sin responsables?|sin destinatarios?|sin duenos?|nadie (decide|responde|asume)|quien (decide|responde))\b'}
+  - {peso: 2, patron: '\b(responsables?|rol(es)?|duenos?|aprobacion(es)?|escalamiento|pendientes?|sin asignar|gobernanza)\b'}
+  - {peso: 2, patron: '\bdepend\w* del equipo\b'}
+  - {peso: 2, patron: '\bmueve\w* (las )?preguntas\b'}
+  - {peso: 1, patron: '\b(equipos?|adopcion|liderazgo|cultura)\b'}
+  transformacion:
+  - {peso: 3, patron: '\b(de|del|desde) (la |el |lo )?(plano|papel|cad|2d|modelo|3d|obra|manual|automatico|digital)\w*,? (a|al|hasta) (la |el |lo )?(plano|papel|cad|2d|modelo|3d|obra|manual|automatico|automatizado|digital)\w*'}
+  - {peso: 2, patron: '\b(pasar de|convertir|migrar|digitaliz\w*|transformacion digital|implementar|implementacion|adoptar|evolucion del flujo)\b'}
+  - {peso: 1, patron: '\b(flujos?|procesos?)\b'}
+  - {peso: 1, kicker: '^caso$'}
+  - {peso: -3, patron: '\ben (\d+|dos|tres|cuatro|cinco|seis) (fases|pasos|etapas)\b|\bantes y despues\b'}
+  evento:
+  - {peso: 2, kicker: '^(guia|lanzamiento)$', requiere_objeto: true}

@@ -1,0 +1,72 @@
+{
+ "galeria": "G03",
+ "seccion": null,
+ "rubrica": "pred-crit-a",
+ "retro": true,
+ "criterios_hasta": "G03",
+ "sellado": "2026-11-11T00:43:02",
+ "hash_rubrica": "2afef7084991",
+ "hash_criterios": "fd98b8707561",
+ "votos": [
+  {
+   "id": "G03-pca-prediccion",
+   "galeria": "G03",
+   "version": "pred-crit-a",
+   "lente": "prediccion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 6,
+    "2": 6.5,
+    "3": 6,
+    "4": 8
+   },
+   "hallazgos": [
+    {
+     "opcion": "4",
+     "donde": "pie, logotipo Umbral BIM abajo a la izquierda",
+     "problema": "El texto chico crece un 29 % pero el logotipo no: queda solo en la última línea y pasa a ser el elemento más chico de la columna. David cuenta el logo como texto chico.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "4",
+     "donde": "columna de texto, del kicker a los datos",
+     "problema": "Al crecer el kicker, el subtítulo y los datos, la jerarquía se comprime: el subtítulo turquesa en dos líneas pesa más y le resta algo de distancia al título. El título sigue mandando.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1",
+     "donde": "entre el subtítulo y el bloque de datos",
+     "problema": "Queda un vacío grande sin función, de cerca del 17 % del alto. Datos, llamado y logo siguen a 14 px CSS: en el feed del celular se ven de unos 4 px y se leen justo, sin holgura, aunque midan 10:1.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "entre el subtítulo y los datos; pie",
+     "problema": "Los datos ganan peso, pero el vacío sobre ellos crece porque el subtítulo cabe en una línea. El llamado y el logo siguen a 14 px. El subtítulo baja al tamaño del kicker, ocupa todo el ancho de la columna y pierde peso.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "tercio superior de la columna",
+     "problema": "El aire queda arriba y solo lo ocupa la etiqueta EJEMPLO. El título baja al centro y la entrada de lectura se retrasa. El texto chico mantiene 14 px, así que no gana legibilidad en el celular.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "todas",
+     "donde": "imagen de los dos tercios derechos",
+     "problema": "Es un defecto común y no desempata. La imagen es una mancha abstracta con un turquesa luminoso que parece resplandor y contrastes negro-blanco dramáticos. Se aleja de la línea isométrica plana aprobada y roza los vetos de marca: hay que revisarla antes de publicar.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "todas",
+     "donde": "título",
+     "problema": "Es común a todas: el título se reduce de 176 a 98 px para caber en los 581 px del tercio.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "4",
+   "veredicto": "sirve",
+   "resumen": "Las cuatro opciones miden más de 10:1 sobre la imagen, así que el contraste ya no las distingue. Las separa el tamaño del texto chico en el celular. La 4 es la única que lo agranda de forma pareja: datos y llamado pasan a 18 px CSS, el llamado tiene su propia línea y la columna queda llena, sin el vacío bajo el subtítulo. Es la que más se acerca a lo que David pidió de abajo a la izquierda. Antes de aprobarla conviene agrandar el logotipo, que no creció. La 2 refuerza solo los datos y agranda el vacío. La 1 y la 3 dejan el texto chico en 14 px y cambian el vacío de lugar. La imagen es común a todas y debe revisarse aparte contra los vetos de resplandor y dramatismo."
+  }
+ ]
+}

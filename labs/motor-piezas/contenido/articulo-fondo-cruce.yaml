@@ -1,0 +1,10 @@
+# G27 (2026-11-11): Versión A cruzada (sugerencia de los jueces): la principal de A1 con la apaisada de A2, que comparten vocabulario. No publicar.
+id: articulo-fondo-cruce
+ejemplo: true              # muestra el chip EJEMPLO
+chip: EJEMPLO
+kicker: Artículo
+titulo: [La IA entra, a la obra]
+cuerpo: "Qué cambia en la coordinación BIM cuando los modelos se revisan con IA, y qué sigue dependiendo del equipo."
+cta: "LEE EL ARTÍCULO · umbralbim.io"
+imagen: mg-articulo-ia-obra-fondo-p1
+imagen_ancha: mg-articulo-ia-obra-fondo-a2

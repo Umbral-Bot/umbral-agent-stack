@@ -1,0 +1,78 @@
+{
+ "galeria": "G12",
+ "seccion": null,
+ "rubrica": "pred-ej-b",
+ "retro": true,
+ "criterios_hasta": "G12",
+ "sellado": "2026-11-11T01:09:46",
+ "hash_rubrica": "b71ce177d875",
+ "hash_criterios": "c375ba4695d4",
+ "votos": [
+  {
+   "id": "G12-ejb-prediccion",
+   "galeria": "G12",
+   "version": "pred-ej-b",
+   "lente": "prediccion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 8,
+    "2": 7,
+    "3": 4.5,
+    "4": 4
+   },
+   "hallazgos": [
+    {
+     "opcion": "3",
+     "donde": "franja de imagen a la derecha",
+     "problema": "La franja recorta al sujeto: del brazo robótico solo queda la pinza, cortada por el borde derecho. Casi toda la franja son bloques crema y turquesa sin protagonista, y se pierde la imagen favorita. Es justo la queja de David por el objeto mal ubicado en la máscara.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "3",
+     "donde": "columna de texto, entre el llamado y el logo",
+     "problema": "Un post de noticia tiene poco texto. Bajo el llamado queda un vacío oscuro de casi un tercio de la altura, sin ninguna función. En el Preset 01 los datos llenaban la columna; aquí no hay nada que la llene.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "titular",
+     "problema": "El titular baja a 107 px, frente a 156 px en las demás opciones. En el celular pierde su peso, y el kicker y la bajada de 5 líneas se acercan al límite de jerarquía.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4",
+     "donde": "velo bajo el texto",
+     "problema": "Con 0,86 de opacidad, el velo se ve gris turbio en vez del fondo oscuro de marca. La pinza y los bloques de la imagen se ven a través del velo, detrás del kicker y del titular, y compiten con la textura. Además rompe la identidad de la serie: no tiene el panel liso ni la trama. David ya dejó el velo a sangre por el sangrado lateral (G04).",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "4",
+     "donde": "recorte de la imagen",
+     "problema": "El recorte a sangre corta el círculo por la izquierda y el brazo por la derecha, y el robot queda fragmentado. En el pie aparece una banda gris plana sin imagen.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "2",
+     "donde": "pie (logo y llamado)",
+     "problema": "El pie queda a media altura del lienzo, sobre la imagen, y no abajo a la izquierda como en el Preset 01. Se lee como un corte a mitad de pieza y debilita la serie.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "1",
+     "donde": "unión entre la imagen y el panel",
+     "problema": "La imagen trae su propio margen crema abajo. Queda una franja crema fina antes del panel oscuro y la costura se ve algo blanda.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "todas",
+     "donde": "imagen fija",
+     "problema": "Defecto común, no desempata: el turquesa domina como fondo dentro de la imagen y tiene grano marcado. Está en tensión con el veto de turquesa como fondo, pero David fijó esa imagen como favorita.",
+     "gravedad": "baja"
+    }
+   ],
+   "mejor": "1",
+   "veredicto": "sirve",
+   "resumen": "Predigo que David elige la 1: la imagen arriba a sangre muestra el robot completo, el titular manda en el panel oscuro con trama y el logo queda abajo a la izquierda como en el Preset 01. La lectura es limpia (7,24:1 sobre fondo liso). La 2 es casi igual de buena, pero sube el pie a mitad del lienzo. La 3 se parece a la familia del Preset 01, pero corta el robot y deja un gran vacío bajo el llamado. La 4 vuelve al velo que David ya descartó, se ve gris y mezcla la textura con el texto."
+  }
+ ]
+}

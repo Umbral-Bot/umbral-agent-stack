@@ -1,0 +1,8 @@
+id: O2
+nombre: "Solo titular · sin bajada: el titular crece hasta su ancho máximo"
+alternativa: p02-paso2
+paso: jerarquia
+hereda: packs/O1-noticia-jerarquia-base.yaml
+decision_david: null
+valores:
+  densidad_texto: media     # kicker, titular y llamado; la bajada queda para el texto del post

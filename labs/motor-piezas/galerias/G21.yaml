@@ -1,0 +1,36 @@
+id: G21
+fecha: 2026-11-10
+titulo: "Galería 21 · LinkedIn con bajada: la misma separación entre los textos"
+descripcion: >
+  Elecciones de David en G20: la 2° para LinkedIn con bajada («1= 2, pero un poco mas separados los
+  textos "Articulo" , "la IA.." , "Que cam.." y "Lee.." todos esos entre si con la mismasparación
+  aumenta la un poco mas, haz variaciones  a partir de la alt2») y la 4° para LinkedIn sin bajada
+  («2= 4»), que pasa al Preset 03. Aquí, la 2° con los cuatro textos a la misma distancia, en tres
+  medidas. Para que el botón no quede pegado al logo, el logo baja 16 px (margen inferior de 48 px)
+  y queda más lejos del botón que los textos entre sí. Con más aire, el titular se achica para caber.
+  Laboratorio: no publicar.
+resumen: >
+  La 2° de G20 con la misma separación entre «Artículo», el titular, la bajada y el botón:
+  32, 36 y 40 px.
+como_elegir: >
+  Elige una del 1° al 3°. La hoja 01_detalle.jpg muestra la columna de texto más grande.
+contenido: contenido/articulo-ejemplo.yaml
+detalle:
+  titulo: "DETALLE · COLUMNA DE TEXTO"
+  recorte: [0, 0, 720, 627]
+  secciones: [p02-linkedin-separacion]
+secciones:
+  - alternativa: p02-linkedin-separacion
+    titulo: "Con bajada · LinkedIn (1200×627), la 2° de G20 con la misma separación"
+    descripcion: >
+      En la 2° los espacios eran 16, 20 y 32 px. Ahora son iguales entre los cuatro textos; cada
+      uno va de la línea base del texto de arriba a la altura de mayúscula del de abajo (o al
+      borde del botón).
+    pasos:
+      - "32 px entre los cuatro textos; el titular queda igual (102 px)"
+      - "36 px; el titular baja a 96 px para caber"
+      - "40 px; el titular baja a 86 px para caber"
+    piezas:
+      - packs/U1-noticia-linkedin-separacion-32.yaml
+      - packs/U2-noticia-linkedin-separacion-36.yaml
+      - packs/U3-noticia-linkedin-separacion-40.yaml

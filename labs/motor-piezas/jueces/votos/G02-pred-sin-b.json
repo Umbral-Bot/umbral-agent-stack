@@ -1,0 +1,78 @@
+{
+ "galeria": "G02",
+ "seccion": null,
+ "rubrica": "pred-sin-b",
+ "retro": true,
+ "criterios_hasta": null,
+ "sellado": "2026-11-11T00:45:34",
+ "hash_rubrica": "2afef7084991",
+ "hash_criterios": "fd98b8707561",
+ "votos": [
+  {
+   "id": "G02-qb-prediccion",
+   "galeria": "G02",
+   "version": "pred-sin-b",
+   "lente": "prediccion",
+   "no_aplica": false,
+   "puntajes": {
+    "1": 7.5,
+    "2": 4.5,
+    "3": 7,
+    "4": 6
+   },
+   "hallazgos": [
+    {
+     "opcion": "1",
+     "donde": "columna de texto, entre el subtítulo y la fila 01 (y≈1000–1270 en el PNG de 3840 px)",
+     "problema": "Queda un hueco vertical grande entre el subtítulo y los datos. En el feed el bloque se ve partido en dos. El reparto vertical se afina en el paso 2.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "1",
+     "donde": "mitad derecha, del corte del velo (x≈1944) al borde",
+     "problema": "La parte cian de la imagen se pega al corte. El resto de la mitad es gris claro casi plano y no tiene un punto que atraiga la mirada.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "2",
+     "donde": "título y subtítulo en la columna de 4/12 (x 0–1338)",
+     "problema": "El título baja de 176 a 98 px (−44 %) y en el celular queda en unos 19 px, chico al lado de la imagen. El subtítulo se parte en 2 líneas. La pieza deja de leerse como el anuncio de un evento.",
+     "gravedad": "alta"
+    },
+    {
+     "opcion": "2",
+     "donde": "columna de texto, entre el subtítulo y la fila 01 (y≈900–1275)",
+     "problema": "Hay un hueco vertical aún mayor que en la 1°, dentro de una columna estrecha. El pie y el CTA quedan apretados contra el borde de la columna.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "banda inferior (y≈1055–2160): SAVE THE DATE a ~70 px del borde del velo y el subtítulo cerca del pie",
+     "problema": "Todo el texto se aprieta en el 51 % de abajo. El título baja a 143 px para caber en 362 px de alto y la banda se siente cargada frente a la imagen de arriba, que no lleva información.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "3",
+     "donde": "mitad superior de la imagen (y 0–1055)",
+     "problema": "En el feed, las zonas blanco-grisáceas de arriba a la izquierda y a la derecha se llevan la primera mirada antes que el título.",
+     "gravedad": "baja"
+    },
+    {
+     "opcion": "4",
+     "donde": "cuadrante superior derecho (x≈2160–3840, y 0–1100)",
+     "problema": "Queda un bloque gris velado al 72 % con solo la etiqueta EJEMPLO. A tamaño de feed se lee como relleno muerto o turbio.",
+     "gravedad": "media"
+    },
+    {
+     "opcion": "4",
+     "donde": "esquina del velo en L (x≈1338, y≈1103)",
+     "problema": "El velo en escalón, con un corte vertical y otro horizontal, relega la imagen al cuadrante inferior derecho. Es el título más fuerte (176 px sin reducir), pero la imagen pierde presencia y la composición se ve menos limpia.",
+     "gravedad": "media"
+    }
+   ],
+   "mejor": "1",
+   "veredicto": "sirve",
+   "resumen": "Predigo que David elige la 1° (mitad), por poco frente a la 3°. Es la base que ya eligió en G01, ahora con mejor contraste. Mantiene una lectura limpia de arriba abajo y un título grande (149 px) que en el celular sigue mandando. La imagen conserva su mitad. Su defecto, el hueco entre el subtítulo y los datos, se corrige en el paso 2. La 3° (banda) es la rival seria: título a la izquierda, datos a la derecha y mejor contraste (7.05:1), pero la banda de abajo queda apretada. La 4° tiene el título más potente, aunque deja un bloque gris muerto arriba a la derecha y la imagen queda relegada. La 2° encoge el título a 98 px y pierde la jerarquía del anuncio."
+  }
+ ]
+}

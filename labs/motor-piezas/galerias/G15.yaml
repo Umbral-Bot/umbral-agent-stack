@@ -1,0 +1,29 @@
+id: G15
+fecha: 2026-11-09
+titulo: "Galería 15 · Preset 02 (post de noticia), paso 4: color"
+descripcion: >
+  Paso 4 del Preset 02. Quedan fijas la banda abajo, la jerarquía base y la imagen a sangre
+  (G14 1°). Tres colores para la banda de texto; cada pieza cambia una sola cosa respecto de la
+  1°. El azul de portadas (#1A1A2E) no entra: el manual lo reserva para diapositivas.
+  Laboratorio: no publicar.
+resumen: >
+  Preset 02, paso 4: el color de la banda de texto. Quedan fijas la banda abajo, la jerarquía
+  base y la imagen a sangre.
+como_elegir: >
+  Elige un número (1° a 3°) o una combinación y dime qué cambiarías. Ese preset queda fijo y
+  pasamos al paso 5 (pie y detalles), el último.
+contenido: contenido/articulo-ejemplo.yaml
+secciones:
+  - alternativa: p02-paso4
+    titulo: "Paso 4 · Color (4:5, 1080×1350)"
+    descripcion: >
+      Cada pieza hereda de la 1° (R1, que es la G14 1° sin cambios). Contraste medido sobre el
+      fondo liso de la banda.
+    pasos:
+      - "Base: bajada en gris de marca (7,2:1), turquesa en «Artículo» y en el llamado, como el Preset 01"
+      - "Bajada blanca: la bajada en el color del texto (15,8:1)"
+      - "Panel claro: la banda en el tema claro de la marca; la bajada gris queda en 4,6:1, la más baja de las tres"
+    piezas:
+      - packs/R1-noticia-color-base.yaml
+      - packs/R2-noticia-bajada-blanca.yaml
+      - packs/R3-noticia-panel-claro.yaml

@@ -1,0 +1,9 @@
+id: AA3
+nombre: "LinkedIn sin bajada · el mismo bloque a 32 px, apoyado abajo; el logo solo arriba"
+alternativa: sin-bajada-linkedin-separacion
+paso: separación del texto
+hereda: packs/AA2-noticia-linkedin-sin-bajada-bloque.yaml
+decision_david: null
+# G21, 2026-11-10: «2= 1». Igual que la 2°, con el bloque sobre el margen inferior.
+valores:
+  pila_anclaje: abajo

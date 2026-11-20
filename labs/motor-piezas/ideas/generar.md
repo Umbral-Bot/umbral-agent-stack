@@ -32,7 +32,9 @@ evidencia real.
 7. Varía: tus tres ideas tienen tesis distintas. Evita girar otra vez sobre «criterio antes que automatizar» salvo que
    la evidencia lo exija y la idea sea nueva.
 8. Respeta las reglas de verdad: sin cifras ni credenciales que el CV v6 no confirma, sin nombrar clientes fuera del v6,
-   sin pegar transcripciones, Konstruedu solo como patrón anónimo.
+   sin pegar transcripciones, Konstruedu solo como patrón anónimo. Las grabaciones, las transcripciones y las fichas
+   de los talleres en vivo de Konstruedu (carpeta «Cursos en vivo/Lives IA AEC 2026-2027», base «Cronograma Konstruedu
+   - David Moreira») no entran en la fábrica: sirven solo para preparar esos talleres (`fuentes-vetadas.yaml`).
 9. Escribe en castellano, en la voz de David (directo, técnico, sin la lista negra). Usa «ustedes», nunca «vosotros».
 
 ## Salida

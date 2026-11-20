@@ -1,0 +1,54 @@
+# Fuentes que no entran en la fábrica de ideas. ideas.py validar rechaza una ficha que las cite.
+# Decisión de David del 20-11-2026 (mi-contenido 0.3.0, registry main 0cb2b7d): la segunda excepción al veto de
+# Konstruedu (talleres en vivo del eje propio de David) sirve solo para preparar esos mismos talleres. No pasa a otro
+# programa ni se usa como patrón fuera de ese eje, así que tampoco alimenta ideas de publicaciones.
+
+vetadas:
+  - nombre: Grabaciones y transcripciones de los talleres en vivo de Konstruedu
+    textos:                       # se buscan sin tildes ni mayúsculas en todo el texto de la ficha
+      - "cursos en vivo"
+      - "lives ia aec"
+      - "taller n - transcripcion"
+    fuente: "Drive: Clientes y Partners/Konstruedu/01_WIP/Cursos en vivo/Lives IA AEC 2026-2027/"
+  - nombre: Fichas de los talleres en la base de Notion «Cronograma Konstruedu - David Moreira»
+    textos:
+      - "cronograma konstruedu"
+    ids_notion:                   # base, su data source, la página del eje y las 24 fichas (leídas el 20-11-2026)
+      - 6acc8a7b1e834870ad4414fbd706309d
+      - e87cf82953c348d398b6c5a202a81a84
+      - adf3fdf75ca94679815b8b77e9bd74b5
+      - b689956cd14949018f437c6dd621e516
+      - 2628b7ed6f0746188aec1fe6cf3a5659
+      - 18bf9422278e470eae527218cc36e922
+      - 1336f2b9fc58494197b6f7982d1bfb33
+      - efb49c257cb745448ba42f75ac8924c9
+      - e68d99668f3a4276a4c7a6b338454d5e
+      - ac3a460a802641e8bc8e5e990be59bde
+      - bc88693362c24736a0b39b71d50031ca
+      - 7f03f008a54e4b2b9cd808740be8cccd
+      - 643b60041dc14ae492e913b3bc558945
+      - 4617f9983bbd45fabe25a512eb04cd9a
+      - c5bf70940c7440189c924f5fb8b73678
+      - 930ba41691634c00a232a2489cf1eefa
+      - d06303e6608c4066a30189a8cf814f55
+      - c892cc178bef4ee9b98a562a902b144f
+      - e4d5260dd72549e99107a544556c8580
+      - 553eea7e66664d6ab788fb76ecb9f4e3
+      - 774fd53a456246458b07db393e6ad9ed
+      - 9bb2dd6826514ff2ba16dd9d901eaa91
+      - a7eca04225d04f63b6344be30f13b94d
+      - c8268f1c261d40dfb9c66a7e1adda759
+      - a40f041ccdd3404eb311a75ba036879c
+      - 78105c78f7c543169bd4db7a71c451a1
+      - 21948f9f410c45c8830339d1487c3846
+    fuente: "Notion: Operacion / Clientes y Partners / Konstruedu / Temario semestral / Eje David Moreira"
+    nota: "una ficha nueva en esa base no está en la lista: también la atrapa el texto «cronograma konstruedu» si se cita por nombre"
+
+pendientes:                       # fuentes en duda: la ficha pasa con aviso y no se presenta hasta que David decida
+  - nombre: Informe de la masterclass «Diseña tu primera automatización» (Konstruedu, 5-nov-2026)
+    textos:
+      - "disena tu primera automatizacion"
+      - "masterclass"
+    ids_notion:
+      - 4105f443fb5c817ba1d1f584d5167115
+    motivo: "primera excepción al veto (6-nov-2026), pensada para idear casos y ejemplos de clases; David no ha decidido si sigue alimentando ideas de publicaciones (pregunta del 20-11-2026)"

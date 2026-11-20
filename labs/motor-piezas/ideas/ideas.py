@@ -23,6 +23,7 @@ import yaml
 AQUI = Path(__file__).resolve().parent
 LAB = AQUI.parent
 RAIZ = yaml.safe_load((AQUI / 'raiz-david.yaml').read_text(encoding='utf-8'))
+VETADAS = yaml.safe_load((AQUI / 'fuentes-vetadas.yaml').read_text(encoding='utf-8'))
 
 OBLIGATORIOS = ['titulo', 'tema', 'manantial', 'formula', 'evidencia', 'premisa', 'hipotesis', 'respuesta', 'cadena_tesis',
                 'residuo', 'gancho', 'arco', 'escena', 'arquitectura', 'pilar', 'audiencia', 'canales', 'procedencia']
@@ -127,6 +128,15 @@ def validar_ficha(f: dict, ronda: str = 'I01') -> tuple[list, list]:
             E.append(f'lista negra: «{frase}»')
     if re.search(r'\b(vosotros|os |vuestro|dedicais|queres)\b', norm(todo)):
         E.append('persona gramatical: se usa «ustedes»')
+    # fuentes vetadas o en duda (fuentes-vetadas.yaml): por texto o por id de Notion, en toda la ficha
+    plano = norm(todo).replace('-', '')
+    for grupo, lista in (('vetadas', E), ('pendientes', A)):
+        for v in VETADAS.get(grupo, []):
+            pega = [t for t in v.get('textos', []) if norm(t).replace('-', '') in plano] + \
+                   [i for i in v.get('ids_notion', []) if i in plano]
+            if pega:
+                lista.append(f"{'fuente vetada' if grupo == 'vetadas' else 'fuente pendiente de David'}: "
+                             f"{v['nombre']} («{pega[0]}»)")
     # C55: la docencia como tema está fuera (las clases siguen siendo canal y fuente)
     m = re.search(DOCENCIA, norm(' '.join([f['titulo'], f['tema'], f['premisa'], f['respuesta']])))
     if m:

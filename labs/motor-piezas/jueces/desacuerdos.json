@@ -952,6 +952,21 @@
   }
  },
  {
+  "galeria": "I02",
+  "rubrica": "idea-v5",
+  "jueces": "3",
+  "david": [],
+  "cita": "nocreo qeu esasa ideas conecten muy bien con la audiencia",
+  "resumenes": {
+   "premisa": "Ninguna opción cae en un veto: las cinco son posturas y no solo temas. La 3 (La planilla del viernes) tiene la premisa más sólida: cruza tres fuentes, la creencia es de gerentes y la tensiona, y es la única que contesta su objeción fuerte dentro de la ficha. La 1 tiene la tensión más contraintuitiva, pero deja sin responder la objeción de los honorarios. La 4 es sólida como experiencia, aunque tensiona poco para un gerente. La 2 promete más de lo que una sola entrevista sostiene, y la 5 sostiene algo en lo que casi todos ya están de acuerdo.",
+   "alineacion": "Desde la alineación, la 4 es la idea más de David: su caso estrella confirmado en el CV, su regla de partir de la licencia disponible y su marco de Puentes Digitales. La 1 y la 3 también sirven: la 1 baja directo a la tesis central y la 3 cruza a la vez su pilar, su mensaje a gerentes y la Automatización Empática, aunque su diagnóstico en primera persona sale de una bitácora «Planificado» y necesita confirmación. La 5 sirve con ajustes: está bien respaldada, pero la escena es de modelador y la conexión con la tesis es indirecta. La 2 sirve con ajustes: afirma en primera persona una experiencia que solo está en una bitácora «Planificado», y su título y su gancho de taller la acercan a la docencia, que David dejó fuera de sus temas.",
+   "voz": "Por voz, la 5 es la que David diría tal cual en una reunión: frases cortas, la escena antes del concepto, la recepción de obra como recurso suyo y un cierre que sirve para la próxima reunión. La 4 queda muy cerca (su caso, su error, su frase), con detalles menores: la muletilla «ya» y un residuo algo redondo. La 2 tiene buena voz, pero la broma se lee ambigua. La 3 tiene el mejor residuo, pero el relato se carga de fuentes y tiene una incoherencia entre consultora y capataz. La 1 abre con la analogía y suena a procedimiento. La lente no ve vetos en ninguna.",
+   "enganche": "Por enganche gana la 3: dolor oculto que reconoce cualquier gerente, creencia concreta que se cae y frase que queda; conviene aligerar las fuentes del relato. La 1 queda muy cerca y también sirve (tensión de honorarios actual, analogía clara), con el cierre por ajustar. La 2 sorprende pero se lee rara y llena de salvedades; la 4 y la 5 enganchan menos fuera del especialista.",
+   "monotonia": "La ronda tiene un par repetido: la 1 (escáner del taller) y la 5 (habitación de al lado) sostienen lo mismo, que el resultado de la IA vale cuando un profesional lo revisa. Comparten pilar, arquitectura y una analogía de oficio, y la 1 es la vuelta más directa a «criterio antes que automatizar». Si sigue una sola, mejor la 5, por su ángulo más concreto. La 3 y la 4 comparten pilar, pero tienen tesis distintas. La 2 es la más distinta del conjunto y no toca el tema recurrente, así que es la que elige esta lente.",
+   "prediccion": "Predigo que David elige la 3, La planilla del viernes: le habla directo al gerente con su propio mensaje «No tienes visibilidad real», la entiende cualquiera sin saber de software, conecta con la compra de IA de fin de año y deja una frase que engancha («La IA no ve la obra. Ve la planilla del viernes»). Ajuste: aligerar el relato, que apila tres fuentes, y confirmar la escena del Planificado. Le sigue la 4 (OXXO, muy suya pero ya gastada), luego la 1 (tema amplio, analogía ajena) y la 2 (el tema que le interesó, pero aún con escena construida). La 5 queda abajo por seguir siendo un tema de Revit."
+  }
+ },
+ {
   "galeria": "M01",
   "rubrica": "imagenes-lectura-ciega",
   "jueces": "2",

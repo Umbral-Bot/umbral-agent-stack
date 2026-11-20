@@ -125,5 +125,7 @@ reglas_de_verdad:
   - "Clientes que se pueden nombrar: los del CV v6 (OXXO, Butic, UTFSM, FEDEFRUTAS, Hafnia, Geisse y Navarro); el resto, anónimo"
   - "Credenciales que no están en el v6 (embajador n8n, ponencias, BIM Forum…) no se usan como credencial"
   - "Konstruedu: solo como patrón anonimizado (regla de mi-contenido)"
+  - "Las grabaciones, las transcripciones y las fichas de los talleres en vivo de Konstruedu (carpeta «Konstruedu/01_WIP/Cursos en vivo/Lives IA AEC 2026-2027», base de Notion «Cronograma Konstruedu - David Moreira») no entran en la fábrica de ideas: sirven solo para preparar esos talleres (David, 20-11-2026; mi-contenido 0.3.0). ideas.py rechaza la ficha que las cite (fuentes-vetadas.yaml)"
+  - "El informe de la masterclass del 5-nov-2026 (Konstruedu) queda en pausa para ideas de publicaciones hasta que David decida si sigue sirviendo como patrón anónimo"
   - "Planificado alimenta ideas; Informe prueba (mi-contenido): una experiencia solo se afirma si está en un informe o en el CV"
   - "No pegar fragmentos de transcripciones; se parafrasea y se cita la fuente"

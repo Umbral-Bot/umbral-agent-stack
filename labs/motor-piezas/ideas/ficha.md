@@ -26,4 +26,7 @@ la skill `asesor-discursivo` (tema, premisa, propósito, residuo). Una ficha no 
 | `canales` | `{linkedin, x, blog, clase}`: en una línea, qué sería en cada uno | Misma tesis, forma nativa; vacío si no aplica |
 | `por_que_ahora` | Por qué esta semana y no otra | |
 | `riesgo` | Qué puede salir mal (claim débil, cliente, monotonía) | |
+| `relato` | Desde I02: la idea contada como David la diría, 90 a 140 palabras: gancho, escena, giro y frase que queda | Lo primero que lee David; sin plantilla, rótulos ni paréntesis (C57) |
+| `persuasion` | Desde I03: en una frase corta, a qué busca convencer al lector: que haga más de algo o menos de otra cosa | Si no cambia una conducta, no persuade (C59) |
+| `proceso` | Desde I03: los pasos que de verdad produjeron la idea (a quién se miró, qué necesidad, de qué evidencia sale la propuesta…), de 3 a 7 | No es una secuencia fija (C58) |
 | `procedencia` | `{david, agente}`: qué viene de David (su caso, sus palabras) y qué propuso el agente | |

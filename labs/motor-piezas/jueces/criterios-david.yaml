@@ -1263,6 +1263,63 @@ criterios:
   - galeria: I01
     cita: la redacción y narrativa está un poco extraña
     fuente: jueces/elecciones.yaml (I01, opción 3)
+- id: C58
+  regla: 'Cada idea muestra el proceso que la produjo, en pasos cortos y reales (por ejemplo, a qué audiencia se
+    miró, qué necesidad se detectó y de qué evidencia sale la propuesta). No es una secuencia fija: es lo que de
+    verdad se hizo para esa idea, para que David vea por qué debería conectar.'
+  tipo: proceso
+  lentes:
+  - idea.alineacion
+  - idea.enganche
+  - eleccion.prediccion
+  confianza: alta
+  estado: activo
+  desde: G32
+  hasta: G32
+  origen: pedido de David (I02)
+  evidencia:
+  - galeria: I02
+    cita: quiero qeu ene cada alt agregues una parte que diga el proceso que usó, punteo de cosas, por ejemplo , analisis
+      de audiiencia, detectar necesidad de tal tipo, proponer solución apartir de tal etc, lo digo solo como ejemplo, no
+      te pido que uses esa secuencia como tal
+    fuente: jueces/elecciones.yaml (I02) · mensaje de David del 2026-11-20
+- id: C59
+  regla: 'Cada idea dice en una frase corta a qué busca convencer al lector: que haga más de algo o menos de otra
+    cosa. Si no se puede decir qué conducta cambia, la idea no persuade.'
+  tipo: proceso
+  lentes:
+  - idea.premisa
+  - idea.enganche
+  - eleccion.prediccion
+  confianza: alta
+  estado: activo
+  desde: G32
+  hasta: G32
+  origen: pedido de David (I02)
+  evidencia:
+  - galeria: I02
+    cita: agrega un ttem qeu se llame Persuación, en una frace corta que busca convencer al lector, de que intenta
+      convencer, de que haga mas de esto omenos de esto otro etc
+    fuente: jueces/elecciones.yaml (I02) · mensaje de David del 2026-11-20
+- id: C60
+  regla: 'Partir de la evidencia de David no basta para conectar: en I02 las ideas nacían de sus casos y no conectaron
+    con la audiencia. La idea parte de lo que una audiencia concreta está viviendo y necesita, y después busca en la
+    evidencia de David lo que responde a eso.'
+  tipo: proceso
+  lentes:
+  - idea.alineacion
+  - idea.enganche
+  - eleccion.prediccion
+  confianza: media
+  estado: a prueba
+  desde: G32
+  hasta: G32
+  origen: 'inferido de I02 y de la secuencia de ejemplo que dio David («analisis de audiiencia, detectar necesidad»);
+    él aclaró que no pide esa secuencia: se prueba en I03'
+  evidencia:
+  - galeria: I02
+    cita: nocreo qeu esasa ideas conecten muy bien con la audiencia
+    fuente: jueces/elecciones.yaml (I02) · mensaje de David del 2026-11-20
 rechazados:
 - id: C46
   regla: 'Cuando todas las opciones ya cumplen el contraste y el tamaño mínimo, la más legible no gana por eso.

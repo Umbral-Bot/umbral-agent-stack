@@ -37,8 +37,13 @@ evidencia real.
    - David Moreira») no entran en la fábrica: sirven solo para preparar esos talleres (`fuentes-vetadas.yaml`).
 9. Escribe en castellano, en la voz de David (directo, técnico, sin la lista negra). Usa «ustedes», nunca «vosotros».
 
+10. Desde I03, cada ficha lleva `persuasion` (una frase: qué conducta busca cambiar en el lector, hacer más de algo
+    o menos de otra cosa) y `proceso` (de 3 a 7 pasos con lo que de verdad hiciste para llegar a esa idea; no copies
+    una secuencia fija). A prueba (C60): parte de lo que vive y necesita una audiencia concreta y después busca en
+    la evidencia de David lo que responde a eso.
+
 ## Salida
 Tres fichas en JSON, con los campos de `ficha.md`: titulo, tema, manantial, formula, evidencia {tipo, referencia,
 afirmacion}, premisa, hipotesis, respuesta, cadena_tesis {evidencia, inferencia, salto, no_afirmado}, contraargumento,
 residuo, gancho {tipo, texto}, arco, escena, arquitectura, pilar, marco, audiencia, canales {linkedin, x, blog, clase},
-por_que_ahora, riesgo, procedencia {david, agente}.
+por_que_ahora, riesgo, procedencia {david, agente}; desde I02 `relato` y desde I03 `persuasion` y `proceso`.

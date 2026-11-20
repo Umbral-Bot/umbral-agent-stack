@@ -29,6 +29,8 @@ OBLIGATORIOS = ['titulo', 'tema', 'manantial', 'formula', 'evidencia', 'premisa'
                 'residuo', 'gancho', 'arco', 'escena', 'arquitectura', 'pilar', 'audiencia', 'canales', 'procedencia']
 # desde I02 (C57): la idea contada como David la contaría, que es lo que se le muestra
 OBLIGATORIOS_DESDE_I02 = ['relato']
+# desde I03 (C58 y C59, pedido de David del 20-11-2026): cómo se llegó a la idea y a qué busca convencer
+OBLIGATORIOS_DESDE_I03 = ['proceso', 'persuasion']
 RELATO_PLANTILLA = r'(lo que sostengo es|escena ilustrativa|punto de partida|\(tension|\(cierre|hipotesis|se cree que)'
 DOCENCIA = r'\b(docen\w*|pedagog\w*|ensenar a|como ensenar|disenar (un|el) taller|la sala copia|didactic\w*)'
 MANANTIALES = {'experiencia', 'dolor', 'senal', 'señal', 'pilar'}
@@ -62,7 +64,8 @@ def texto_de(f: dict) -> str:
 
 def validar_ficha(f: dict, ronda: str = 'I01') -> tuple[list, list]:
     E, A = [], []
-    for c in OBLIGATORIOS + (OBLIGATORIOS_DESDE_I02 if ronda >= 'I02' else []):
+    for c in OBLIGATORIOS + (OBLIGATORIOS_DESDE_I02 if ronda >= 'I02' else []) + \
+            (OBLIGATORIOS_DESDE_I03 if ronda >= 'I03' else []):
         v = f.get(c)
         if not v or (isinstance(v, dict) and not any(v.values())):
             E.append(f'falta «{c}»')
@@ -154,6 +157,15 @@ def validar_ficha(f: dict, ronda: str = 'I01') -> tuple[list, list]:
             E.append(f'relato con plantilla o andamiaje («{m.group(0)}»): se cuenta como lo diría David (C57)')
         if '(' in r:
             A.append('relato con paréntesis: suele ser andamiaje')
+    # C58: el proceso, en pasos reales (no una plantilla fija); C59: la persuasión, en una frase corta
+    pr = f.get('proceso')
+    if pr is not None and (not isinstance(pr, list) or not 3 <= len(pr) <= 7):
+        E.append('el proceso va como lista de 3 a 7 pasos')
+    ps = f.get('persuasion')
+    if ps:
+        n = len(ps.split())
+        if not 5 <= n <= 30:
+            A.append(f'persuasión de {n} palabras (de 5 a 30, una frase)')
     return E, A
 
 
@@ -234,6 +246,14 @@ def o_pagina(a):
             ('Cuidado', e(f.get('riesgo') or '—')),
             ('En cada canal', f'<ul>{canales}</ul>'),
         ]
+        # desde I03 (C58 y C59): a qué busca convencer y cómo se llegó a la idea, después del relato
+        extra = []
+        if f.get('persuasion'):
+            extra.append(('Persuasión', e(f['persuasion'])))
+        if f.get('proceso'):
+            extra.append(('El proceso', '<ol>' + ''.join(f'<li>{e(p)}</li>' for p in f['proceso']) + '</ol>'))
+        if extra and f.get('relato'):
+            filas[1:1] = extra
         cuerpo = ''.join(f'<div class="fila"><dt>{k}</dt><dd>{v}</dd></div>' for k, v in filas)
         tarjetas.append(f'<section class="alt" id="i{n}"><h2><span class="num">{n}</span><span>{e(f["titulo"])}</span></h2>'
                         f'<dl>{cuerpo}</dl></section>')
@@ -260,7 +280,7 @@ dl {{ margin: 0; display: grid; gap: 10px; }}
 .fila {{ display: grid; gap: 2px; }}
 dt {{ font-size: .78rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--pt); }}
 dd {{ margin: 0; }}
-dd ul {{ margin: 0; padding-left: 1.1em; display: grid; gap: 3px; }}
+dd ul, dd ol {{ margin: 0; padding-left: 1.1em; display: grid; gap: 3px; }}
 footer {{ color: var(--mu); font-size: .9rem; border-top: 1px solid var(--bo); padding-top: 14px; }}
 </style>
 <main>
